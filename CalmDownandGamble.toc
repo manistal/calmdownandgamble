@@ -1,0 +1,33 @@
+
+## Interface: 60000
+## X-Min-Interface: 50000
+## Title: CalmDownandGamble
+## Author: Fuzz Magtheridon-US
+## Version: 0.6.64
+## Notes: CALM DOWN AND GAMBLE
+## DefaultState: Enabled
+## LoadOnDemand: 0
+## SavedVariables: CalmDownandGambleDB
+
+Libs\LibStub\LibStub.lua
+Libs\CallbackHandler-1.0\CallbackHandler-1.0.xml
+Libs\AceAddon-3.0\AceAddon-3.0.xml
+Libs\AceEvent-3.0\AceEvent-3.0.xml
+Libs\AceTimer-3.0\AceTimer-3.0.xml
+Libs\AceHook-3.0\AceHook-3.0.xml
+Libs\AceLocale-3.0\AceLocale-3.0.xml
+Libs\AceDB-3.0\AceDB-3.0.xml
+Libs\AceConsole-3.0\AceConsole-3.0.xml
+Libs\AceGUI-3.0\AceGUI-3.0.xml
+Libs\AceConfig-3.0\AceConfig-3.0.xml
+Libs\AceComm-3.0\AceComm-3.0.xml
+Libs\AceSerializer-3.0\AceSerializer-3.0.xml
+Libs\LibCompress\LibCompress.lua
+Libs\LibTalentQuery-1.0\LibTalentQuery-1.0.lua
+Libs\LibDialog-1.0\lib.xml
+Libs\LibBase64-1.0\lib.xml
+
+embeds.xml
+
+CalmDownandGamble.lua
+
