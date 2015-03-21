@@ -21,7 +21,7 @@
 		</Backdrop>
 		<Layers>
 			<Layer level="OVERLAY">
-				<FontString name="Cross Gambling" inherits="GameFontNormal" text="CrossFire Gambling">
+				<FontString name="Calm Down Gambling" inherits="GameFontNormal" text="Calm Down Gambling">
 					<Size x="298" y="19" />
 					<Anchors>
 						<Anchor point="TOPLEFT">
@@ -29,7 +29,7 @@
 						</Anchor>
 					</Anchors>
 				</FontString>
-				<FontString name="version" inherits="GameFontNormal" text="|cffff3f3f(6.1.0 version)">
+				<FontString name="version" inherits="GameFontNormal" text="|cffff3f3f(1.0 version)">
 					<Size x="299" y="18" />
 					<Anchors>
 						<Anchor point="TOPLEFT">
@@ -37,7 +37,7 @@
 						</Anchor>
 					</Anchors>
 				</FontString>
-				<FontString inherits="GameFontNormal" text="GameOver@Proudmoore">
+				<FontString inherits="GameFontNormal" text="CalmDown@Magtheridon">
 					<Size x="122" y="13" />
 					<Anchors>
 						<Anchor point="TOPLEFT">
@@ -214,7 +214,7 @@
 				</Scripts>
 			</Button>
 			
-			<Button name="CDG_Type_Button" inherits="OptionsButtonTemplate" text="Enter's For You">
+			<Button name="CDG_Type_Button" inherits="OptionsButtonTemplate" text="Enters For You">
 				<Anchors>
 					<Anchor point="BOTTOM">
 						<Offset x="105" y="55" />
@@ -235,55 +235,7 @@
 					</Anchor>
 				</Anchors>
 			</Button>
-			
-			
-		    
-			
-			<Button name="CG_MinimapButton" parent="Minimap" enableMouse="true" movable="true" hidden="false">
-		<Size>
-			<AbsDimension x="33" y="33"/>
-		</Size>
-		<Anchors>
-			<Anchor point="TOPLEFT"/>
-		</Anchors>
-		<Layers>
-			<Layer level="BACKGROUND">
-				<Texture name="CG_MinimapButton_Icon" file="Interface\AddOns\CDG\media\icon">
-					<Size>
-						<AbsDimension x="21" y="21"/>
-					</Size>
-					<Anchors>
-						<Anchor point="TOPLEFT">
-							<Offset>
-								<AbsDimension x="7" y="-6"/>
-							</Offset>
-						</Anchor>
-					</Anchors>
-				</Texture>
-			</Layer>
-			<Layer level="OVERLAY">
-				<Texture file="Interface\Minimap\MiniMap-TrackingBorder">
-					<Size>
-						<AbsDimension x="56" y="56"/>
-					</Size>
-					<Anchors>
-						<Anchor point="TOPLEFT"/>
-					</Anchors>
-				</Texture>
-			</Layer>
-		</Layers>
-		<Frames>
-			<Frame name="CG_MinimapButton_DraggingFrame" hidden="true">
-				<Scripts>
-					<OnUpdate>
-						CG_MinimapButton_DraggingFrame_OnUpdate()
-					</OnUpdate>
-				</Scripts>
-			</Frame>
-		</Frames>
-		<HighlightTexture alphaMode="ADD" file="Interface\Minimap\UI-Minimap-ZoomButton-Highlight"/>
-	</Button>
-		</Frames>
-	</Frame>
+
+		</Frame>
 	
 </Ui>

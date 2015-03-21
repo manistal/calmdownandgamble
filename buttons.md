@@ -1,15 +1,8 @@
-Line 4, <Frame name="CrossGambling_Frame" parent="UIParent" toplevel="true" movable="true" enableMouse="true">
-Main frame, everything sits inside this.
+#Roll Button
 
-Line 11, <Backdrop bgFile="Interface\DialogFrame\UI-DialogBox-Background" edgeFile="Interface\DialogFrame\UI-DialogBox-Border" tile="true">
-Adds the border to the window, as well as the grey background
+#This command will roll for the user. Uses function CDG_OnClickROLL
 
-Line 22, <Layers> is used for showing the name of the addon and the version (this is mostly useless lol)
-
-Close button, <Button name="CrossGambling_Close" inherits="UIPanelCloseButton"> 
-easy as pie here, boys. anchor it awaaaaaay
-
-<Button name="CrossGambling_ROLL_Button" inherits="OptionsButtonTemplate" movable="true" text="Roll!">
+			<Button name="CDG_ROLL_Button" inherits="OptionsButtonTemplate" movable="true" text="ROLL!">
 				<Anchors>
 					<Anchor point="BOTTOM">
 						<Offset x="-105" y="35" />
@@ -17,48 +10,76 @@ easy as pie here, boys. anchor it awaaaaaay
 				</Anchors>
 				<Scripts>
 					<OnClick>
-						CrossGambling_OnClickROLL();
+						CDG_OnClickROLL();
 					</OnClick>
 				</Scripts>
 			</Button>
 
-# ^ general example of how a button works, including the script call and the anchors. This example is the Roll button!
+			
+#Entry button
 
+#This button will notify users the game has begun and entries are now accepted. Should also announce game mode and wager.
+#Button click executes CDG_OnClickEntry
 
-#Example of the use of the edit box to determine the roll amount. TGhis is optional, could be (should be) worked around, could really be replaced with a simple slash command)
-				<Layers>
-					<Layer level="BACKGROUND">
-						<Texture name="Texture2" file="Interface\ChatFrame\UI-ChatInputBorder-Right">
-							<Size>
-								<AbsDimension x="75" y="32" />
-							</Size>
-							<Anchors>
-								<Anchor point="RIGHT">
-									<Offset x="9" />
-								</Anchor>
-							</Anchors>
-							<TexCoords left="0.7" right="1" top="0" bottom="1" />
-						</Texture>
-						<Texture name="Texture1" file="Interface\ChatFrame\UI-ChatInputBorder-Left">
-							<Size>
-								<AbsDimension x="75" y="32" />
-							</Size>
-							<Anchors>
-								<Anchor point="LEFT">
-									<Offset x="-14" />
-								</Anchor>
-							</Anchors>
-							<TexCoords left="0" right="0.2" top="0" bottom="1" />
-						</Texture>
-					</Layer>
-				</Layers>
+			<Button name="CDG_Entry_Button" inherits="OptionsButtonTemplate" text="Entries">
+				<Anchors>
+					<Anchor point="BOTTOM">
+						<Offset x="-105" y="75" />
+					</Anchor>
+				</Anchors>
 				<Scripts>
-          <OnLoad>
-            CrossGambling_EditBox_OnLoad();
-          </OnLoad>
-					<OnEscapePressed>
-						self:ClearFocus();
-					</OnEscapePressed>
+					<OnClick>
+						CDG_OnClickEntry();
+
+					</OnClick>
 				</Scripts>
-				<FontString inherits="ChatFontNormal" />
-			</EditBox>
+			</Button>
+			
+	
+#Last call button
+
+#This button will shout 'Last call!' and then after 10 seconds, inform everyone that entries are closed and they can ROLL! 
+#Clicking this button executes CDG_OnClickLASTCALL
+
+ 			<Button name="CDG_LASTCALL_Button" inherits="OptionsButtonTemplate" movable="true" text="Last Call">
+				<Anchors>
+					<Anchor point="BOTTOM">
+						<Offset x="-105" y="55" />
+					</Anchor>
+				</Anchors>
+				<Scripts>
+					<OnClick>
+						CDG_OnClickLASTCALL();
+					</OnClick>
+				</Scripts>
+			</Button>
+			
+#X for the top right Corner?
+			<Button name="CDG_Close" inherits="UIPanelCloseButton">
+				<Anchors>
+					<Anchor point="TOPRIGHT" relativeTo="CDG_Frame" relativePoint="TOPRIGHT">
+						<Offset>
+							<AbsDimension x="7" y="6"/>
+						</Offset>
+					</Anchor>
+				</Anchors>
+			</Button>		
+
+#Stats Button
+
+#This button will post the highest and lowest scores in chat, using command CDG_OnClickSTATS	
+
+<Button name="CDG_STATS_Button" inherits="OptionsButtonTemplate" movable="true" text="Stats">
+				<Anchors>
+					<Anchor point="BOTTOM">
+						<Offset x="105" y="35" />
+					</Anchor>
+				</Anchors>
+				<Scripts>
+					<OnClick>
+						CDG_OnClickSTATS();
+					</OnClick>
+				<OnLoad>CDG_STATS_Button.tooltipText="Show's all user stats."</OnLoad>
+				</Scripts>
+			</Button>
+			
