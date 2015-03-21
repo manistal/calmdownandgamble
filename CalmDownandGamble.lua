@@ -13,11 +13,11 @@ function CalmDownandGamble:OnInitialize()
     -- Set up a database so we can save results 
 	self:Print("Load Begin")
 
+	-- Register Some Chat Commands
 	self:RegisterChatCommand("cdgshow", "ShowUI")
 	self:RegisterChatCommand("cdghide", "HideUI")
 
-	self:RegisterChatCommand("cdgroll", "GenerateRoll")
-	self:RegisterChatCommand("cdgleave", "LeaveGame")
+	-- Set up Infrastructure
     self.db = LibStub("AceDB-3.0"):New("CalmDownandGambleDB")
 	self:ConstructUI()
 
@@ -35,9 +35,8 @@ end
 
 -- CALLBACK FUNCTIONS 
 -- ==================================================== 
-function CalmDownandGamble:GenerateRoll()
-end
 
+-- SLASH COMMANDS -- 
 function CalmDownandGamble:ShowUI()
 	self.ui.CDG_Frame:Show()
 end
@@ -45,12 +44,13 @@ function CalmDownandGamble:HideUI()
 	self.ui.CDG_Frame:Hide()
 end
 
-function CalmDownandGamble:LeaveGame()
-end
-
+-- BUTTONS -- 
 function CalmDownandGamble:ButtonCallback()
 	self:Print("DID IT WORK")
 end
+
+-- CHAT CALLBACKS -- 
+
 
 -- UI ELEMENTS 
 -- ======================================================
@@ -61,17 +61,18 @@ function CalmDownandGamble:ConstructUI()
 		-- Main Box Frame -- 
 		main_frame = {
 			width = 440,
-			height = 150
+			height = 170
 		},
 		
 		-- Order in which the buttons are layed out -- 
 		button_index = {
 			"accept_entries",
 			"start_gambling",
-			"print_stats_table",
-			"print_ban_list",
+			"last_call",
 			"roll_for_me",
 			"enter_for_me",
+			"print_stats_table",
+			"print_ban_list",
 			"chat_channel",
 			"reset_game"
 		},
@@ -103,6 +104,11 @@ function CalmDownandGamble:ConstructUI()
 				label = "StartRolls!",
 				click_callback = function() self:ButtonCallback() end
 			},
+			last_call = {
+				width = 100,
+				label = "LastCall!",
+				click_callback = function() self:ButtonCallback() end
+			},
 			print_ban_list = {
 				width = 100,
 				label = "Print Bans",
@@ -119,6 +125,8 @@ function CalmDownandGamble:ConstructUI()
 				click_callback = function() self:ButtonCallback() end
 			}
 		}
+		
+		
 	};
 	
 	-- Give us a base UI Table to work with -- 
@@ -131,8 +139,13 @@ function CalmDownandGamble:ConstructUI()
 	self.ui.CDG_Frame:SetLayout("Flow")
 	self.ui.CDG_Frame:SetStatusTable(cdg_ui_elements.main_frame)
 	
-
-	-- Set up Buttons -- 
+	-- Set up edit box for gold -- 
+	self.ui.gold_amount_entry = AceGUI:Create("EditBox")
+	self.ui.gold_amount_entry:SetLabel("Gold Amount")
+	self.ui.gold_amount_entry:SetWidth(100)
+	self.ui.CDG_Frame:AddChild(self.ui.gold_amount_entry)
+	
+	-- Set up Buttons Above Text Box-- 
 	for _, button_name in pairs(cdg_ui_elements.button_index) do
 		local button_settings = cdg_ui_elements.buttons[button_name]
 	
@@ -145,17 +158,8 @@ function CalmDownandGamble:ConstructUI()
 	end
 	
 	
-	--[[
-	local editbox = AceGUI:Create("EditBox")
-	editbox:SetLabel("Insert text:")
-	editbox:SetWidth(200)
-	CDG_Frame:AddChild(editbox)
-
-	local button = AceGUI:Create("Button")
-	button:SetText("Click Me!")
-	button:SetWidth(200)
-	CDG_Frame:AddChild(button)
-	--]]
+	
+	
 end
 
 
