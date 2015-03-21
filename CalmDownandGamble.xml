@@ -1,7 +1,7 @@
 <Ui xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns="http://www.blizzard.com/wow/ui/">
 	<Script file="CalmDownandGamble.lua" />
 	<Animation />
-	<Frame name="CrossGambling_Frame" parent="UIParent" toplevel="true" movable="true" enableMouse="true">
+	<Frame name="CDG_Frame" parent="UIParent" toplevel="true" movable="true" enableMouse="true">
 		<Size>
 			<AbsDimension x="320" y="150" />
 		</Size>
@@ -38,7 +38,7 @@
 						</Anchor>
 					</Anchors>
 				</FontString>
-				<FontString inherits="GameFontNormal" text="GameOver@Proudmoore">
+				<FontString inherits="GameFontNormal" text="Fuzz">
 					<Size x="122" y="13" />
 					<Anchors>
 						<Anchor point="TOPLEFT">
@@ -54,9 +54,9 @@
 		<Frames>
 		
 		
-			<Button name="CrossGambling_Close" inherits="UIPanelCloseButton">
+			<Button name="CDG_Close" inherits="UIPanelCloseButton">
 				<Anchors>
-					<Anchor point="TOPRIGHT" relativeTo="CrossGambling_Frame" relativePoint="TOPRIGHT">
+					<Anchor point="TOPRIGHT" relativeTo="CDG_Frame" relativePoint="TOPRIGHT">
 						<Offset>
 							<AbsDimension x="7" y="6"/>
 						</Offset>
@@ -65,7 +65,7 @@
 			</Button>
 			
 			
-			<Button name="CrossGambling_ROLL_Button" inherits="OptionsButtonTemplate" movable="true" text="ROLL!">
+			<Button name="CDG_ROLL_Button" inherits="OptionsButtonTemplate" movable="true" text="ROLL!">
 				<Anchors>
 					<Anchor point="BOTTOM">
 						<Offset x="-105" y="35" />
@@ -73,7 +73,7 @@
 				</Anchors>
 			</Button>
 
-			<Button name="CrossGambling_STATS_Button" inherits="OptionsButtonTemplate" movable="true" text="Stats">
+			<Button name="CDG_STATS_Button" inherits="OptionsButtonTemplate" movable="true" text="Stats">
 				<Anchors>
 					<Anchor point="BOTTOM">
 						<Offset x="105" y="35" />
@@ -82,7 +82,7 @@
 			</Button>
 			
 			
-			<EditBox name="CrossGambling_EditBox" letters="6">
+			<EditBox name="CDG_EditBox" letters="6">
 				<Size>
 					<AbsDimension x="100" y="30" />
 				</Size>
@@ -121,7 +121,7 @@
 			</EditBox>
 			
 			
-			<Button name="CrossGambling_RESET_Button" inherits="OptionsButtonTemplate" movable="true" text="Reset Stats">
+			<Button name="CDG_RESET_Button" inherits="OptionsButtonTemplate" movable="true" text="Reset Stats">
 				<Anchors>
 					<Anchor point="BOTTOM">
 						<Offset x="105" y="15" />
@@ -129,7 +129,7 @@
 				</Anchors>
 			</Button>
 			
-			<Button name="CrossGambling_RESET1_Button" inherits="OptionsButtonTemplate" movable="true" text="Reset Game">
+			<Button name="CDG_RESET1_Button" inherits="OptionsButtonTemplate" movable="true" text="Reset Game">
 				<Anchors>
 				<Anchor point="BOTTOM">
 						<Offset x="3" y="20" />
@@ -137,7 +137,7 @@
 				</Anchors>
 			</Button>
 			
-			<Button name="CrossGambling_LASTCALL_Button" inherits="OptionsButtonTemplate" movable="true" text="Last Call">
+			<Button name="CDG_LASTCALL_Button" inherits="OptionsButtonTemplate" movable="true" text="Last Call">
 				<Anchors>
 					<Anchor point="BOTTOM">
 						<Offset x="-105" y="55" />
@@ -145,7 +145,7 @@
 				</Anchors>
 			</Button>
 			
-			<Button name="CrossGambling_AcceptOnes_Button" inherits="OptionsButtonTemplate" text="Open Entry">
+			<Button name="CDG_AcceptOnes_Button" inherits="OptionsButtonTemplate" text="Open Entry">
 				<Anchors>
 					<Anchor point="BOTTOM">
 						<Offset x="-105" y="75" />
@@ -153,7 +153,7 @@
 				</Anchors>
 			</Button>
 			
-			<Button name="CrossGambling_Roll_Button" inherits="OptionsButtonTemplate" text="User Roll">
+			<Button name="CDG_Roll_Button" inherits="OptionsButtonTemplate" text="User Roll">
 				<Anchors>
 					<Anchor point="BOTTOM">
 						<Offset x="105" y="75" />
@@ -161,7 +161,7 @@
 				</Anchors>
 			</Button>
 			
-			<Button name="CrossGambling_Ban_Button" inherits="OptionsButtonTemplate" text="Ban List">
+			<Button name="CDG_Ban_Button" inherits="OptionsButtonTemplate" text="Ban List">
 				<Anchors>
 					<Anchor point="BOTTOM">
 						<Offset x="-105" y="15" />
@@ -170,7 +170,7 @@
 			</Button>
 			
 			
-			<Button name="CrossGambling_Type_Button" inherits="OptionsButtonTemplate" text="Enter's For You">
+			<Button name="CDG_Type_Button" inherits="OptionsButtonTemplate" text="Enter's For You">
 				<Anchors>
 					<Anchor point="BOTTOM">
 						<Offset x="105" y="55" />
@@ -179,7 +179,7 @@
 			</Button>
 			
 			
-			<Button name="CrossGambling_CHAT_Button" inherits="OptionsButtonTemplate" text="(Raid)">
+			<Button name="CDG_CHAT_Button" inherits="OptionsButtonTemplate" text="(Raid)">
 				<Anchors>
 					<Anchor point="TOP">
 						<Offset x="1" y="-60" />

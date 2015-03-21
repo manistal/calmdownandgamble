@@ -44,7 +44,7 @@ end
 
 function CalmDownandGamble:ShowUI()
 	self:Print("HAHAH");
-	CrossGambling_Frame:Show();
+	CDG_Frame:Show();
 
 end
 
