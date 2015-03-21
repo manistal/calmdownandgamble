@@ -173,18 +173,6 @@ function CalmDownandGamble:ChatChannelToggle()
 
 	self:SetChannelSettings()
 	
-	
-		--CrossGambling_CHAT_Button:SetText("(Guild)");
-		--chatmethod = "GUILD";
-		--self.chat.chanId, self.chat.chanName = GetChannelName(self.chat.channel_index)
-	
-	
-	
-	-- Loop if we've done them all
-	--	if self.chat.channel_index > table.getn(self.chat.options) then self.chat.channel_index = 1
-	-- Set settings based on options table
-	--	self.chat.channel_const = self.chat.options[self.chat.channel_index].const
-	-- etc
 end
 
 
