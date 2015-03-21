@@ -234,13 +234,6 @@
 						<Offset x="1" y="-60" />
 					</Anchor>
 				</Anchors>
-				<Scripts>
-				
-					<OnClick>
-						CDG_OnClickCHAT();
-					</OnClick>
-				<OnLoad>CDG_CHAT_Button.tooltipText="Change Channels"</OnLoad>
-				</Scripts>
 			</Button>
 			
 			
@@ -289,63 +282,8 @@
 			</Frame>
 		</Frames>
 		<HighlightTexture alphaMode="ADD" file="Interface\Minimap\UI-Minimap-ZoomButton-Highlight"/>
-		<Scripts>
-			<OnLoad>
-				self:RegisterForClicks("LeftButtonUp","RightButtonUp")
-				self:RegisterForDrag("LeftButton","RightButton")
-			</OnLoad>
-			<OnDragStart>
-				self:LockHighlight()
-                CG_MinimapButton_DraggingFrame:Show()
-			</OnDragStart>
-			<OnDragStop>
-				self:UnlockHighlight()
-				CG_MinimapButton_DraggingFrame:Hide()
-			</OnDragStop>
-			
-			<OnMouseDown>
-              if button == "RightButton" and not self.isMoving then
-              self:StartMoving();
-              self.isMoving = true;
-              end
-        </OnMouseDown>
-        <OnMouseUp>
-              if button == "RightButton" and self.isMoving then
-              self:StopMovingOrSizing();
-              self.isMoving = false;
-              end
-        </OnMouseUp>
-        <OnHide>
-             if ( self.isMoving ) then
-             self:StopMovingOrSizing();
-             self.isMoving = false;
-             end
-        </OnHide>
-			
-			
-			<OnClick>
-                ToggleFrame(CDG_Frame)
-			</OnClick>
-		</Scripts>
 	</Button>
 		</Frames>
-		<Scripts>
-		    
-			<OnLoad>
-				CDG_OnLoad(self);
-			</OnLoad>
-			<OnEvent>
-				CDG_OnEvent(self, event, ...);
-			</OnEvent>
-			<OnDragStart>
-				self:StartMoving();
-				self.isMoving = true;
-			</OnDragStart>
-			<OnDragStop>
-				self:StopMovingOrSizing();
-				self.isMoving = false;
-			</OnDragStop>
-		</Scripts>
 	</Frame>
 	
 </Ui>

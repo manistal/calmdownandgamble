@@ -4,23 +4,25 @@
 CalmDownandGamble = LibStub("AceAddon-3.0"):NewAddon("CalmDownandGamble", "AceConsole-3.0", "AceComm-3.0", "AceEvent-3.0", "AceTimer-3.0", "AceHook-3.0", "AceSerializer-3.0")
 local CalmDownandGamble	= LibStub("AceAddon-3.0"):GetAddon("CalmDownandGamble")
 
+-- Settings, can move these into a different file as we scale --
+-- ============================================================
+
+
 
 -- Basic Adddon Initialization stuff, virtually inherited functions -- 
 -- ================================================================ -- 
-
-
-
 
 -- CONSTRUCTOR -- 
 function CalmDownandGamble:OnInitialize()
     -- Set up a database so we can save results -- 
 	self:Print("Load Begin")
 
-	self:RegisterChatCommand("cdgshow", "ShowUI")
+	self:RegisterChatCommand("cdgwoo", "ShowUI")
 	self:RegisterChatCommand("cdgroll", "GenerateRoll")
 	self:RegisterChatCommand("cdgleave", "LeaveGame")
     self.db = LibStub("AceDB-3.0"):New("CalmDownandGambleDB")
 	
+
 	self:Print("Load Complete!!")
 
 end
@@ -36,20 +38,12 @@ end
 function CalmDownandGamble:OnDisable()
 end
 
-
--- Some Util functions to clean up life -- 
--- =================================== -- 
-function CalmDownandGamble:RegisterCDCallbacks()
-
-end
-
 -- Corresponding Chat command funcs -- 
 function CalmDownandGamble:GenerateRoll()
 end
 
-function CalmDownandGamble:ShowUI(inpubt)
-	-- TODO -- Change this object name to match CalmDownandGamble in the XML
-	CrossGambling_Frame:Show(); 
+function CalmDownandGamble:ShowUI()
+	CDG_Frame:show(); 
 end
 
 function CalmDownandGamble:LeaveGame()
