@@ -35,6 +35,7 @@ function CalmDownandGamble:InitState()
 	self.chat.channel_label = "(Raid)" -- Displays on Button
 	self.chat.channel_const = "RAID"   -- What the WoW API is looking for, CHANNEL for numeric channels
 	self.chat.channel_numeric = nil    -- /1, /2 etc, nil for non-numeric channels
+	self.chat.channel_callback = "CHAT_MSG_RAID"
 	self.chat.channel_index = 1
 	--[[
 		self.chat.options = {
@@ -56,11 +57,15 @@ function CalmDownandGamble:StartGame()
 	self.current_game = {}
 	self.current_game.player_rolls = {}
 	self.current_game.players = {}
+	self.current_game.gold_amount = self.ui.gold_amount_entry:GetText() or 100
+	self:Print(self.ui.gold_amount_entry:GetText())
 	
 	-- Register game callbacks
 	self:RegisterEvent("CHAT_MSG_SYSTEM", function(...) self:RollCallback(...) end)
-	self:RegisterEvent(self.chat.channel_const, function(...) self:ChatChannelCallback(...) end)
+	self:RegisterEvent(self.chat.channel_callback, function(...) self:ChatChannelCallback(...) end)
 
+	local welcome_msg = "Shh Just CalmDownandGamble. Press 1 to Join : "..self.current_game.gold_amount.." gold rolls!"
+	SendChatMessage(welcome_msg, self.chat.channel_const, nil, self.chat.channel_numeric)
 end
 
 function CalmDownandGamble:EndGame()
@@ -101,22 +106,36 @@ end
 
 -- CHAT CALLBACKS -- 
 function CalmDownandGamble:RollCallback(...)
+	-- Parse the input Args 
 	local message = select(2, ...)
 	message = SplitString(message)
 	local player, roll, roll_range = message[1], message[3], message[4]
 	
-	if self.current_game then 
-		-- TODO if self.current_game.roll_range != roll_range then
+	-- Check that the roll is valid ( also that the message is for us)
+	local roll_range_str = "(1-"..self.current_game.gold_amount..")"
+	local valid_roll = (roll_range_str == roll_range)
+
+	if self.current_game and valid_roll then 
+		self:Print("Player: "..player.." Roll: "..roll.." RollRange: "..roll_range)
+		
 		if not (self.current_game.player_rolls[player]) then
 			self.current_game.player_rolls[player] = roll
 		end
+		
 	end
+	
 	
 end
 
 function CalmDownandGamble:ChatChannelCallback(...)
-	local message = select(2, ...)
-	self:Print(message)
+	self:Print("WHATTHEFUCK")
+	--local message = select(2, ...)
+	--local sender = select(3, ...)
+	--local something = select(4, ...)
+	--self:Print(message)
+	--self:Print(sender)
+	--self:Print(something)
+
 end
 
 -- BUTTONS -- 
@@ -147,10 +166,6 @@ function CalmDownandGamble:ResetGame()
 	self.current_game = nil
 end
 
-function CalmDownandGamble:AcceptRegisters()
-	-- SendChatMessage("text" [, "chatType" [, languageIndex [, "channel"]]])
-	SendChatMessage("Press 1 to Join!!", self.chat.channel_const, nil, self.chat.channel_numeric)
-end
 
 function CalmDownandGamble:ChatChannelToggle()
 	-- Increment with toggle
@@ -178,7 +193,7 @@ function CalmDownandGamble:ConstructUI()
 		
 		-- Order in which the buttons are layed out -- 
 		button_index = {
-			"accept_entries",
+			"new_game",
 			"start_gambling",
 			"last_call",
 			"roll_for_me",
@@ -237,10 +252,10 @@ function CalmDownandGamble:ConstructUI()
 				label = "LastCall!",
 				click_callback = function() self:LastCall() end
 			},
-			accept_entries = {
+			new_game = {
 				width = 100,
-				label = "CallEntries",
-				click_callback = function() self:AcceptRegisters() end
+				label = "NewGame",
+				click_callback = function() self:StartGame() end
 			}
 		}
 		
