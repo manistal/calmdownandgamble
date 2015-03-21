@@ -32,7 +32,7 @@ end
 function CalmDownandGamble:InitState()
 	-- Chat Context -- 
 	self.chat = {}
-	self.chat.channel_label = self.chat.options.label -- Displays on Button
+	self.chat.channel_label = "Raid" -- Displays on Button
 	self.chat.channel_const = "RAID"   -- What the WoW API is looking for, CHANNEL for numeric channels
 	self.chat.channel_numeric = nil    -- /1, /2 etc, nil for non-numeric channels
 	self.chat.channel_index = 1
@@ -155,14 +155,19 @@ function CalmDownandGamble:AcceptRegisters()
 end
 
 function CalmDownandGamble:ChatChannelToggle()
-	self.chat.channel_index = self.chat.channel_index + 1
-	self:Print(self.chat.options.label)
-	if self.chat.channel_index > table.getn(self.chat.options) then self.chat.channel_index = 1 end
 	
-	--self.chat.chanId, self.chat.chanName = GetChannelName(self.chat.channel_index)
-	self:Print(self.chat.options.label)
-	self.ui.chat_channel:SetText(self.chat.options.label)
-	chatmethod = self.chat.options.label
+
+	
+	
+		--CrossGambling_CHAT_Button:SetText("(Guild)");
+		--chatmethod = "GUILD";
+		--self.chat.chanId, self.chat.chanName = GetChannelName(self.chat.channel_index)
+	self:Print(self.chat.options[self.chat.channel_index].label)
+	self.chat.channel_const = self.chat.options[self.chat.channel_index].const
+	self.ui.chat_channel:SetText(self.chat.options[self.chat.channel_index].label)
+	
+	self.chat.channel_index = self.chat.channel_index + 1
+	if self.chat.channel_index > table.getn(self.chat.options) then self.chat.channel_index = 1 end
 	-- Loop if we've done them all
 	--	if self.chat.channel_index > table.getn(self.chat.options) then self.chat.channel_index = 1
 	-- Set settings based on options table
