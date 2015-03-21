@@ -29,14 +29,10 @@ end
 function CalmDownandGamble:RegisterCDCallbacks()
     self:RegisterEvent("CHAT_MSG_ADDON")
     self:RegisterEvent("CHAT_MSG_CHANNEL")
+	self:RegisterChatCommand("cdgroll", "GenerateRoll")
+	self:RegisterChatCommand("cdgjoin", "JoinGame")
+	self:RegisterChatCommand("cdgleave", "LeaveGame")
 end
-
-
--- Register some slash commands because FUN -- 
--- ======================================== --
-CalmDownandGamble:RegisterChatCommand("cdgroll", "GenerateRoll")
-CalmDownandGamble:RegisterChatCommand("cdgjoin", "JoinGame")
-CalmDownandGamble:RegisterChatCommand("cdgleave", "LeaveGame")
 
 
 -- Corresponding Chat command funcs -- 
