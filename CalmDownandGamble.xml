@@ -22,7 +22,7 @@
 		</Backdrop>
 		<Layers>
 			<Layer level="OVERLAY">
-				<FontString name="Cross Gambling" inherits="GameFontNormal" text="CrossFire Gambling">
+				<FontString name="Calm Down Gambling" inherits="GameFontNormal" text="Calm Down Gambling">
 					<Size x="298" y="19" />
 					<Anchors>
 						<Anchor point="TOPLEFT">
