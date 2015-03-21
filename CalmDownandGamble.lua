@@ -32,17 +32,17 @@ end
 function CalmDownandGamble:InitState()
 	-- Chat Context -- 
 	self.chat = {}
-	self.chat.channel_label = "(Raid)" -- Displays on Button
+	self.chat.channel_label = self.chat.options.label -- Displays on Button
 	self.chat.channel_const = "RAID"   -- What the WoW API is looking for, CHANNEL for numeric channels
 	self.chat.channel_numeric = nil    -- /1, /2 etc, nil for non-numeric channels
 	self.chat.channel_index = 1
-	--[[
-		self.chat.options = {
-			{ label = "(Raid)", const = "RAID", numeric = nil }, -- Index 1
-			{ label = "(Say)", const = "SAY", numeric = nil },   -- Index 2
-			...
-		}
-	]]--
+	--self.chat.('chanId', 'chanName') = GetChannelName(self.chat.channel_index) -- this causes errors?
+	self.chat.options = {
+			{ label = "Raid", const = "RAID", numeric = nil }, -- Index 1
+			{ label = "Say", const = "SAY", numeric = nil },   -- Index 2
+			{ label = "Party", const = "PARTY", numeric = nil },   -- Index 3
+			{ label = "Guild", const = "GUILD", numeric = nil },   -- Index 4	
+		}	
 end
 
 function CalmDownandGamble:RegisterCallbacks()
@@ -121,7 +121,8 @@ end
 
 -- BUTTONS -- 
 function CalmDownandGamble:ButtonCallback()
-	self:Print("DID IT WORK")
+	--self:Print(self.chat.chanId)
+	--self:Print(self.chat.chanName)
 end
 
 function CalmDownandGamble:RollForMe()
@@ -133,6 +134,7 @@ function CalmDownandGamble:EnterForMe()
 end
 
 function CalmDownandGamble:StartRolls()
+	
 end
 
 function CalmDownandGamble:LastCall()
@@ -153,12 +155,18 @@ function CalmDownandGamble:AcceptRegisters()
 end
 
 function CalmDownandGamble:ChatChannelToggle()
-	-- Increment with toggle
-	-- self.chat.channel_index = self.chat.channel_index + 1
+	self.chat.channel_index = self.chat.channel_index + 1
+	self:Print(self.chat.options.label)
+	if self.chat.channel_index > table.getn(self.chat.options) then self.chat.channel_index = 1 end
+	
+	--self.chat.chanId, self.chat.chanName = GetChannelName(self.chat.channel_index)
+	self:Print(self.chat.options.label)
+	self.ui.chat_channel:SetText(self.chat.options.label)
+	chatmethod = self.chat.options.label
 	-- Loop if we've done them all
-	-- if self.chat.channel_index > table.getn(self.chat.options) then self.chat.channel_index = 1
+	--	if self.chat.channel_index > table.getn(self.chat.options) then self.chat.channel_index = 1
 	-- Set settings based on options table
-	-- self.chat.channel_const = self.chat.options[self.chat.channel_index].const
+	--	self.chat.channel_const = self.chat.options[self.chat.channel_index].const
 	-- etc
 end
 
