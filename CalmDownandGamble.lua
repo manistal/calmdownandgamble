@@ -207,7 +207,7 @@ function CalmDownandGamble:ConstructUI()
 		buttons = {
 			chat_channel = {
 				width = 100,
-				label = "(Raid)",
+				label = "Raid",
 				click_callback = function() self:ChatChannelToggle() end
 			},
 			game_mode = {
