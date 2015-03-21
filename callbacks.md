@@ -1,3 +1,14 @@
+## Game State
+
+  Game consists of different states
+  1) New Game Created, look for entrants
+  2) Entrance closed, look for rolls
+  3) Rolls seen, calculate winner
+  4) Log results, exit
+
+
+
+
 ## TextBox 
   OnEnterPressed(text) -- Set the CDG Value for the Currency Amount
 

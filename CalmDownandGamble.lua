@@ -16,6 +16,7 @@ function CalmDownandGamble:OnInitialize()
     self.db = LibStub("AceDB-3.0"):New("CalmDownandGambleDB")
 	self:ConstructUI()
 	self:RegisterCallbacks()
+	self:InitState()
 
 	self:Print("Load Complete!!")
 end
@@ -28,13 +29,50 @@ end
 function CalmDownandGamble:OnDisable()
 end
 
+function CalmDownandGamble:InitState()
+	-- Chat Context -- 
+	self.chat = {}
+	self.chat.channel_label = "(Raid)" -- Displays on Button
+	self.chat.channel_const = "RAID"   -- What the WoW API is looking for, CHANNEL for numeric channels
+	self.chat.channel_numeric = nil    -- /1, /2 etc, nil for non-numeric channels
+	self.chat.channel_index = 1
+	--[[
+		self.chat.options = {
+			{ label = "(Raid)", const = "RAID", numeric = nil }, -- Index 1
+			{ label = "(Say)", const = "SAY", numeric = nil },   -- Index 2
+			...
+		}
+	]]--
+end
+
 function CalmDownandGamble:RegisterCallbacks()
 	-- Register Some Slash Commands
 	self:RegisterChatCommand("cdgshow", "ShowUI")
 	self:RegisterChatCommand("cdghide", "HideUI")
+end
+
+function CalmDownandGamble:StartGame()
+	-- Init our game
+	self.current_game = {}
+	self.current_game.player_rolls = {}
+	self.current_game.players = {}
 	
-	-- Regsiter Chat Callbacks
+	-- Register game callbacks
 	self:RegisterEvent("CHAT_MSG_SYSTEM", function(...) self:RollCallback(...) end)
+	self:RegisterEvent(self.chat.channel_const, function(...) self:ChatChannelCallback(...) end)
+
+end
+
+function CalmDownandGamble:EndGame()
+	-- Init our game
+	self.current_game = nil
+	self.current_game.player_rolls = nil
+	self.current_game.players = nil
+	
+	-- Register game callbacks
+	self:UnregisterEvent("CHAT_MSG_SYSTEM")
+	self:UnregisterEvent(self.chat.channel_const)
+
 end
 
 -- Util Functions cuz EW LUA STRINGS 
@@ -61,12 +99,36 @@ function CalmDownandGamble:HideUI()
 	self.ui.CDG_Frame:Hide()
 end
 
+-- CHAT CALLBACKS -- 
+function CalmDownandGamble:RollCallback(...)
+	local message = select(2, ...)
+	message = SplitString(message)
+	local player, roll, roll_range = message[1], message[3], message[4]
+	
+	if self.current_game then 
+		-- TODO if self.current_game.roll_range != roll_range then
+		if not (self.current_game.player_rolls[player]) then
+			self.current_game.player_rolls[player] = roll
+		end
+	end
+	
+end
+
+function CalmDownandGamble:ChatChannelCallback(...)
+	local message = select(2, ...)
+	self:Print(message)
+end
+
 -- BUTTONS -- 
 function CalmDownandGamble:ButtonCallback()
 	self:Print("DID IT WORK")
 end
 
-function CalmDownandGamble:RollForMeCallback()
+function CalmDownandGamble:RollForMe()
+	RandomRoll(1, 100)
+end
+
+function CalmDownandGamble:EnterForMe()
 	RandomRoll(1, 100)
 end
 
@@ -87,25 +149,19 @@ end
 
 function CalmDownandGamble:AcceptRegisters()
 	-- SendChatMessage("text" [, "chatType" [, languageIndex [, "channel"]]])
-	SendChatMessage("Pres 1 to Join!!")
-	self.current_game = {}
-	self.current_game.player_rolls = {}
+	SendChatMessage("Press 1 to Join!!", self.chat.channel_const, nil, self.chat.channel_numeric)
 end
 
--- CHAT CALLBACKS -- 
-function CalmDownandGamble:RollCallback(...)
-	local message = select(2, ...)
-	message = SplitString(message)
-	local player, roll, roll_range = message[1], message[3], message[4]
-	
-	if self.current_game then 
-		-- TODO if self.current_game.roll_range != roll_range then
-		if not (self.current_game.player_rolls[player]) then
-			self.current_game.player_rolls[player] = roll
-		end
-	end
-	
+function CalmDownandGamble:ChatChannelToggle()
+	-- Increment with toggle
+	-- self.chat.channel_index = self.chat.channel_index + 1
+	-- Loop if we've done them all
+	-- if self.chat.channel_index > table.getn(self.chat.options) then self.chat.channel_index = 1
+	-- Set settings based on options table
+	-- self.chat.channel_const = self.chat.options[self.chat.channel_index].const
+	-- etc
 end
+
 
 
 -- UI ELEMENTS 
@@ -139,37 +195,12 @@ function CalmDownandGamble:ConstructUI()
 			chat_channel = {
 				width = 100,
 				label = "(Raid)",
-				click_callback = function() self:ButtonCallback() end
+				click_callback = function() self:ChatChannelToggle() end
 			},
 			game_mode = {
 				width = 100,
 				label = "(Classic)",
 				click_callback = function() self:ButtonCallback() end
-			},
-			reset_game = {
-				width = 100,
-				label = "Reset",
-				click_callback = function() self:ButtonCallback() end
-			},
-			roll_for_me = {
-				width = 100,
-				label = "Roll For Me",
-				click_callback = function() self:RollForMeCallback() end
-			},
-			enter_for_me = {
-				width = 100,
-				label = "Enter Me",
-				click_callback = function() self:ButtonCallback() end
-			},
-			start_gambling = {
-				width = 100,
-				label = "StartRolls!",
-				click_callback = function() self:StartRolls() end
-			},
-			last_call = {
-				width = 100,
-				label = "LastCall!",
-				click_callback = function() self:LastCall() end
 			},
 			print_ban_list = {
 				width = 100,
@@ -180,6 +211,31 @@ function CalmDownandGamble:ConstructUI()
 				width = 100,
 				label = "Print Stats",
 				click_callback = function() self:ButtonCallback() end
+			},
+			reset_game = {
+				width = 100,
+				label = "Reset",
+				click_callback = function() self:EndGame() end
+			},
+			roll_for_me = {
+				width = 100,
+				label = "Roll For Me",
+				click_callback = function() self:RollForMe() end
+			},
+			enter_for_me = {
+				width = 100,
+				label = "Enter Me",
+				click_callback = function() self:EnterGameForMe() end
+			},
+			start_gambling = {
+				width = 100,
+				label = "StartRolls!",
+				click_callback = function() self:StartRolls() end
+			},
+			last_call = {
+				width = 100,
+				label = "LastCall!",
+				click_callback = function() self:LastCall() end
 			},
 			accept_entries = {
 				width = 100,
