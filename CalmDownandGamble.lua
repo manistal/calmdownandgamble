@@ -49,7 +49,7 @@ end
 
 function CalmDownandGamble:ShowUI(inpubt)
 	-- TODO -- Change this object name to match CalmDownandGamble in the XML
-	CrossGambling_Frame:Show(); 
+	CDG_Frame:Show(); 
 end
 
 function CalmDownandGamble:LeaveGame()
