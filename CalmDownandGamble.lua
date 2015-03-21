@@ -52,7 +52,6 @@ function CalmDownandGamble:SetChannelSettings()
 	self:Print(self.chat.options[self.chat.channel_index].label)
 	
 	self.chat.channel_const = self.chat.options[self.chat.channel_index].const
-	self.chat.channel_numeric =  self.chat.options[self.chat.channel_index].numeric   -- /1, /2 etc, nil for non-numeric channel
 	self.ui.chat_channel:SetText(self.chat.options[self.chat.channel_index].label)
 	self.chat.channel_callback = self.chat.options[self.chat.channel_index].callback
 
@@ -164,7 +163,7 @@ end
 
 function CalmDownandGamble:AcceptRegisters()
 	-- SendChatMessage("text" [, "chatType" [, languageIndex [, "channel"]]])
-	SendChatMessage("Press 1 to Join!!", self.chat.channel_const, nil, self.chat.channel_numeric)
+	SendChatMessage("Press 1 to Join!!", self.chat.channel_const)
 end
 
 function CalmDownandGamble:ChatChannelToggle()
