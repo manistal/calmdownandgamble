@@ -10,16 +10,12 @@ local AceGUI = LibStub("AceGUI-3.0")
 
 -- CONSTRUCTOR 
 function CalmDownandGamble:OnInitialize()
-    -- Set up a database so we can save results 
 	self:Print("Load Begin")
-
-	-- Register Some Chat Commands
-	self:RegisterChatCommand("cdgshow", "ShowUI")
-	self:RegisterChatCommand("cdghide", "HideUI")
 
 	-- Set up Infrastructure
     self.db = LibStub("AceDB-3.0"):New("CalmDownandGambleDB")
 	self:ConstructUI()
+	self:RegisterCallbacks()
 
 	self:Print("Load Complete!!")
 end
@@ -30,6 +26,27 @@ end
 
 -- DESTRUCTOR  
 function CalmDownandGamble:OnDisable()
+end
+
+function CalmDownandGamble:RegisterCallbacks()
+	-- Register Some Slash Commands
+	self:RegisterChatCommand("cdgshow", "ShowUI")
+	self:RegisterChatCommand("cdghide", "HideUI")
+	
+	-- Regsiter Chat Callbacks
+	self:RegisterEvent("CHAT_MSG_SYSTEM", function(...) self:RollCallback(...) end)
+end
+
+-- Util Functions cuz EW LUA STRINGS 
+-- =============================================
+function SplitString(str)
+	local ret_list = {}
+	local index = 1
+	for token in string.gmatch(str, "%S+") do
+		ret_list[index] = token
+		index = index + 1
+	end
+	return ret_list
 end
 
 
@@ -49,7 +66,46 @@ function CalmDownandGamble:ButtonCallback()
 	self:Print("DID IT WORK")
 end
 
+function CalmDownandGamble:RollForMeCallback()
+	RandomRoll(1, 100)
+end
+
+function CalmDownandGamble:StartRolls()
+end
+
+function CalmDownandGamble:LastCall()
+	for player, roll in pairs(self.current_game.player_rolls) do
+		self:Print(player)
+		self:Print(roll)
+	end
+
+end
+
+function CalmDownandGamble:ResetGame()
+	self.current_game = nil
+end
+
+function CalmDownandGamble:AcceptRegisters()
+	-- SendChatMessage("text" [, "chatType" [, languageIndex [, "channel"]]])
+	SendChatMessage("Pres 1 to Join!!")
+	self.current_game = {}
+	self.current_game.player_rolls = {}
+end
+
 -- CHAT CALLBACKS -- 
+function CalmDownandGamble:RollCallback(...)
+	local message = select(2, ...)
+	message = SplitString(message)
+	local player, roll, roll_range = message[1], message[3], message[4]
+	
+	if self.current_game then 
+		-- TODO if self.current_game.roll_range != roll_range then
+		if not (self.current_game.player_rolls[player]) then
+			self.current_game.player_rolls[player] = roll
+		end
+	end
+	
+end
 
 
 -- UI ELEMENTS 
@@ -92,7 +148,7 @@ function CalmDownandGamble:ConstructUI()
 			roll_for_me = {
 				width = 100,
 				label = "Roll For Me",
-				click_callback = function() self:ButtonCallback() end
+				click_callback = function() self:RollForMeCallback() end
 			},
 			enter_for_me = {
 				width = 100,
@@ -102,12 +158,12 @@ function CalmDownandGamble:ConstructUI()
 			start_gambling = {
 				width = 100,
 				label = "StartRolls!",
-				click_callback = function() self:ButtonCallback() end
+				click_callback = function() self:StartRolls() end
 			},
 			last_call = {
 				width = 100,
 				label = "LastCall!",
-				click_callback = function() self:ButtonCallback() end
+				click_callback = function() self:LastCall() end
 			},
 			print_ban_list = {
 				width = 100,
@@ -122,7 +178,7 @@ function CalmDownandGamble:ConstructUI()
 			accept_entries = {
 				width = 100,
 				label = "CallEntries",
-				click_callback = function() self:ButtonCallback() end
+				click_callback = function() self:AcceptRegisters() end
 			}
 		}
 		
