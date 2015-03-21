@@ -42,10 +42,10 @@ end
 function CalmDownandGamble:SetChannelSettings() 
 
 	self.chat.options = {
-			{ label = "Raid", const = "RAID", numeric = nil, callback = "CHAT_MSG_RAID" }, -- Index 1
-			{ label = "Say", const = "SAY", numeric = nil, callback = "CHAT_MSG_SAY" },   -- Index 2
-			{ label = "Party", const = "PARTY", numeric = nil, callback = "CHAT_MSG_PARTY" },   -- Index 3
-			{ label = "Guild", const = "GUILD", numeric = nil, callback = "CHAT_MSG_GUILD" },   -- Index 4	
+			{ label = "Raid", const = "RAID", callback = "CHAT_MSG_RAID" }, -- Index 1
+			{ label = "Say", const = "SAY", callback = "CHAT_MSG_SAY" },   -- Index 2
+			{ label = "Party", const = "PARTY", callback = "CHAT_MSG_PARTY" },   -- Index 3
+			{ label = "Guild", const = "GUILD", callback = "CHAT_MSG_GUILD" },   -- Index 4	
 	}	
 	self.chat.channel_const = "RAID"   -- What the WoW API is looking for, CHANNEL for numeric channels
 	
