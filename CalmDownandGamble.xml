@@ -1,7 +1,14 @@
 <Ui xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns="http://www.blizzard.com/wow/ui/">
+	
+	
 	<Script file="CalmDownandGamble.lua" />
 	<Animation />
+	
+	
+	<!-- MAIN FRAME ==================================================================================================== -->
 	<Frame name="CDG_Frame" parent="UIParent" toplevel="true" movable="true" enableMouse="true">
+		
+		<!-- SETTINGS ============================================ -->
 		<Size>
 			<AbsDimension x="320" y="150" />
 		</Size>
@@ -20,6 +27,9 @@
 				<AbsValue val="32" />
 			</EdgeSize>
 		</Backdrop>
+		
+		
+		<!-- UI LAYER ============================================ -->
 		<Layers>
 			<Layer level="OVERLAY">
 				<FontString name="Calm Down Gambling" inherits="GameFontNormal" text="Calm Down Gambling">
@@ -51,37 +61,10 @@
 			</Layer>
 		</Layers>
 		
+		
+		<!-- UI ELEMENTS ============================================ -->
 		<Frames>
 		
-		
-			<Button name="CDG_Close" inherits="UIPanelCloseButton">
-				<Anchors>
-					<Anchor point="TOPRIGHT" relativeTo="CDG_Frame" relativePoint="TOPRIGHT">
-						<Offset>
-							<AbsDimension x="7" y="6"/>
-						</Offset>
-					</Anchor>
-				</Anchors>
-			</Button>
-			
-			
-			<Button name="CDG_ROLL_Button" inherits="OptionsButtonTemplate" movable="true" text="ROLL!">
-				<Anchors>
-					<Anchor point="BOTTOM">
-						<Offset x="-105" y="35" />
-					</Anchor>
-				</Anchors>
-			</Button>
-
-			<Button name="CDG_STATS_Button" inherits="OptionsButtonTemplate" movable="true" text="Stats">
-				<Anchors>
-					<Anchor point="BOTTOM">
-						<Offset x="105" y="35" />
-					</Anchor>
-				</Anchors>
-			</Button>
-			
-			
 			<EditBox name="CDG_EditBox" letters="6">
 				<Size>
 					<AbsDimension x="100" y="30" />
@@ -117,8 +100,46 @@
 						</Texture>
 					</Layer>
 				</Layers>
+				<Scripts>
+					<OnLoad>
+						self:ClearFocus();
+						self:SetNumeric(true);
+						self:SetAutoFocus(false);
+					</OnLoad>
+					<OnEscapePressed>
+						self:ClearFocus();
+					</OnEscapePressed>
+				</Scripts>
 				<FontString inherits="ChatFontNormal" />
 			</EditBox>
+			
+			
+			<Button name="CDG_Close" inherits="UIPanelCloseButton">
+				<Anchors>
+					<Anchor point="TOPRIGHT" relativeTo="CDG_Frame" relativePoint="TOPRIGHT">
+						<Offset>
+							<AbsDimension x="7" y="6"/>
+						</Offset>
+					</Anchor>
+				</Anchors>
+			</Button>
+			
+			
+			<Button name="CDG_ROLL_Button" inherits="OptionsButtonTemplate" movable="true" text="ROLL!">
+				<Anchors>
+					<Anchor point="BOTTOM">
+						<Offset x="-105" y="35" />
+					</Anchor>
+				</Anchors>
+			</Button>
+
+			<Button name="CDG_STATS_Button" inherits="OptionsButtonTemplate" movable="true" text="Stats">
+				<Anchors>
+					<Anchor point="BOTTOM">
+						<Offset x="105" y="35" />
+					</Anchor>
+				</Anchors>
+			</Button>
 			
 			
 			<Button name="CDG_RESET_Button" inherits="OptionsButtonTemplate" movable="true" text="Reset Stats">
@@ -189,7 +210,12 @@
 			
 			
 		</Frames>
-	
+		<Scripts>
+			<OnLoad>self:RegisterForDrag("LeftButton");</OnLoad>
+			<OnDragStart>self:StartMoving();</OnDragStart>
+			<OnDragStop>self:StopMovingOrSizing();</OnDragStop>
+		</Scripts>
+
 	</Frame>
 	
 </Ui>
