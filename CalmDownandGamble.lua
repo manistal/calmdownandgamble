@@ -66,8 +66,7 @@ function CalmDownandGamble:StartGame()
 	self.current_game = {}
 	self.current_game.player_rolls = {}
 	self.current_game.players = {}
-	self.current_game.gold_amount = self.ui.gold_amount_entry:GetText() or 100
-	self:Print(self.ui.gold_amount_entry:GetText())
+	self:SetGoldAmount()
 	
 	-- Register game callbacks
 	self:RegisterEvent("CHAT_MSG_SYSTEM", function(...) self:RollCallback(...) end)
@@ -88,6 +87,19 @@ function CalmDownandGamble:EndGame()
 	self:UnregisterEvent(self.chat.channel_const)
 
 end
+
+
+function CalmDownandGamble:SetGoldAmount() 
+
+	local text_box = self.ui.gold_amount_entry:GetText()
+	if not (string.match(text_box, "[%a%c]")) then
+		self.current_game.gold_amount = text_box
+	else
+		self.current_game.gold_amount = 100
+	end
+
+end
+
 
 -- Util Functions cuz EW LUA STRINGS 
 -- =============================================
