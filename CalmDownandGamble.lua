@@ -56,7 +56,7 @@ function CalmDownandGamble:ConstructUI()
 	local cdg_ui_elements = {
 		-- Main Box Frame -- 
 		main_frame = {
-			width = 450,
+			width = 440,
 			height = 150
 		},
 		
