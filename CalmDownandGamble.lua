@@ -130,6 +130,7 @@ function CalmDownandGamble:ConstructUI()
 			"print_stats_table",
 			"print_ban_list",
 			"chat_channel",
+			"game_mode",
 			"reset_game"
 		},
 		
@@ -138,6 +139,11 @@ function CalmDownandGamble:ConstructUI()
 			chat_channel = {
 				width = 100,
 				label = "(Raid)",
+				click_callback = function() self:ButtonCallback() end
+			},
+			game_mode = {
+				width = 100,
+				label = "(Classic)",
 				click_callback = function() self:ButtonCallback() end
 			},
 			reset_game = {
