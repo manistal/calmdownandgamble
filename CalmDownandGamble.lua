@@ -32,17 +32,30 @@ end
 function CalmDownandGamble:InitState()
 	-- Chat Context -- 
 	self.chat = {}
-	self.chat.channel_label = "Raid" -- Displays on Button
-	self.chat.channel_const = "RAID"   -- What the WoW API is looking for, CHANNEL for numeric channels
-	self.chat.channel_numeric = nil    -- /1, /2 etc, nil for non-numeric channels
 	self.chat.channel_index = 1
-	--self.chat.('chanId', 'chanName') = GetChannelName(self.chat.channel_index) -- this causes errors?
+	self:SetChannelSettings()
+	
+	
+
+end
+
+function CalmDownandGamble:SetChannelSettings() 
+
 	self.chat.options = {
-			{ label = "Raid", const = "RAID", numeric = nil }, -- Index 1
-			{ label = "Say", const = "SAY", numeric = nil },   -- Index 2
-			{ label = "Party", const = "PARTY", numeric = nil },   -- Index 3
-			{ label = "Guild", const = "GUILD", numeric = nil },   -- Index 4	
-		}	
+			{ label = "Raid", const = "RAID", numeric = nil, callback = "CHAT_MSG_RAID" }, -- Index 1
+			{ label = "Say", const = "SAY", numeric = nil, callback = "CHAT_MSG_SAY" },   -- Index 2
+			{ label = "Party", const = "PARTY", numeric = nil, callback = "CHAT_MSG_PARTY" },   -- Index 3
+			{ label = "Guild", const = "GUILD", numeric = nil, callback = "CHAT_MSG_GUILD" },   -- Index 4	
+	}	
+	self.chat.channel_const = "RAID"   -- What the WoW API is looking for, CHANNEL for numeric channels
+	
+	self:Print(self.chat.options[self.chat.channel_index].label)
+	
+	self.chat.channel_const = self.chat.options[self.chat.channel_index].const
+	self.chat.channel_numeric =  self.chat.options[self.chat.channel_index].numeric   -- /1, /2 etc, nil for non-numeric channel
+	self.ui.chat_channel:SetText(self.chat.options[self.chat.channel_index].label)
+	self.chat.channel_callback = self.chat.options[self.chat.channel_index].callback
+
 end
 
 function CalmDownandGamble:RegisterCallbacks()
@@ -155,19 +168,18 @@ function CalmDownandGamble:AcceptRegisters()
 end
 
 function CalmDownandGamble:ChatChannelToggle()
-	
+	self.chat.channel_index = self.chat.channel_index + 1
+	if self.chat.channel_index > table.getn(self.chat.options) then self.chat.channel_index = 1 end
 
+	self:SetChannelSettings()
 	
 	
 		--CrossGambling_CHAT_Button:SetText("(Guild)");
 		--chatmethod = "GUILD";
 		--self.chat.chanId, self.chat.chanName = GetChannelName(self.chat.channel_index)
-	self:Print(self.chat.options[self.chat.channel_index].label)
-	self.chat.channel_const = self.chat.options[self.chat.channel_index].const
-	self.ui.chat_channel:SetText(self.chat.options[self.chat.channel_index].label)
 	
-	self.chat.channel_index = self.chat.channel_index + 1
-	if self.chat.channel_index > table.getn(self.chat.options) then self.chat.channel_index = 1 end
+	
+	
 	-- Loop if we've done them all
 	--	if self.chat.channel_index > table.getn(self.chat.options) then self.chat.channel_index = 1
 	-- Set settings based on options table
