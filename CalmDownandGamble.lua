@@ -13,7 +13,9 @@ function CalmDownandGamble:OnInitialize()
     -- Set up a database so we can save results 
 	self:Print("Load Begin")
 
-	self:RegisterChatCommand("cdgwoo", "ShowUI")
+	self:RegisterChatCommand("cdgshow", "ShowUI")
+	self:RegisterChatCommand("cdghide", "HideUI")
+
 	self:RegisterChatCommand("cdgroll", "GenerateRoll")
 	self:RegisterChatCommand("cdgleave", "LeaveGame")
     self.db = LibStub("AceDB-3.0"):New("CalmDownandGambleDB")
@@ -37,7 +39,9 @@ function CalmDownandGamble:GenerateRoll()
 end
 
 function CalmDownandGamble:ShowUI()
-	self:Print("HAHAH");
+	self.ui.CDG_Frame:Show()
+end
+function CalmDownandGamble:HideUI()
 	self.ui.CDG_Frame:Hide()
 end
 
@@ -125,7 +129,6 @@ function CalmDownandGamble:ConstructUI()
 	self.ui.CDG_Frame:SetTitle("Calm Down Gambling")
 	self.ui.CDG_Frame:SetStatusText("")
 	self.ui.CDG_Frame:SetLayout("Flow")
-	self.ui.CDG_Frame:SetCallback("OnClose", function(widget) AceGUI:Release(widget) end)
 	self.ui.CDG_Frame:SetStatusTable(cdg_ui_elements.main_frame)
 	
 
