@@ -32,18 +32,27 @@ end
 function CalmDownandGamble:InitState()
 	-- Chat Context -- 
 	self.chat = {}
-	self.chat.channel_label = "(Raid)" -- Displays on Button
-	self.chat.channel_const = "RAID"   -- What the WoW API is looking for, CHANNEL for numeric channels
-	self.chat.channel_numeric = nil    -- /1, /2 etc, nil for non-numeric channels
-	self.chat.channel_callback = "CHAT_MSG_RAID"
 	self.chat.channel_index = 1
-	--[[
-		self.chat.options = {
-			{ label = "(Raid)", const = "RAID", numeric = nil }, -- Index 1
-			{ label = "(Say)", const = "SAY", numeric = nil },   -- Index 2
-			...
-		}
-	]]--
+	self:SetChannelSettings()
+	
+end
+
+function CalmDownandGamble:SetChannelSettings() 
+
+	self.chat.options = {
+			{ label = "Raid", const = "RAID", callback = "CHAT_MSG_RAID" }, -- Index 1
+			{ label = "Say", const = "SAY", callback = "CHAT_MSG_SAY" },   -- Index 2
+			{ label = "Party", const = "PARTY", callback = "CHAT_MSG_PARTY" },   -- Index 3
+			{ label = "Guild", const = "GUILD", callback = "CHAT_MSG_GUILD" },   -- Index 4	
+	}	
+	self.chat.channel_const = "RAID"   -- What the WoW API is looking for, CHANNEL for numeric channels
+	
+	self:Print(self.chat.options[self.chat.channel_index].label)
+	
+	self.chat.channel_const = self.chat.options[self.chat.channel_index].const
+	self.ui.chat_channel:SetText(self.chat.options[self.chat.channel_index].label)
+	self.chat.channel_callback = self.chat.options[self.chat.channel_index].callback
+
 end
 
 function CalmDownandGamble:RegisterCallbacks()
@@ -140,7 +149,8 @@ end
 
 -- BUTTONS -- 
 function CalmDownandGamble:ButtonCallback()
-	self:Print("DID IT WORK")
+	--self:Print(self.chat.chanId)
+	--self:Print(self.chat.chanName)
 end
 
 function CalmDownandGamble:RollForMe()
@@ -152,6 +162,7 @@ function CalmDownandGamble:EnterForMe()
 end
 
 function CalmDownandGamble:StartRolls()
+	
 end
 
 function CalmDownandGamble:LastCall()
@@ -168,13 +179,11 @@ end
 
 
 function CalmDownandGamble:ChatChannelToggle()
-	-- Increment with toggle
-	-- self.chat.channel_index = self.chat.channel_index + 1
-	-- Loop if we've done them all
-	-- if self.chat.channel_index > table.getn(self.chat.options) then self.chat.channel_index = 1
-	-- Set settings based on options table
-	-- self.chat.channel_const = self.chat.options[self.chat.channel_index].const
-	-- etc
+	self.chat.channel_index = self.chat.channel_index + 1
+	if self.chat.channel_index > table.getn(self.chat.options) then self.chat.channel_index = 1 end
+
+	self:SetChannelSettings()
+	
 end
 
 
@@ -209,7 +218,7 @@ function CalmDownandGamble:ConstructUI()
 		buttons = {
 			chat_channel = {
 				width = 100,
-				label = "(Raid)",
+				label = "Raid",
 				click_callback = function() self:ChatChannelToggle() end
 			},
 			game_mode = {
