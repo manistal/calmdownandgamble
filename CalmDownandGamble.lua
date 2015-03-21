@@ -43,7 +43,9 @@ function CalmDownandGamble:GenerateRoll()
 end
 
 function CalmDownandGamble:ShowUI()
-	CDG_Frame:show(); 
+	self:Print("HAHAH");
+	CrossGambling_Frame:Show();
+
 end
 
 function CalmDownandGamble:LeaveGame()
