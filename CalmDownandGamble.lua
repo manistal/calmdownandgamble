@@ -92,7 +92,8 @@ end
 function CalmDownandGamble:SetGoldAmount() 
 
 	local text_box = self.ui.gold_amount_entry:GetText()
-	if not (string.match(text_box, "[%a%c]")) then
+	local text_box_valid = (not string.match(text_box, "[^%d]")) and (text_box ~= '')
+	if ( text_box_valid ) then
 		self.current_game.gold_amount = text_box
 	else
 		self.current_game.gold_amount = 100
