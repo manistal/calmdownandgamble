@@ -48,7 +48,8 @@ function CalmDownandGamble:GenerateRoll()
 end
 
 function CalmDownandGamble:ShowUI(input)
-	CrossGambling_Frame:Show();
+	-- TODO -- Change this object name to match CalmDownandGamble in the XML
+	CrossGambling_Frame:Show(); 
 end
 
 function CalmDownandGamble:LeaveGame()
