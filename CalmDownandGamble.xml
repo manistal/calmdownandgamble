@@ -1,3 +1,351 @@
-<Ui xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xsi:schemaLocation="http://www.blizzard.com/wow/ui/ ..\FrameXML\UI.xsd" xmlns="http://www.blizzard.com/wow/ui/">
+<Ui xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns="http://www.blizzard.com/wow/ui/">
+	<Script file="CalmDownandGamble.lua" />
+	<Animation />
+	<Frame name="CrossGambling_Frame" parent="UIParent" toplevel="true" movable="true" enableMouse="true">
+		<Size>
+			<AbsDimension x="320" y="150" />
+		</Size>
+		<Anchors>
+			<Anchor point="TOPLEFT" relativeTo="UIParent" />
+		</Anchors>
+		<Backdrop bgFile="Interface\DialogFrame\UI-DialogBox-Background" edgeFile="Interface\DialogFrame\UI-DialogBox-Border" tile="true">
+			<BackgroundInsets>
+				<AbsInset left="11" right="12" top="12" bottom="11" />
+			</BackgroundInsets>
+			<TileSize>
+				<AbsValue val="32" />
+			</TileSize>
+			<EdgeSize>
+				<AbsValue val="32" />
+			</EdgeSize>
+		</Backdrop>
+		<Layers>
+			<Layer level="OVERLAY">
+				<FontString name="Cross Gambling" inherits="GameFontNormal" text="CrossFire Gambling">
+					<Size x="298" y="19" />
+					<Anchors>
+						<Anchor point="TOPLEFT">
+							<Offset x="11" y="-15" />
+						</Anchor>
+					</Anchors>
+				</FontString>
+				<FontString name="version" inherits="GameFontNormal" text="|cffff3f3f(6.1.0 version)">
+					<Size x="299" y="18" />
+					<Anchors>
+						<Anchor point="TOPLEFT">
+							<Offset x="10" y="-32" />
+						</Anchor>
+					</Anchors>
+				</FontString>
+				<FontString inherits="GameFontNormal" text="GameOver@Proudmoore">
+					<Size x="122" y="13" />
+					<Anchors>
+						<Anchor point="TOPLEFT">
+							<Offset x="98" y="-129" />
+						</Anchor>
+					</Anchors>
+					<FontHeight val="5" />
+					<Color r="0.753" g="0.753" b="0.753" />
+				</FontString>
+			</Layer>
+		</Layers>
+		
+		<Frames>
+			<Button name="CrossGambling_Close" inherits="UIPanelCloseButton">
+				<Anchors>
+					<Anchor point="TOPRIGHT" relativeTo="CrossGambling_Frame" relativePoint="TOPRIGHT">
+						<Offset>
+							<AbsDimension x="7" y="6"/>
+						</Offset>
+					</Anchor>
+				</Anchors>
+			</Button>
+			<Button name="CrossGambling_ROLL_Button" inherits="OptionsButtonTemplate" movable="true" text="ROLL!">
+				<Anchors>
+					<Anchor point="BOTTOM">
+						<Offset x="-105" y="35" />
+					</Anchor>
+				</Anchors>
+				<Scripts>
+					<OnClick>
+						CrossGambling_OnClickROLL();
+					</OnClick>
+				</Scripts>
+			</Button>
 
+			<Button name="CrossGambling_STATS_Button" inherits="OptionsButtonTemplate" movable="true" text="Stats">
+				<Anchors>
+					<Anchor point="BOTTOM">
+						<Offset x="105" y="35" />
+					</Anchor>
+				</Anchors>
+				<Scripts>
+					<OnClick>
+						CrossGambling_OnClickSTATS();
+					</OnClick>
+				<OnLoad>CrossGambling_STATS_Button.tooltipText="Show's all user stats."</OnLoad>
+				</Scripts>
+			</Button>
+			<EditBox name="CrossGambling_EditBox" letters="6">
+				<Size>
+					<AbsDimension x="100" y="30" />
+				</Size>
+				<Anchors>
+					<Anchor point="TOP">
+						<Offset x="2" y="-81" />
+					</Anchor>
+				</Anchors>
+				<Layers>
+					<Layer level="BACKGROUND">
+						<Texture name="Texture2" file="Interface\ChatFrame\UI-ChatInputBorder-Right">
+							<Size>
+								<AbsDimension x="75" y="32" />
+							</Size>
+							<Anchors>
+								<Anchor point="RIGHT">
+									<Offset x="9" />
+								</Anchor>
+							</Anchors>
+							<TexCoords left="0.7" right="1" top="0" bottom="1" />
+						</Texture>
+						<Texture name="Texture1" file="Interface\ChatFrame\UI-ChatInputBorder-Left">
+							<Size>
+								<AbsDimension x="75" y="32" />
+							</Size>
+							<Anchors>
+								<Anchor point="LEFT">
+									<Offset x="-14" />
+								</Anchor>
+							</Anchors>
+							<TexCoords left="0" right="0.2" top="0" bottom="1" />
+						</Texture>
+					</Layer>
+				</Layers>
+				<Scripts>
+          <OnLoad>
+            CrossGambling_EditBox_OnLoad();
+          </OnLoad>
+					<OnEscapePressed>
+						self:ClearFocus();
+					</OnEscapePressed>
+				</Scripts>
+				<FontString inherits="ChatFontNormal" />
+			</EditBox>
+			<Button name="CrossGambling_RESET_Button" inherits="OptionsButtonTemplate" movable="true" text="Reset Stats">
+				<Anchors>
+					<Anchor point="BOTTOM">
+						<Offset x="105" y="15" />
+					</Anchor>
+				</Anchors>
+				<Scripts>
+					<OnClick>
+						CrossGambling_ResetStats()
+					</OnClick>
+				<OnLoad>CrossGambling_RESET_Button.tooltipText="Resets all Stats"</OnLoad>
+				</Scripts>
+			</Button>
+			<Button name="CrossGambling_RESET1_Button" inherits="OptionsButtonTemplate" movable="true" text="Reset Game">
+				<Anchors>
+				<Anchor point="BOTTOM">
+						<Offset x="3" y="20" />
+					</Anchor>
+				</Anchors>
+				<Scripts>
+					<OnClick>
+						CrossGambling_Reset()
+						CrossGambling_ResetCmd()
+					</OnClick>
+				<OnLoad>CrossGambling_RESET1_Button.tooltipText="Resets The Game"</OnLoad>
+				</Scripts>
+			</Button>
+			<Button name="CrossGambling_LASTCALL_Button" inherits="OptionsButtonTemplate" movable="true" text="Last Call">
+				<Anchors>
+					<Anchor point="BOTTOM">
+						<Offset x="-105" y="55" />
+					</Anchor>
+				</Anchors>
+				<Scripts>
+					<OnClick>
+						CrossGambling_OnClickLASTCALL();
+					</OnClick>
+				</Scripts>
+			</Button>
+			<Button name="CrossGambling_AcceptOnes_Button" inherits="OptionsButtonTemplate" text="Open Entry">
+				<Anchors>
+					<Anchor point="BOTTOM">
+						<Offset x="-105" y="75" />
+					</Anchor>
+				</Anchors>
+				<Scripts>
+					<OnClick>
+						CrossGambling_OnClickACCEPTONES();
+
+					</OnClick>
+				</Scripts>
+			</Button>
+			<Button name="CrossGambling_Roll_Button" inherits="OptionsButtonTemplate" text="User Roll">
+				<Anchors>
+					<Anchor point="BOTTOM">
+						<Offset x="105" y="75" />
+					</Anchor>
+				</Anchors>
+				<Scripts>
+					<OnClick>
+						CrossGambling_OnClickRoll();
+
+					</OnClick>
+				<OnLoad>CrossGambling_Roll_Button.tooltipText="Does /roll for you!"</OnLoad>
+				</Scripts>
+			</Button>
+			
+			<Button name="CrossGambling_Ban_Button" inherits="OptionsButtonTemplate" text="Ban List">
+				<Anchors>
+					<Anchor point="BOTTOM">
+						<Offset x="-105" y="15" />
+					</Anchor>
+				</Anchors>
+				<Scripts>
+					<OnClick>
+						CrossGambling_ListBan();
+
+					</OnClick>
+				<OnLoad>CrossGambling_Ban_Button.tooltipText="Ban list, to add people here type /cg ban (name)"</OnLoad>
+				
+				</Scripts>
+			</Button>
+			
+			<Button name="CrossGambling_Type_Button" inherits="OptionsButtonTemplate" text="Enter's For You">
+				<Anchors>
+					<Anchor point="BOTTOM">
+						<Offset x="105" y="55" />
+					</Anchor>
+				</Anchors>
+				<Scripts>
+					<OnClick>
+						CrossGambling_OnClickRoll1();
+
+					</OnClick>
+					<OnLoad>CrossGambling_Type_Button.tooltipText="Type's the number one into chat"</OnLoad>
+				</Scripts>
+			</Button>
+			<Button name="CrossGambling_CHAT_Button" inherits="OptionsButtonTemplate" text="(Raid)">
+				<Anchors>
+					<Anchor point="TOP">
+						<Offset x="1" y="-60" />
+					</Anchor>
+				</Anchors>
+				<Scripts>
+				
+					<OnClick>
+						CrossGambling_OnClickCHAT();
+					</OnClick>
+				<OnLoad>CrossGambling_CHAT_Button.tooltipText="Change Channels"</OnLoad>
+				</Scripts>
+			</Button>
+			
+			
+		    
+			
+			<Button name="CG_MinimapButton" parent="Minimap" enableMouse="true" movable="true" hidden="false">
+		<Size>
+			<AbsDimension x="33" y="33"/>
+		</Size>
+		<Anchors>
+			<Anchor point="TOPLEFT"/>
+		</Anchors>
+		<Layers>
+			<Layer level="BACKGROUND">
+				<Texture name="CG_MinimapButton_Icon" file="Interface\AddOns\CrossGambling\media\icon">
+					<Size>
+						<AbsDimension x="21" y="21"/>
+					</Size>
+					<Anchors>
+						<Anchor point="TOPLEFT">
+							<Offset>
+								<AbsDimension x="7" y="-6"/>
+							</Offset>
+						</Anchor>
+					</Anchors>
+				</Texture>
+			</Layer>
+			<Layer level="OVERLAY">
+				<Texture file="Interface\Minimap\MiniMap-TrackingBorder">
+					<Size>
+						<AbsDimension x="56" y="56"/>
+					</Size>
+					<Anchors>
+						<Anchor point="TOPLEFT"/>
+					</Anchors>
+				</Texture>
+			</Layer>
+		</Layers>
+		<Frames>
+			<Frame name="CG_MinimapButton_DraggingFrame" hidden="true">
+				<Scripts>
+					<OnUpdate>
+						CG_MinimapButton_DraggingFrame_OnUpdate()
+					</OnUpdate>
+				</Scripts>
+			</Frame>
+		</Frames>
+		<HighlightTexture alphaMode="ADD" file="Interface\Minimap\UI-Minimap-ZoomButton-Highlight"/>
+		<Scripts>
+			<OnLoad>
+				self:RegisterForClicks("LeftButtonUp","RightButtonUp")
+				self:RegisterForDrag("LeftButton","RightButton")
+			</OnLoad>
+			<OnDragStart>
+				self:LockHighlight()
+                CG_MinimapButton_DraggingFrame:Show()
+			</OnDragStart>
+			<OnDragStop>
+				self:UnlockHighlight()
+				CG_MinimapButton_DraggingFrame:Hide()
+			</OnDragStop>
+			
+			<OnMouseDown>
+              if button == "RightButton" and not self.isMoving then
+              self:StartMoving();
+              self.isMoving = true;
+              end
+        </OnMouseDown>
+        <OnMouseUp>
+              if button == "RightButton" and self.isMoving then
+              self:StopMovingOrSizing();
+              self.isMoving = false;
+              end
+        </OnMouseUp>
+        <OnHide>
+             if ( self.isMoving ) then
+             self:StopMovingOrSizing();
+             self.isMoving = false;
+             end
+        </OnHide>
+			
+			
+			<OnClick>
+                ToggleFrame(CrossGambling_Frame)
+			</OnClick>
+		</Scripts>
+	</Button>
+		</Frames>
+		<Scripts>
+		    
+			<OnLoad>
+				CrossGambling_OnLoad(self);
+			</OnLoad>
+			<OnEvent>
+				CrossGambling_OnEvent(self, event, ...);
+			</OnEvent>
+			<OnDragStart>
+				self:StartMoving();
+				self.isMoving = true;
+			</OnDragStart>
+			<OnDragStop>
+				self:StopMovingOrSizing();
+				self.isMoving = false;
+			</OnDragStop>
+		</Scripts>
+	</Frame>
+	
 </Ui>
