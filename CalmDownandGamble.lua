@@ -151,10 +151,11 @@ end
 function CalmDownandGamble:SetGameMode() 
 
 	self.game.options = {
-			{ label = "High-Low", func = function() self:HighLow() end}, -- Index 1
-			{ label = "2s", func = function() self:twos() end},   -- Index 2
-			{ label = "Big Pot", func = function() self:BigPot() end},   -- Index 3
-	
+			{ label = "High-Low", func = function() self:HighLowWrap() end}, -- Index 1
+			{ label = "Inverse", func = function() self:Inverse() end},   -- Index 2
+			--{ label = "2s", func = function() self:twos() end},   -- Index 3
+			--{ label = "Big Pot", func = function() self:BigPot() end},   -- Index 4
+			
 	}	
 	
 	if DEBUG then self:Print(self.game.options[self.db.global.game_mode_index].label) end
@@ -237,12 +238,32 @@ function CalmDownandGamble:HighLow()
 
 
 	self.current_game.cash_winnings = high_score - low_score
+
+end
+
+
+function CalmDownandGamble:HighLowWrap()
+	CalmDownandGamble:HighLow()
+	
 	SendChatMessage("THE RESULTS: "..self.current_game.loser.." owes "..self.current_game.winner.." "..self.current_game.cash_winnings.." gold!", self.chat.channel_const)
 	
 	-- Log Results -- All game modes must call these two explicitly
 	self:LogResults()
 	self:EndGame()
 end
+
+function CalmDownandGamble:Inverse()
+	CalmDownandGamble:HighLow()
+	
+	self.current_game.winner, self.current_game.loser = self.current_game.loser, self.current_game.winner
+	
+	SendChatMessage("THE RESULTS: "..self.current_game.loser.." owes "..self.current_game.winner.." "..self.current_game.cash_winnings.." gold!", self.chat.channel_const)
+	
+	-- Log Results -- All game modes must call these two explicitly
+	self:LogResults()
+	self:EndGame()
+end
+
 
 function CalmDownandGamble:twos()
 	SendChatMessage("TWOS CHECK RESULTS!", self.chat.channel_const)
