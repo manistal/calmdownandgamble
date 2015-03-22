@@ -32,8 +32,11 @@ end
 function CalmDownandGamble:InitState()
 	-- Chat Context -- 
 	self.chat = {}
+	self.game = {}
 	self.chat.channel_index = 1
+	self.game.channel_index = 1
 	self:SetChannelSettings()
+	self:SetGameMode()
 	
 end
 
@@ -45,13 +48,25 @@ function CalmDownandGamble:SetChannelSettings()
 			{ label = "Party", const = "PARTY", callback = "CHAT_MSG_PARTY" },   -- Index 3
 			{ label = "Guild", const = "GUILD", callback = "CHAT_MSG_GUILD" },   -- Index 4	
 	}	
-	self.chat.channel_const = "RAID"   -- What the WoW API is looking for, CHANNEL for numeric channels
 	
 	self:Print(self.chat.options[self.chat.channel_index].label)
-	
 	self.chat.channel_const = self.chat.options[self.chat.channel_index].const
 	self.ui.chat_channel:SetText(self.chat.options[self.chat.channel_index].label)
 	self.chat.channel_callback = self.chat.options[self.chat.channel_index].callback
+
+end
+
+function CalmDownandGamble:SetGameMode() 
+
+	self.game.options = {
+			{ label = "High-Low", func = CalmDownandGamble:HighLow, mode = "A"}, -- Index 1
+			{ label = "2s", func = CalmDownandGamble:twos , mode = "B"},   -- Index 2
+			{ label = "Big Pot", func = CalmDownandGamble:BigPot, mode = "C"},   -- Index 3
+	
+	}	
+	
+	self:Print(self.game.options[self.game.channel_index].label)
+	self.ui.game_mode:SetText(self.game.options[self.game.channel_index].label)
 
 end
 
@@ -73,7 +88,7 @@ function CalmDownandGamble:StartGame()
 	self:RegisterEvent("CHAT_MSG_SYSTEM", function(...) self:RollCallback(...) end)
 	self:RegisterEvent(self.chat.channel_callback, function(...) self:ChatChannelCallback(...) end)
 
-	local welcome_msg = "Shh Just CalmDownandGamble. Press 1 to Join : "..self.current_game.gold_amount.." gold rolls!"
+	local welcome_msg = "Game: "..self.game.options[self.game.channel_index].label..", Wager: "..self.current_game.gold_amount.." gold, Press 1 to join!"
 	SendChatMessage(welcome_msg, self.chat.channel_const, nil, self.chat.channel_numeric)
 end
 
@@ -186,6 +201,13 @@ function CalmDownandGamble:ChatChannelToggle()
 	
 end
 
+function CalmDownandGamble:ButtonGameMode()
+	self.game.channel_index = self.game.channel_index + 1
+	if self.game.channel_index > table.getn(self.game.options) then self.game.channel_index = 1 end
+
+	self:SetGameMode()
+	
+end
 
 
 -- UI ELEMENTS 
@@ -223,8 +245,8 @@ function CalmDownandGamble:ConstructUI()
 			},
 			game_mode = {
 				width = 100,
-				label = "(Classic)",
-				click_callback = function() self:ButtonCallback() end
+				label = "High-Low",
+				click_callback = function() self:ButtonGameMode() end
 			},
 			print_ban_list = {
 				width = 100,
