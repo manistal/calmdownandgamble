@@ -120,8 +120,13 @@ function CalmDownandGamble:SetGoldAmount()
 end
 
 function CalmDownandGamble:CheckRollsComplete(print_players)
+	self:Print(" CHECKROLLS ")
 	local rolls_complete = true
+	self:Print(" CHECKROLLS2 ")
+	self:Print(self.current_game.player_rolls)
+	self:Print(pairs(self.current_game.player_rolls))
 	for player, roll in pairs(self.current_game.player_rolls) do
+		self:Print(" "..Player.." "..roll.." ")
 		if (roll == -1) then
 			rolls_complete = false
 			if print_players then
@@ -152,22 +157,22 @@ function CalmDownandGamble:SetGameMode()
 end
 
 
-function CalmDownandGamble:LogResults(player, amount) 
-	self:Print(player)
-	self:Print(amount)
-	
-	if (self.db.global.rankings[player] ~= nil) then
-		self:Print("RETURNING PLAYER")
-		self.db.global.rankings[player] = self.db.global.rankings[player] + amount
+function CalmDownandGamble:LogResults() 
+	if (self.db.global.rankings[self.current_game.winner] ~= nil) then
+		self.db.global.rankings[self.current_game.winner] = self.db.global.rankings[self.current_game.winner] + self.current_game.cash_winnings
 	else
-		self:Print("NEW PLAYER")
-		self.db.global.rankings[player] = amount
+		self.db.global.rankings[self.current_game.winner] = self.current_game.cash_winnings
+	end
+	
+	if (self.db.global.rankings[self.current_game.loser] ~= nil) then
+		self.db.global.rankings[self.current_game.loser] = self.db.global.rankings[self.current_game.loser] - self.current_game.cash_winnings
+	else
+		self.db.global.rankings[self.current_game.loser] = (-1*self.current_game.cash_winnings)
 	end
 end
 
 
 function CalmDownandGamble:HighLow()
-	self:Print("HIGH LOW CHECK RESULTS!!")
 	
 	local high_player, low_player = "", ""
 	local high_score, low_score = 0, (self.current_game.gold_amount + 1)
@@ -177,60 +182,61 @@ function CalmDownandGamble:HighLow()
 	
 	for player, roll in pairs(self.current_game.player_rolls) do
 	
-		self:Print(player.."  "..roll)
 		player_score = tonumber(roll)
 		
 		if (player_score > high_score) then
 			high_player = player
 			high_score = player_score
 			high_player_playoff = {}
-			self:Print("NEW HIGH SCORE")
 		elseif (player_score == high_score) then
 			high_player_playoff[player] = -1
 			high_player_playoff[high_player] = -1
-			self:Print("NEW HIGH TIE")
 		end
 			
 		if (player_score < low_score) then
 			low_player = player
 			low_score = player_score
 			low_player_playoff = {}
-			self:Print("NEW LOW SCORE")
 		elseif (player_score == low_score) then
 			low_player_playoff[player] = -1
 			low_player_playoff[low_player] = -1
-			self:Print("NEW LOW TIE")
 		end
 		
 	end
 	
 	local high_play = TableLength(high_player_playoff)
 	local low_play = TableLength(low_player_playoff)
-	self:Print(high_play)
-	self:Print(low_play)
 	local playoff = ((high_play ~= 0) or (low_play ~= 0))
 	
-	if (TableLength(high_player_playoff) > 1) then
+	if (high_play > 1) and (low_play > 1) then
 		self.current_game.high_roller_playoff = CopyTable(high_player_playoff)
-		self:Print("HIGHPLAYERPLAYOFF")
-	end
-	
-	if (TableLength(low_player_playoff) > 1 ) then
 		self.current_game.low_roller_playoff = CopyTable(low_player_playoff)
+		self:Print("HIGHPLAYERPLAYOFF")
 		self:Print("LOWPLAYERPLAYOFF")
-	end
-	
-	if playoff then
 		self:StartRolls()
 		return
+	elseif (high_play > 1) then
+		self.current_game.high_roller_playoff = CopyTable(high_player_playoff)
+		self.current_game.loser = low_player
+		self:StartRolls()
+		return
+	elseif (low_play > 1) then
+		self.current_game.low_roller_playoff = CopyTable(low_player_playoff)
+		self.current_game.winner = high_player
+		self:StartRolls()
+		return
+	else
+		-- Ternary operator -- A ? B : C ==> A AND B OR C cause fuck lua
+		self.current_game.winner = (self.current_game.winner == nil) and high_player or self.current_game.winner
+		self.current_game.loser = (self.current_game.loser == nil) and low_player or self.current_game.loser
 	end
 
-	local cash_winnings = high_score - low_score
-	SendChatMessage("THE RESULTS: "..low_player.." owes "..high_player.." "..cash_winnings.." gold!", self.chat.channel_const)
+
+	self.current_game.cash_winnings = high_score - low_score
+	SendChatMessage("THE RESULTS: "..self.current_game.loser.." owes "..self.current_game.winner.." "..self.current_game.cash_winnings.." gold!", self.chat.channel_const)
 	
-	-- Log Results -- 
-	self:LogResults(high_player, cash_winnings)
-	self:LogResults(low_player, (-1*cash_winnings))
+	-- Log Results -- All game modes must call these two explicitly
+	self:LogResults()
 	self:EndGame()
 end
 
