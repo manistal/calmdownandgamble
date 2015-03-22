@@ -182,7 +182,7 @@ function CalmDownandGamble:RollForMe()
 end
 
 function CalmDownandGamble:EnterForMe()
-	RandomRoll(1, 100)
+	SendChatMessage("1", self.chat.channel_const)
 end
 
 function CalmDownandGamble:StartRolls()
