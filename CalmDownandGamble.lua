@@ -70,7 +70,9 @@ function CalmDownandGamble:StartGame()
 	self.current_game = {}
 	self.current_game.accepting_rolls = false
 	self.current_game.accepting_players = true
-
+	self.current_game.high_roller_playoff = nil
+	self.current_game.low_roller_playoff = nil
+	
 	self.current_game.player_rolls = {}
 	self:SetGoldAmount()
 	
@@ -82,7 +84,7 @@ function CalmDownandGamble:StartGame()
 	end
 	
 	
-	local welcome_msg = "CDG Initialized. ~~ Mode: "..self.game.options[self.game.channel_index].label.." ~~ Bet:  "..self.current_game.gold_amount.." gold ~~ Join now."
+	local welcome_msg = "CDG Initialized. ~~ Mode: "..self.game.options[self.game.channel_index].label.." ~~ Bet:  "..self.current_game.gold_amount.." gold ~~ Press 1 to Join now."
 	SendChatMessage(welcome_msg, self.chat.channel_const)
 	
 end
@@ -124,7 +126,6 @@ function CalmDownandGamble:CheckRollsComplete(print_players)
 	
 	if (rolls_complete) then
 		self.game.options[self.game.channel_index].func()
-		self:EndGame()
 	end
 	
 end
@@ -145,6 +146,15 @@ function CalmDownandGamble:SetGameMode()
 end
 
 
+function CalmDownandGamble:LogResults(player, amount) 
+	if (self.db.global.rankings[player]) then
+		self.db.global.rankings[player] = self.db.global.rankings[player] + cash_winnings
+	else
+		self.db.global.rankings[player] = cash_winnings
+	end
+end
+
+
 function CalmDownandGamble:HighLow()
 	self:Print("HIGH LOW CHECK RESULTS!!")
 	
@@ -159,40 +169,58 @@ function CalmDownandGamble:HighLow()
 		self:Print(player.."  "..roll)
 		player_score = tonumber(roll)
 		
-		if (player_score < low_score) then
-			low_player = player
-			low_score = player_score
-			low_player_playoff = {}
-		end
-		
 		if (player_score > high_score) then
 			high_player = player
 			high_score = player_score
 			high_player_playoff = {}
-		end
-		
-		if (player_score == high_score) then
+			self:Print("NEW HIGH SCORE")
+		elseif (player_score == high_score) then
 			high_player_playoff[player] = -1
 			high_player_playoff[high_player] = -1
+			self:Print("NEW HIGH TIE")
 		end
-		
-		if (player_score == low_score) then
+			
+		if (player_score < low_score) then
+			low_player = player
+			low_score = player_score
+			low_player_playoff = {}
+			self:Print("NEW LOW SCORE")
+		elseif (player_score == low_score) then
 			low_player_playoff[player] = -1
 			low_player_playoff[low_player] = -1
+			self:Print("NEW LOW TIE")
 		end
 		
 	end
 	
-	if (table.getn(high_player_playoff) > 1) then
+	local high_play = TableLength(high_player_playoff)
+	local low_play = TableLength(low_player_playoff)
+	self:Print(high_play)
+	self:Print(low_play)
+	local playoff = ((high_play ~= 0) or (low_play ~= 0))
+	
+	if (TableLength(high_player_playoff) > 1) then
+		self.current_game.high_roller_playoff = CopyTable(high_player_playoff)
+		self:Print("HIGHPLAYERPLAYOFF")
 	end
 	
-	if (table.getn(low_player_playoff) > 1 ) then
+	if (TableLength(low_player_playoff) > 1 ) then
+		self.current_game.low_roller_playoff = CopyTable(low_player_playoff)
+		self:Print("LOWPLAYERPLAYOFF")
 	end
 	
+	if playoff then
+		self:StartRolls()
+		return
+	end
 
 	local cash_winnings = high_score - low_score
 	SendChatMessage("THE RESULTS: "..low_player.." owes "..high_player.." "..cash_winnings.." gold!", self.chat.channel_const)
 	
+	-- Log Results -- 
+	self:LogResults(high_player, cash_winnings)
+	self:LogResults(low_player, (-1*cash_winnings))
+	self:EndGame()
 end
 
 function CalmDownandGamble:twos()
@@ -213,6 +241,24 @@ function SplitString(str, pattern)
 		index = index + 1
 	end
 	return ret_list
+end
+
+function CopyTable(T)
+  local u = { }
+  for k, v in pairs(T) do u[k] = v end
+  return setmetatable(u, getmetatable(T))
+end
+
+function TableLength(T)
+  local count = 0
+  for _ in pairs(T) do count = count + 1 end
+  return count
+end
+
+function PrintTable(T)
+	for k, v in pairs(T) do
+		CalmDownandGamble:Print(k.."  "..v)
+	end
 end
 
 
@@ -274,6 +320,10 @@ function CalmDownandGamble:PrintBanlist()
 end
 function CalmDownandGamble:PrintRanklist()
 
+	for player, winnings in pairs(self.db.global.rankings) do
+		SendChatMessage("  "..player.." "..winnings, self.chat.channel_const)
+	end
+
 end
 
 function CalmDownandGamble:RollForMe()
@@ -285,8 +335,19 @@ function CalmDownandGamble:EnterForMe()
 end
 
 function CalmDownandGamble:StartRolls()
-	local roll_msg = "Time to roll! Good Luck! Command:   /roll "..self.current_game.gold_amount
+	
+	local roll_msg = ""
+	if (self.current_game.high_roller_playoff) then
+		self.current_game.player_rolls = CopyTable(self.current_game.high_roller_playoff)
+		roll_msg = "High Roller TieBreaker! Good Luck! Command:   /roll "..self.current_game.gold_amount
+	elseif (self.current_game.low_roller_playoff) then
+		self.current_game.player_rolls = CopyTable(self.current_game.high_roller_playoff)
+		roll_msg = "Low Roller TieBreaker! Good Luck! Command:   /roll "..self.current_game.gold_amount
+	else
+		roll_msg = "Time to roll! Good Luck! Command:   /roll "..self.current_game.gold_amount
+	end
 	SendChatMessage(roll_msg, self.chat.channel_const)
+	
 	self.current_game.accepting_rolls = true
 	self.current_game.accepting_players = false
 end
