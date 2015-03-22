@@ -32,8 +32,11 @@ end
 function CalmDownandGamble:InitState()
 	-- Chat Context -- 
 	self.chat = {}
+	self.game = {}
 	self.chat.channel_index = 1
+	self.game.channel_index = 1
 	self:SetChannelSettings()
+	self:SetGameMode()
 	
 end
 
@@ -91,7 +94,6 @@ function CalmDownandGamble:EndGame()
 
 end
 
-
 function CalmDownandGamble:SetGoldAmount() 
 
 	local text_box = self.ui.gold_amount_entry:GetText()
@@ -104,6 +106,30 @@ function CalmDownandGamble:SetGoldAmount()
 
 end
 
+function CalmDownandGamble:SetGameMode() 
+
+	self.game.options = {
+			{ label = "High-Low", func = function() self:HighLow() end}, -- Index 1
+			{ label = "2s", func = function() self:twos() end},   -- Index 2
+			{ label = "Big Pot", func = function() self:BigPot() end},   -- Index 3
+	
+	}	
+	
+	self:Print(self.game.options[self.game.channel_index].label)
+	self.ui.game_mode:SetText(self.game.options[self.game.channel_index].label)
+
+end
+function CalmDownandGamble:HighLow()
+
+end
+
+function CalmDownandGamble:twos()
+
+end
+
+function CalmDownandGamble:BigPot()
+
+end
 
 -- Util Functions cuz EW LUA STRINGS 
 -- =============================================
@@ -213,7 +239,13 @@ function CalmDownandGamble:ChatChannelToggle()
 	
 end
 
+function CalmDownandGamble:ButtonGameMode()
+	self.game.channel_index = self.game.channel_index + 1
+	if self.game.channel_index > table.getn(self.game.options) then self.game.channel_index = 1 end
 
+	self:SetGameMode()
+	
+end
 
 -- UI ELEMENTS 
 -- ======================================================
