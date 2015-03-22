@@ -13,7 +13,13 @@ function CalmDownandGamble:OnInitialize()
 	self:Print("Load Begin")
 
 	-- Set up Infrastructure
-    self.db = LibStub("AceDB-3.0"):New("CalmDownandGambleDB")
+	local defaults = {
+	    global = {
+			rankings = { }
+		}
+	}
+
+    self.db = LibStub("AceDB-3.0"):New("CalmDownandGambleDB", defaults)
 	self:ConstructUI()
 	self:RegisterCallbacks()
 	self:InitState()
@@ -147,10 +153,15 @@ end
 
 
 function CalmDownandGamble:LogResults(player, amount) 
-	if (self.db.global.rankings[player]) then
-		self.db.global.rankings[player] = self.db.global.rankings[player] + cash_winnings
+	self:Print(player)
+	self:Print(amount)
+	
+	if (self.db.global.rankings[player] ~= nil) then
+		self:Print("RETURNING PLAYER")
+		self.db.global.rankings[player] = self.db.global.rankings[player] + amount
 	else
-		self.db.global.rankings[player] = cash_winnings
+		self:Print("NEW PLAYER")
+		self.db.global.rankings[player] = amount
 	end
 end
 
@@ -319,7 +330,7 @@ function CalmDownandGamble:PrintBanlist()
 
 end
 function CalmDownandGamble:PrintRanklist()
-
+	self:Print(self.db.global.rankings)
 	for player, winnings in pairs(self.db.global.rankings) do
 		SendChatMessage("  "..player.." "..winnings, self.chat.channel_const)
 	end
