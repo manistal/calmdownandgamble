@@ -82,8 +82,11 @@ function CalmDownandGamble:StartGame()
 	end
 	
 	
-	local welcome_msg = "Shh Just CalmDownandGamble. Press 1 to Join : "..self.current_game.gold_amount.." gold rolls!"
+	local welcome_msg = "CDG Initialized. Mode: "..self.game.options[self.game.channel_index].label.." Bet:"..self.current_game.gold_amount.." gold, Join now."
+	local welcome_info = 
 	SendChatMessage(welcome_msg, self.chat.channel_const)
+	SendChatMessage(welcome_info, self.chat.channel_const)
+	
 end
 
 function CalmDownandGamble:EndGame()
@@ -309,7 +312,7 @@ function CalmDownandGamble:ConstructUI()
 			game_mode = {
 				width = 100,
 				label = "(Classic)",
-				click_callback = function() self:ButtonCallback() end
+				click_callback = function() self:ButtonGameMode() end
 			},
 			print_ban_list = {
 				width = 100,
