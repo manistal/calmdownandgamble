@@ -598,7 +598,7 @@ function CalmDownandGamble:ConstructUI()
 	end
 	
 	
-	
+	self.ui.CDG_Frame:Hide()
 	
 end
 
