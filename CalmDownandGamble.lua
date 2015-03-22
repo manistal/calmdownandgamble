@@ -439,6 +439,7 @@ function format_player_names(players)
 end
 
 function CalmDownandGamble:StartRolls()
+	if (self.current_game.accepting_rolls) then return end
 	
 	local roll_msg = ""
 	if (self.current_game.high_roller_playoff) then
