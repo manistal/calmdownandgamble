@@ -82,10 +82,8 @@ function CalmDownandGamble:StartGame()
 	end
 	
 	
-	local welcome_msg = "CDG Initialized. Mode: "..self.game.options[self.game.channel_index].label.." Bet:"..self.current_game.gold_amount.." gold, Join now."
-	local welcome_info = 
+	local welcome_msg = "CDG Initialized. ~~ Mode: "..self.game.options[self.game.channel_index].label.." ~~ Bet:  "..self.current_game.gold_amount.." gold ~~ Join now."
 	SendChatMessage(welcome_msg, self.chat.channel_const)
-	SendChatMessage(welcome_info, self.chat.channel_const)
 	
 end
 
@@ -99,9 +97,6 @@ function CalmDownandGamble:EndGame()
 	if (self.chat.channel_callback_leader) then
 		self:UnregisterEvent(self.chat.channel_callback_leader)
 	end
-	
-	SendChatMessage("Game Over!!", self.chat.channel_const)
-
 end
 
 function CalmDownandGamble:SetGoldAmount() 
@@ -151,7 +146,53 @@ end
 
 
 function CalmDownandGamble:HighLow()
-	SendChatMessage("HIGH LOW CHECK RESULTS!!", self.chat.channel_const)
+	self:Print("HIGH LOW CHECK RESULTS!!")
+	
+	local high_player, low_player = "", ""
+	local high_score, low_score = 0, (self.current_game.gold_amount + 1)
+	
+	local high_player_playoff = {}
+	local low_player_playoff = {}
+	
+	for player, roll in pairs(self.current_game.player_rolls) do
+	
+		self:Print(player.."  "..roll)
+		player_score = tonumber(roll)
+		
+		if (player_score < low_score) then
+			low_player = player
+			low_score = player_score
+			low_player_playoff = {}
+		end
+		
+		if (player_score > high_score) then
+			high_player = player
+			high_score = player_score
+			high_player_playoff = {}
+		end
+		
+		if (player_score == high_score) then
+			high_player_playoff[player] = -1
+			high_player_playoff[high_player] = -1
+		end
+		
+		if (player_score == low_score) then
+			low_player_playoff[player] = -1
+			low_player_playoff[low_player] = -1
+		end
+		
+	end
+	
+	if (table.getn(high_player_playoff) > 1) then
+	end
+	
+	if (table.getn(low_player_playoff) > 1 ) then
+	end
+	
+
+	local cash_winnings = high_score - low_score
+	SendChatMessage("THE RESULTS: "..low_player.." owes "..high_player.." "..cash_winnings.." gold!", self.chat.channel_const)
+	
 end
 
 function CalmDownandGamble:twos()
