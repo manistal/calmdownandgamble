@@ -104,6 +104,10 @@ function CalmDownandGamble:StartGame()
 end
 
 function CalmDownandGamble:EndGame()
+
+	-- Show me the results
+	self.ui.CDG_Frame:SetStatusText(self.current_game.cash_winnings.."g  "..self.current_game.loser.." => "..self.current_game.winner)
+
 	-- Init our game
 	self.current_game = nil
 	
