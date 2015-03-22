@@ -52,9 +52,9 @@ function CalmDownandGamble:SetChannelSettings()
 
 	self.chat.options = {
 			{ label = "Raid", const = "RAID", callback = "CHAT_MSG_RAID", callback_leader = "CHAT_MSG_RAID_LEADER" }, -- Index 1
-			{ label = "Say", const = "SAY", callback = "CHAT_MSG_SAY", callback_leader = nil},   -- Index 2
-			{ label = "Party", const = "PARTY", callback = "CHAT_MSG_PARTY", callback_leader = "CHAT_MSG_PARTY_LEADER" },   -- Index 3
-			{ label = "Guild", const = "GUILD", callback = "CHAT_MSG_GUILD", callback_leader = nil },   -- Index 4	
+			{ label = "Party", const = "PARTY", callback = "CHAT_MSG_PARTY", callback_leader = "CHAT_MSG_PARTY_LEADER" },   -- Index 2
+			{ label = "Guild", const = "GUILD", callback = "CHAT_MSG_GUILD", callback_leader = nil },   -- Index 3
+			{ label = "Say", const = "SAY", callback = "CHAT_MSG_SAY", callback_leader = nil},   -- Index 4
 	}	
 	self.chat.channel_const = "RAID"   -- What the WoW API is looking for, CHANNEL for numeric channels
 	
@@ -98,8 +98,9 @@ function CalmDownandGamble:StartGame()
 	end
 	
 	
-	local welcome_msg = "CDG Initialized. ~~ Mode: "..self.game.options[self.db.global.game_mode_index].label.." ~~ Bet:  "..self.current_game.gold_amount.." gold ~~ Press 1 to Join now."
+	local welcome_msg = "CDG is now in session! Mode: "..self.game.options[self.db.global.game_mode_index].label..", Bet: "..self.current_game.gold_amount.." gold"
 	SendChatMessage(welcome_msg, self.chat.channel_const)
+	SendChatMessage("Press 1 to Join!", self.chat.channel_const)
 	
 end
 
@@ -249,7 +250,7 @@ end
 function CalmDownandGamble:HighLowWrap()
 	CalmDownandGamble:HighLow()
 	
-	SendChatMessage("THE RESULTS: "..self.current_game.loser.." owes "..self.current_game.winner.." "..self.current_game.cash_winnings.." gold!", self.chat.channel_const)
+	SendChatMessage(" "..self.current_game.loser.." owes "..self.current_game.winner.." "..self.current_game.cash_winnings.." gold!", self.chat.channel_const)
 	
 	-- Log Results -- All game modes must call these two explicitly
 	self:LogResults()
@@ -261,7 +262,7 @@ function CalmDownandGamble:Inverse()
 	
 	self.current_game.winner, self.current_game.loser = self.current_game.loser, self.current_game.winner
 	
-	SendChatMessage("THE RESULTS: "..self.current_game.loser.." owes "..self.current_game.winner.." "..self.current_game.cash_winnings.." gold!", self.chat.channel_const)
+	SendChatMessage(" "..self.current_game.loser.." owes "..self.current_game.winner.." "..self.current_game.cash_winnings.." gold!", self.chat.channel_const)
 	
 	-- Log Results -- All game modes must call these two explicitly
 	self:LogResults()
@@ -396,31 +397,27 @@ function CalmDownandGamble:PrintRanklist()
 
 	sort_by_score = function(t,a,b) return t[b] < t[a] end
 	index = 1
-	SendChatMessage("The Winners Circle: ", self.chat.channel_const)
-	SendChatMessage("======", self.chat.channel_const)
+	SendChatMessage("Hall of Fame: ", self.chat.channel_const)
 	for player, gold in sortedpairs(self.db.global.rankings, sort_by_score) do
 		if gold <= 0 then break end
 		
-		local msg = string.format("%d.  %-20s %d gold.", index, player, gold)
+		local msg = string.format("%d. %s won %d gold.", index, player, gold)
 		SendChatMessage(msg, self.chat.channel_const)
 		index = index + 1
 	end
 	
-	SendChatMessage("         ", self.chat.channel_const)
+	SendChatMessage("~~~~~~", self.chat.channel_const)
 	
 	sort_by_score = function(t,a,b) return t[b] > t[a] end
 	index = 1
-	SendChatMessage("The Wall Of Lost Gold Shame: ", self.chat.channel_const)
-	SendChatMessage("======", self.chat.channel_const)
+	SendChatMessage("Hall of Shame: ", self.chat.channel_const)
 	for player, gold in sortedpairs(self.db.global.rankings, sort_by_score) do
 		if gold >= 0 then break end
 	
-		local msg = string.format("%d.  %-20s     %d gold.", index, player, math.abs(gold))
+		local msg = string.format("%d. %s lost %d gold.", index, player, math.abs(gold))
 		SendChatMessage(msg, self.chat.channel_const)
 		index = index + 1
 	end
-
-	SendChatMessage("         ", self.chat.channel_const)
 	
 end
 
@@ -470,6 +467,7 @@ end
 
 function CalmDownandGamble:ResetGame()
 	self.current_game = nil
+	SendChatMessage("Game has been reset.", self.chat.channel_const)
 end
 
 function CalmDownandGamble:ChatChannelToggle()
@@ -501,8 +499,8 @@ function CalmDownandGamble:ConstructUI()
 		-- Order in which the buttons are layed out -- 
 		button_index = {
 			"new_game",
-			"start_gambling",
 			"last_call",
+			"start_gambling",
 			"roll_for_me",
 			"enter_for_me",
 			"print_stats_table",
@@ -537,7 +535,7 @@ function CalmDownandGamble:ConstructUI()
 			reset_game = {
 				width = 100,
 				label = "Reset",
-				click_callback = function() self:EndGame() end
+				click_callback = function() self:ResetGame() end
 			},
 			roll_for_me = {
 				width = 100,
@@ -551,17 +549,17 @@ function CalmDownandGamble:ConstructUI()
 			},
 			start_gambling = {
 				width = 100,
-				label = "StartRolls!",
+				label = "Start Rolls!",
 				click_callback = function() self:StartRolls() end
 			},
 			last_call = {
 				width = 100,
-				label = "LastCall!",
+				label = "Last Call!",
 				click_callback = function() self:LastCall() end
 			},
 			new_game = {
 				width = 100,
-				label = "NewGame",
+				label = "New Game",
 				click_callback = function() self:StartGame() end
 			}
 		}
