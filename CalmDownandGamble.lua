@@ -74,7 +74,9 @@ function CalmDownandGamble:StartGame()
 	-- Register game callbacks
 	self:RegisterEvent("CHAT_MSG_SYSTEM", function(...) self:RollCallback(...) end)
 	self:RegisterEvent(self.chat.channel_callback, function(...) self:ChatChannelCallback(...) end)
-	self:RegisterEvent(self.chat.channel_callback_leader, function(...) self:ChatChannelCallback(...) end)
+	if (self.chat.channel_callback_leader) then
+		self:RegisterEvent(self.chat.channel_callback_leader, function(...) self:ChatChannelCallback(...) end)
+	end
 	
 	
 	local welcome_msg = "Shh Just CalmDownandGamble. Press 1 to Join : "..self.current_game.gold_amount.." gold rolls!"
