@@ -116,6 +116,25 @@ function CalmDownandGamble:SetGoldAmount()
 
 end
 
+function CalmDownandGamble:CheckRollsComplete(print_players)
+	local rolls_complete = true
+	for player, roll in pairs(self.current_game.player_rolls) do
+		if (roll == -1) then
+			rolls_complete = false
+			if print_players then
+				SendChatMessage("Player: "..player.." still needs to roll", self.chat.channel_const) 
+			end
+		end
+	end
+	
+	if (rolls_complete) then
+		self.game.options[self.game.channel_index].func()
+		self:EndGame()
+	end
+	
+end
+
+
 function CalmDownandGamble:SetGameMode() 
 
 	self.game.options = {
@@ -129,16 +148,18 @@ function CalmDownandGamble:SetGameMode()
 	self.ui.game_mode:SetText(self.game.options[self.game.channel_index].label)
 
 end
-function CalmDownandGamble:HighLow()
 
+
+function CalmDownandGamble:HighLow()
+	SendChatMessage("HIGH LOW CHECK RESULTS!!", self.chat.channel_const)
 end
 
 function CalmDownandGamble:twos()
-
+	SendChatMessage("TWOS CHECK RESULTS!", self.chat.channel_const)
 end
 
 function CalmDownandGamble:BigPot()
-
+	SendChatMessage("BIG POT RESULTS!!", self.chat.channel_const)
 end
 
 -- Util Functions cuz EW LUA STRINGS 
@@ -166,21 +187,6 @@ function CalmDownandGamble:HideUI()
 end
 
 -- CHAT CALLBACKS -- 
-function CalmDownandGamble:CheckRollsComplete()
-	local rolls_complete = true
-	for player, roll in pairs(self.current_game.player_rolls) do
-		if (roll == -1) then
-			SendChatMessage("Player: "..player.." still needs to roll", self.chat.channel_const) 
-			rolls_complete = false
-		end
-	end
-	
-	if (rolls_complete) then
-		self.game.options[self.game.channel_index].func()
-		self:EndGame()
-	end
-	
-end
 
 function CalmDownandGamble:RollCallback(...)
 	-- Parse the input Args 
@@ -196,15 +202,11 @@ function CalmDownandGamble:RollCallback(...)
 		if (self.current_game.player_rolls[player] == -1) then
 			self:Print("Player: "..player.." Roll: "..roll.." RollRange: "..roll_range)
 			self.current_game.player_rolls[player] = roll
+			self:CheckRollsComplete(false)
 		end
 	end
 	
-	self:CheckRollsComplete()
-	
 end
-
-
-
 
 function CalmDownandGamble:ChatChannelCallback(...)
 	local message = select(2, ...)
@@ -226,46 +228,46 @@ function CalmDownandGamble:ChatChannelCallback(...)
 end
 
 -- BUTTONS -- 
-function CalmDownandGamble:ButtonCallback()
-	--self:Print(self.chat.chanId)
-	--self:Print(self.chat.chanName)
+function CalmDownandGamble:PrintBanlist()
+
+end
+function CalmDownandGamble:PrintRanklist()
+
 end
 
 function CalmDownandGamble:RollForMe()
-	RandomRoll(1, 100)
+	RandomRoll(1, self.current_game.gold_amount)
 end
 
 function CalmDownandGamble:EnterForMe()
-	RandomRoll(1, 100)
+	SendChatMessage("1", self.chat.channel_const)
 end
 
 function CalmDownandGamble:StartRolls()
-	local roll_msg = "Time to roll!! /roll "..self.current_game.gold_amount
+	local roll_msg = "Time to roll! Good Luck! Command:   /roll "..self.current_game.gold_amount
 	SendChatMessage(roll_msg, self.chat.channel_const)
 	self.current_game.accepting_rolls = true
 	self.current_game.accepting_players = false
 end
 
 function CalmDownandGamble:LastCall()
-	--if (self.current_game.accepting_rolls) then
-	--	self:CheckRollsComplete()
-	--else if (self.current_game.accepting_players) then
-	--	SendChatMessage("Last call! 10 seconds left!", self.chat.channel_const)
-		--self:ScheduleTimer("StartRolls", 10)
-	--end
+	if (self.current_game.accepting_rolls) then
+		self:CheckRollsComplete(true)
+	elseif (self.current_game.accepting_players) then
+		SendChatMessage("Last call! 10 seconds left!", self.chat.channel_const)
+		self:ScheduleTimer("StartRolls", 10)
+	end
 end
 
 function CalmDownandGamble:ResetGame()
 	self.current_game = nil
 end
 
-
 function CalmDownandGamble:ChatChannelToggle()
 	self.chat.channel_index = self.chat.channel_index + 1
 	if self.chat.channel_index > table.getn(self.chat.options) then self.chat.channel_index = 1 end
 
 	self:SetChannelSettings()
-	
 end
 
 function CalmDownandGamble:ButtonGameMode()
@@ -273,7 +275,6 @@ function CalmDownandGamble:ButtonGameMode()
 	if self.game.channel_index > table.getn(self.game.options) then self.game.channel_index = 1 end
 
 	self:SetGameMode()
-	
 end
 
 -- UI ELEMENTS 
@@ -317,12 +318,12 @@ function CalmDownandGamble:ConstructUI()
 			print_ban_list = {
 				width = 100,
 				label = "Print Bans",
-				click_callback = function() self:ButtonCallback() end
+				click_callback = function() self:PrintBanlist() end
 			},
 			print_stats_table = {
 				width = 100,
 				label = "Print Stats",
-				click_callback = function() self:ButtonCallback() end
+				click_callback = function() self:PrintRanklist() end
 			},
 			reset_game = {
 				width = 100,
@@ -337,7 +338,7 @@ function CalmDownandGamble:ConstructUI()
 			enter_for_me = {
 				width = 100,
 				label = "Enter Me",
-				click_callback = function() self:EnterGameForMe() end
+				click_callback = function() self:EnterForMe() end
 			},
 			start_gambling = {
 				width = 100,
