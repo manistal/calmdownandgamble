@@ -43,16 +43,17 @@ end
 function CalmDownandGamble:SetChannelSettings() 
 
 	self.chat.options = {
-			{ label = "Raid", const = "RAID", callback = "CHAT_MSG_RAID" }, -- Index 1
-			{ label = "Say", const = "SAY", callback = "CHAT_MSG_SAY" },   -- Index 2
-			{ label = "Party", const = "PARTY", callback = "CHAT_MSG_PARTY" },   -- Index 3
-			{ label = "Guild", const = "GUILD", callback = "CHAT_MSG_GUILD" },   -- Index 4	
+			{ label = "Raid", const = "RAID", callback = "CHAT_MSG_RAID", callback_leader = "CHAT_MSG_RAID_LEADER" }, -- Index 1
+			{ label = "Say", const = "SAY", callback = "CHAT_MSG_SAY", callback_leader = nil},   -- Index 2
+			{ label = "Party", const = "PARTY", callback = "CHAT_MSG_PARTY", callback_leader = "CHAT_MSG_PARTY_LEADER" },   -- Index 3
+			{ label = "Guild", const = "GUILD", callback = "CHAT_MSG_GUILD", callback_leader = nil },   -- Index 4	
 	}	
 	
 	self:Print(self.chat.options[self.chat.channel_index].label)
 	self.chat.channel_const = self.chat.options[self.chat.channel_index].const
 	self.ui.chat_channel:SetText(self.chat.options[self.chat.channel_index].label)
 	self.chat.channel_callback = self.chat.options[self.chat.channel_index].callback
+	self.chat.channel_callback_leader = self.chat.options[self.chat.channel_index].callback_leader
 
 end
 
@@ -79,24 +80,25 @@ end
 function CalmDownandGamble:StartGame()
 	-- Init our game
 	self.current_game = {}
+	self.current_game.accepting_rolls = false
+	self.current_game.accepting_players = true
+
 	self.current_game.player_rolls = {}
-	self.current_game.players = {}
-	self.current_game.gold_amount = self.ui.gold_amount_entry:GetText() or 100
-	self:Print(self.ui.gold_amount_entry:GetText())
+	self:SetGoldAmount()
 	
 	-- Register game callbacks
 	self:RegisterEvent("CHAT_MSG_SYSTEM", function(...) self:RollCallback(...) end)
 	self:RegisterEvent(self.chat.channel_callback, function(...) self:ChatChannelCallback(...) end)
-
+	self:RegisterEvent(self.chat.channel_callback_leader, function(...) self:ChatChannelCallback(...) end)
+	
+	
 	local welcome_msg = "Game: "..self.game.options[self.game.channel_index].label..", Wager: "..self.current_game.gold_amount.." gold, Press 1 to join!"
-	SendChatMessage(welcome_msg, self.chat.channel_const, nil, self.chat.channel_numeric)
+	SendChatMessage(welcome_msg, self.chat.channel_const)
 end
 
 function CalmDownandGamble:EndGame()
 	-- Init our game
 	self.current_game = nil
-	self.current_game.player_rolls = nil
-	self.current_game.players = nil
 	
 	-- Register game callbacks
 	self:UnregisterEvent("CHAT_MSG_SYSTEM")
@@ -104,12 +106,26 @@ function CalmDownandGamble:EndGame()
 
 end
 
+
+function CalmDownandGamble:SetGoldAmount() 
+
+	local text_box = self.ui.gold_amount_entry:GetText()
+	local text_box_valid = (not string.match(text_box, "[^%d]")) and (text_box ~= '')
+	if ( text_box_valid ) then
+		self.current_game.gold_amount = text_box
+	else
+		self.current_game.gold_amount = 100
+	end
+
+end
+
+
 -- Util Functions cuz EW LUA STRINGS 
 -- =============================================
-function SplitString(str)
+function SplitString(str, pattern)
 	local ret_list = {}
 	local index = 1
-	for token in string.gmatch(str, "%S+") do
+	for token in string.gmatch(str, pattern) do
 		ret_list[index] = token
 		index = index + 1
 	end
@@ -132,17 +148,17 @@ end
 function CalmDownandGamble:RollCallback(...)
 	-- Parse the input Args 
 	local message = select(2, ...)
-	message = SplitString(message)
+	message = SplitString(message, "%S+")
 	local player, roll, roll_range = message[1], message[3], message[4]
 	
 	-- Check that the roll is valid ( also that the message is for us)
 	local roll_range_str = "(1-"..self.current_game.gold_amount..")"
-	local valid_roll = (roll_range_str == roll_range)
+	local valid_roll = (roll_range_str == roll_range) and self.current_game.accepting_rolls
 
 	if self.current_game and valid_roll then 
-		self:Print("Player: "..player.." Roll: "..roll.." RollRange: "..roll_range)
 		
-		if not (self.current_game.player_rolls[player]) then
+		if (self.current_game.player_rolls[player] == -1) then
+			self:Print("Player: "..player.." Roll: "..roll.." RollRange: "..roll_range)
 			self.current_game.player_rolls[player] = roll
 		end
 		
@@ -152,13 +168,21 @@ function CalmDownandGamble:RollCallback(...)
 end
 
 function CalmDownandGamble:ChatChannelCallback(...)
-	self:Print("WHATTHEFUCK")
-	--local message = select(2, ...)
-	--local sender = select(3, ...)
-	--local something = select(4, ...)
-	--self:Print(message)
-	--self:Print(sender)
-	--self:Print(something)
+	local message = select(2, ...)
+	local sender = select(3, ...)
+	
+	sender = SplitString(sender, "%w+")[1]
+	
+	local player_join = (
+		(self.current_game.player_rolls[sender] == nil) 
+		and (self.current_game.accepting_players) 
+		and (message == "1")
+	)
+	
+	if (player_join) then
+		self.current_game.player_rolls[sender] = -1
+		self:Print("JOINED "..sender)
+	end
 
 end
 
@@ -177,7 +201,10 @@ function CalmDownandGamble:EnterForMe()
 end
 
 function CalmDownandGamble:StartRolls()
-	
+	local roll_msg = "Time to roll!! /roll "..self.current_game.gold_amount
+	SendChatMessage(roll_msg, self.chat.channel_const)
+	self.current_game.accepting_rolls = true
+	self.current_game.accepting_players = false
 end
 
 function CalmDownandGamble:LastCall()
