@@ -92,7 +92,12 @@ function CalmDownandGamble:EndGame()
 	
 	-- Register game callbacks
 	self:UnregisterEvent("CHAT_MSG_SYSTEM")
-	self:UnregisterEvent(self.chat.channel_const)
+	self:UnregisterEvent(self.chat.channel_callback)
+	if (self.chat.channel_callback_leader) then
+		self:UnregisterEvent(self.chat.channel_callback_leader)
+	end
+	
+	SendChatMessage("Game Over!!", self.chat.channel_const)
 
 end
 
@@ -158,6 +163,22 @@ function CalmDownandGamble:HideUI()
 end
 
 -- CHAT CALLBACKS -- 
+function CalmDownandGamble:CheckRollsComplete()
+	local rolls_complete = true
+	for player, roll in pairs(self.current_game.player_rolls) do
+		if (roll == -1) then
+			SendChatMessage("Player: "..player.." still needs to roll", self.chat.channel_const) 
+			rolls_complete = false
+		end
+	end
+	
+	if (rolls_complete) then
+		self.game.options[self.game.channel_index].func()
+		self:EndGame()
+	end
+	
+end
+
 function CalmDownandGamble:RollCallback(...)
 	-- Parse the input Args 
 	local message = select(2, ...)
@@ -169,16 +190,18 @@ function CalmDownandGamble:RollCallback(...)
 	local valid_roll = (roll_range_str == roll_range) and self.current_game.accepting_rolls
 
 	if self.current_game and valid_roll then 
-		
 		if (self.current_game.player_rolls[player] == -1) then
 			self:Print("Player: "..player.." Roll: "..roll.." RollRange: "..roll_range)
 			self.current_game.player_rolls[player] = roll
 		end
-		
 	end
 	
+	self:CheckRollsComplete()
 	
 end
+
+
+
 
 function CalmDownandGamble:ChatChannelCallback(...)
 	local message = select(2, ...)
@@ -221,11 +244,12 @@ function CalmDownandGamble:StartRolls()
 end
 
 function CalmDownandGamble:LastCall()
-	for player, roll in pairs(self.current_game.player_rolls) do
-		self:Print(player)
-		self:Print(roll)
-	end
-
+	--if (self.current_game.accepting_rolls) then
+	--	self:CheckRollsComplete()
+	--else if (self.current_game.accepting_players) then
+	--	SendChatMessage("Last call! 10 seconds left!", self.chat.channel_const)
+		--self:ScheduleTimer("StartRolls", 10)
+	--end
 end
 
 function CalmDownandGamble:ResetGame()
