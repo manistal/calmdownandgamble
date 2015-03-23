@@ -158,6 +158,7 @@ function CalmDownandGamble:SetGameMode()
 	self.game.options = {
 			{ label = "High-Low", func = function() self:HighLowWrap() end}, -- Index 1
 			{ label = "Inverse", func = function() self:Inverse() end},   -- Index 2
+			{ label = "MiddleMan", func = function() self:Median() end},   -- Index 3
 			--{ label = "2s", func = function() self:twos() end},   -- Index 3
 			--{ label = "Big Pot", func = function() self:BigPot() end},   -- Index 4
 			
@@ -248,6 +249,48 @@ function CalmDownandGamble:HighLow()
 
 end
 
+function CalmDownandGamble:Median()
+	
+	local sort_by_score = function(t,a,b) return t[b] < t[a] end
+	local high_player, median_player, low_player = "", "", ""
+	local high_score, median_score, low_score = 0, 0, 0
+	
+	local total_players = TableLength(self.current_game.player_rolls)
+	local last_number = total_players
+	local median_number = math.floor((total_players + 1) / 2)
+
+	local player_index = 1
+	for player, roll in sortedpairs(self.current_game.player_rolls, sort_by_score) do
+		self:Print(player.." "..roll)
+		if player_index == 1 then 
+			high_player = player
+			high_score = roll
+		elseif player_index == median_number then
+			median_player = player
+			median_score = roll
+		elseif player_index == last_number then
+			low_player = player
+			low_score = roll
+		else 
+		end
+		player_index = player_index + 1
+	end
+
+	self.current_game.winner = median_player
+	
+
+	self.current_game.loser = high_player
+	self.current_game.cash_winnings = math.abs(median_score - high_score)
+	SendChatMessage(" "..self.current_game.loser.." owes "..self.current_game.winner.." "..self.current_game.cash_winnings.." gold!", self.chat.channel_const)
+	self:LogResults()
+	
+	self.current_game.loser = low_player
+	self.current_game.cash_winnings = math.abs(median_score - low_score)
+	SendChatMessage(" "..self.current_game.loser.." owes "..self.current_game.winner.." "..self.current_game.cash_winnings.." gold!", self.chat.channel_const)
+	self:LogResults()
+	
+	self:EndGame()
+end
 
 function CalmDownandGamble:HighLowWrap()
 	CalmDownandGamble:HighLow()
