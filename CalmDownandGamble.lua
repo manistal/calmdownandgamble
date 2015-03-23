@@ -403,7 +403,7 @@ function CalmDownandGamble:RollCallback(...)
 	if self.current_game and valid_roll then 
 		if (self.current_game.player_rolls[player] == -1) then
 			if DEBUG then self:Print("Player: "..player.." Roll: "..roll.." RollRange: "..roll_range) end
-			self.current_game.player_rolls[player] = roll
+			self.current_game.player_rolls[player] = tonumber(roll)
 			self:CheckRollsComplete(false)
 		end
 	end
