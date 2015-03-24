@@ -129,6 +129,9 @@ function CDGClient:ChatChannelCallback(...)
 end
 
 function CDGClient:NewGameCallback(...)
+    -- Reset Game Settings -- 
+    self.current_game = {}
+
     -- self.current_game.roll_lower = 
     -- self.current_game.roll_upper = 
     -- self.current_game.roll_range =
@@ -162,6 +165,20 @@ function CDGClient:ChatChannelToggle()
 	self:SetChannelSettings()
 end
 
+function CDGClient:TradeOpen()
+    self.current_game.trade_open = true
+end
+
+function CDGClient:OpenTradeWinner()
+    if (self.current_game.trade_open) then
+        local copper = self.current_game.cash_winnings * 100 * 100 
+        SetTradeMoney(copper)
+        self.current_game.trade_open = false
+    else
+        InitiateTrade(self.current_game.winner)
+        self:RegisterEvent("TRADE_SHOW", function() self:TradeOpen() end)
+    end
+end
 
 -- UI ELEMENTS 
 -- ======================================================
