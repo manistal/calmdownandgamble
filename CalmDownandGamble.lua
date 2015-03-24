@@ -19,7 +19,8 @@ function CalmDownandGamble:OnInitialize()
 	    global = {
 			rankings = { },
 			chat_index = 1,
-			game_mode_index = 1
+			game_mode_index = 1, 
+			window_shown = false
 		}
 	}
 
@@ -442,9 +443,11 @@ end
 -- SLASH COMMANDS -- 
 function CalmDownandGamble:ShowUI()
 	self.ui.CDG_Frame:Show()
+	self.db.global.window_shown = true
 end
 function CalmDownandGamble:HideUI()
 	self.ui.CDG_Frame:Hide()
+	self.db.global.window_shown = false
 end
 
 -- CHAT CALLBACKS -- 
@@ -698,8 +701,9 @@ function CalmDownandGamble:ConstructUI()
 		self.ui.CDG_Frame:AddChild(self.ui[button_name])
 	end
 	
-	
-	self.ui.CDG_Frame:Hide()
+	if not self.db.global.window_shown then
+		self.ui.CDG_Frame:Hide()
+	end
 	
 end
 
