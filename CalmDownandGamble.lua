@@ -86,9 +86,9 @@ function CalmDownandGamble:StartGame()
 	self.current_game.accepting_players = true
 	self.current_game.high_roller_playoff = nil
 	self.current_game.low_roller_playoff = nil
-	
 	self.current_game.player_rolls = {}
-	self:SetGoldAmount()
+	
+	self.game.options[self.db.global.game_mode_index].init()
 	
 	-- Register game callbacks
 	self:RegisterEvent("CHAT_MSG_SYSTEM", function(...) self:RollCallback(...) end)
@@ -97,6 +97,7 @@ function CalmDownandGamble:StartGame()
 		self:RegisterEvent(self.chat.channel_callback_leader, function(...) self:ChatChannelCallback(...) end)
 	end
 	
+	if DEBUG then self:Print("Init'd game state and registered callbacks") end
 	
 	local welcome_msg = "CDG is now in session! Mode: "..self.game.options[self.db.global.game_mode_index].label..", Bet: "..self.current_game.gold_amount.." gold"
 	SendChatMessage(welcome_msg, self.chat.channel_const)
@@ -147,26 +148,9 @@ function CalmDownandGamble:CheckRollsComplete(print_players)
 	end
 	
 	if (rolls_complete) then
-		self.game.options[self.db.global.game_mode_index].func()
+		self.game.options[self.db.global.game_mode_index].evaluate()
 	end
 	
-end
-
-
-function CalmDownandGamble:SetGameMode() 
-
-	self.game.options = {
-			{ label = "High-Low", func = function() self:HighLowWrap() end}, -- Index 1
-			{ label = "Inverse", func = function() self:Inverse() end},   -- Index 2
-			{ label = "MiddleMan", func = function() self:Median() end},   -- Index 3
-			--{ label = "2s", func = function() self:twos() end},   -- Index 3
-			--{ label = "Big Pot", func = function() self:BigPot() end},   -- Index 4
-			
-	}	
-	
-	if DEBUG then self:Print(self.game.options[self.db.global.game_mode_index].label) end
-	self.ui.game_mode:SetText(self.game.options[self.db.global.game_mode_index].label)
-
 end
 
 
@@ -184,6 +168,80 @@ function CalmDownandGamble:LogResults()
 	end
 end
 
+
+function CalmDownandGamble:SetGameMode() 
+
+	self.game.options = {
+			{ label = "High-Low",  evaluate = function() self:HighLowWrap() end, init = function() self:DefaultGameInit() end }, -- Index 1
+			{ label = "Inverse",   evaluate = function() self:Inverse() end,     init = function() self:DefaultGameInit() end },   -- Index 2
+			{ label = "MiddleMan", evaluate = function() self:Median() end,      init = function() self:DefaultGameInit() end },   -- Index 3
+			{ label = "Yahtzee",   evaluate = function() self:Yahtzee() end,     init = function() self:YahtzeeInit() end },
+			--{ label = "2s", func = function() self:twos() end},   -- Index 3
+			--{ label = "Big Pot", func = function() self:BigPot() end},   -- Index 4
+			
+	}	
+	
+	if DEBUG then self:Print(self.game.options[self.db.global.game_mode_index].label) end
+	self.ui.game_mode:SetText(self.game.options[self.db.global.game_mode_index].label)
+
+end
+
+function CalmDownandGamble:DefaultGameInit() 
+	self:SetGoldAmount()
+	self.current_game.roll_range = "(1-"..self.current_game.gold_amount..")"
+end
+
+function CalmDownandGamble:YahtzeeInit() 
+	self:SetGoldAmount()
+	self.current_game.roll_range = "(11111-66666)"
+end
+
+function CalmDownandGamble:ScoreYahtzee(roll)
+
+	local score = 0
+	for digit in string.gmatch(roll, "%d") do
+		local _, count = string.gsub(roll, digit, "")
+		if DEBUG then self:Print(digit.." #"..count) end
+		score = score + (count * digit)
+    end
+	
+	return score
+end
+
+function format_yahtzee_roll(roll)
+	local ret_string = ""
+	for digit in string.gmatch(roll, "%d") do
+		ret_string = ret_string..digit.."-"
+    end
+	ret_string = ret_string.."!!"
+	return string.gsub(ret_string, "-!!", "")
+end
+
+function CalmDownandGamble:Yahtzee()
+
+	local player_scores = {}
+	for player, roll in pairs(self.current_game.player_rolls) do
+		local score = self:ScoreYahtzee(roll)
+		player_scores[player] = score
+	end
+	
+	local sort_by_score = function(t,a,b) return t[b] < t[a] end
+	for player, score in sortedpairs(player_scores, sort_by_score) do
+		SendChatMessage(player.." Roll: "..format_yahtzee_roll(self.current_game.player_rolls[player]).." Score: "..score, self.chat.channel_const)
+	end
+
+	self.current_game.player_rolls = {}
+	self.current_game.player_rolls = CopyTable(player_scores)
+	self:HighLow()
+	self.current_game.cash_winnings = self.current_game.gold_amount
+	
+	SendChatMessage(" "..self.current_game.loser.." owes "..self.current_game.winner.." "..self.current_game.cash_winnings.." gold!", self.chat.channel_const)
+	
+	-- Log Results -- All game modes must call these two explicitly
+	self:LogResults()
+	self:EndGame()
+	
+end
 
 function CalmDownandGamble:HighLow()
 	
@@ -397,10 +455,9 @@ function CalmDownandGamble:RollCallback(...)
 	local player, roll, roll_range = message[1], message[3], message[4]
 	
 	-- Check that the roll is valid ( also that the message is for us)
-	local roll_range_str = "(1-"..self.current_game.gold_amount..")"
-	local valid_roll = (roll_range_str == roll_range) and self.current_game.accepting_rolls
+	local valid_roll = (self.current_game.roll_range == roll_range) and self.current_game.accepting_rolls
 
-	if self.current_game and valid_roll then 
+	if valid_roll then 
 		if (self.current_game.player_rolls[player] == -1) then
 			if DEBUG then self:Print("Player: "..player.." Roll: "..roll.." RollRange: "..roll_range) end
 			self.current_game.player_rolls[player] = tonumber(roll)
@@ -480,12 +537,11 @@ function format_player_names(players)
 		return_str = return_str..player.." vs "
 	end
 	return_str = return_str.."!!"
-	return return_str.gsub(return_str, " vs !", "")
+	return string.gsub(return_str, " vs !", "")
 end
 
 function CalmDownandGamble:StartRolls()
-	-- if (self.current_game.accepting_rolls) then return end
-	
+
 	local roll_msg = ""
 	if (self.current_game.high_roller_playoff) then
 		self.current_game.player_rolls = CopyTable(self.current_game.high_roller_playoff)
@@ -494,7 +550,7 @@ function CalmDownandGamble:StartRolls()
 		self.current_game.player_rolls = CopyTable(self.current_game.low_roller_playoff)
 		roll_msg = "Low Roller TieBreaker! "..format_player_names(self.current_game.low_roller_playoff)
 	else
-		roll_msg = "Time to roll! Good Luck! Command:   /roll "..self.current_game.gold_amount
+		roll_msg = "Time to roll! Good Luck! Command:   /roll "..self.current_game.roll_range
 	end
 	SendChatMessage(roll_msg, self.chat.channel_const)
 	
