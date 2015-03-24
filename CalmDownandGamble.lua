@@ -193,7 +193,7 @@ end
 
 function CalmDownandGamble:YahtzeeInit() 
 	self:SetGoldAmount()
-	self.current_game.roll_range = "(11111-66666)"
+	self.current_game.roll_range = "(11111-99999)"
 end
 
 function CalmDownandGamble:ScoreYahtzee(roll)
@@ -235,7 +235,7 @@ function CalmDownandGamble:Yahtzee()
 	self:HighLow()
 	self.current_game.cash_winnings = self.current_game.gold_amount
 	
-	SendChatMessage(" "..self.current_game.loser.." owes "..self.current_game.winner.." "..self.current_game.cash_winnings.." gold!", self.chat.channel_const)
+	SendChatMessage(self.current_game.loser.." owes "..self.current_game.winner.." "..self.current_game.cash_winnings.." gold!", self.chat.channel_const)
 	
 	-- Log Results -- All game modes must call these two explicitly
 	self:LogResults()
@@ -248,7 +248,7 @@ function CalmDownandGamble:HighLow()
 	if DEBUG then self:Print("Evaluating High Low") end
 	
 	local high_player, low_player = "", ""
-	local high_score, low_score = 0, (self.current_game.gold_amount + 1)
+	local high_score, low_score = 0, 999999
 	
 	local high_player_playoff = {}
 	local low_player_playoff = {}
@@ -256,6 +256,7 @@ function CalmDownandGamble:HighLow()
 	for player, roll in pairs(self.current_game.player_rolls) do
 	
 		player_score = tonumber(roll)
+		if DEBUG then self:Print(player.." "..player_score) end
 		
 		if (player_score > high_score) then
 			high_player = player
@@ -265,7 +266,7 @@ function CalmDownandGamble:HighLow()
 			high_player_playoff[player] = -1
 			high_player_playoff[high_player] = -1
 		end
-			
+		
 		if (player_score < low_score) then
 			low_player = player
 			low_score = player_score
@@ -339,12 +340,12 @@ function CalmDownandGamble:Median()
 
 	self.current_game.loser = high_player
 	self.current_game.cash_winnings = math.abs(median_score - high_score)
-	SendChatMessage(" "..self.current_game.loser.." owes "..self.current_game.winner.." "..self.current_game.cash_winnings.." gold!", self.chat.channel_const)
+	SendChatMessage(self.current_game.loser.." owes "..self.current_game.winner.." "..self.current_game.cash_winnings.." gold!", self.chat.channel_const)
 	self:LogResults()
 	
 	self.current_game.loser = low_player
 	self.current_game.cash_winnings = math.abs(median_score - low_score)
-	SendChatMessage(" "..self.current_game.loser.." owes "..self.current_game.winner.." "..self.current_game.cash_winnings.." gold!", self.chat.channel_const)
+	SendChatMessage(self.current_game.loser.." owes "..self.current_game.winner.." "..self.current_game.cash_winnings.." gold!", self.chat.channel_const)
 	self:LogResults()
 	
 	self:EndGame()
@@ -353,7 +354,7 @@ end
 function CalmDownandGamble:HighLowWrap()
 	CalmDownandGamble:HighLow()
 	
-	SendChatMessage(" "..self.current_game.loser.." owes "..self.current_game.winner.." "..self.current_game.cash_winnings.." gold!", self.chat.channel_const)
+	SendChatMessage(self.current_game.loser.." owes "..self.current_game.winner.." "..self.current_game.cash_winnings.." gold!", self.chat.channel_const)
 	
 	-- Log Results -- All game modes must call these two explicitly
 	self:LogResults()
@@ -365,7 +366,7 @@ function CalmDownandGamble:Inverse()
 	
 	self.current_game.winner, self.current_game.loser = self.current_game.loser, self.current_game.winner
 	
-	SendChatMessage(" "..self.current_game.loser.." owes "..self.current_game.winner.." "..self.current_game.cash_winnings.." gold!", self.chat.channel_const)
+	SendChatMessage(self.current_game.loser.." owes "..self.current_game.winner.." "..self.current_game.cash_winnings.." gold!", self.chat.channel_const)
 	
 	-- Log Results -- All game modes must call these two explicitly
 	self:LogResults()
