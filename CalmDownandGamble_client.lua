@@ -5,7 +5,7 @@ CDGClient = LibStub("AceAddon-3.0"):NewAddon("CDGClient", "AceConsole-3.0", "Ace
 local CDGClient	= LibStub("AceAddon-3.0"):GetAddon("CDGClient")
 local AceGUI = LibStub("AceGUI-3.0")
 
-local DEBUG = false
+local DEBUG = true
 
 -- Basic Adddon Initialization stuff, virtually inherited functions 
 -- ================================================================ 
@@ -16,7 +16,7 @@ function CDGClient:OnInitialize()
 
 	-- Set up Infrastructure
 	local defaults = {
-	    global = {
+	   global = {
 			rankings = { },
 			chat_index = 1,
 			game_mode_index = 1, 
@@ -188,37 +188,38 @@ function CDGClient:ConstructUI()
 	local cdg_ui_elements = {
 		-- Main Box Frame -- 
 		main_frame = {
-			width = 440,
-			height = 170
+			width = 300,
+			height = 125
 		},
 		
 		-- Order in which the buttons are layed out -- 
 		button_index = {
 			"roll_for_me",
 			"enter_for_me",
-			"chat_channel",
-            "open_trade"
+			"open_trade",
+			"chat_channel"
+            
 		},
 		
 		-- Button Definitions -- 
 		buttons = {
 			chat_channel = {
-				width = 100,
+				width = 125,
 				label = "Raid",
 				click_callback = function() self:ChatChannelToggle() end
 			},
 			roll_for_me = {
-				width = 100,
+				width = 125,
 				label = "Roll For Me",
 				click_callback = function() self:RollForMe() end
 			},
 			enter_for_me = {
-				width = 100,
+				width = 125,
 				label = "Enter Me",
 				click_callback = function() self:EnterForMe() end
 			},
 			open_trade = {
-				width = 100,
+				width = 125,
 				label = "Trade Winner",
 				click_callback = function() self:OpenTradeWinner() end
 			}
@@ -305,13 +306,3 @@ function sortedpairs(t, order)
         end
     end
 end
-
-
-
-
-
-
-
-
-
-

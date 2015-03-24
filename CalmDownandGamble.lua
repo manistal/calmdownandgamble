@@ -142,6 +142,8 @@ function CalmDownandGamble:StartGame()
 	SendChatMessage(welcome_msg, self.chat.channel_const)
 	SendChatMessage("Press 1 to Join!", self.chat.channel_const)
 	
+	
+	
 end
 
 -- (2) After accepting entries via chat callbacks, start the rolls

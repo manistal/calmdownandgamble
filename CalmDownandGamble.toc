@@ -29,5 +29,6 @@ Libs\LibBase64-1.0\lib.xml
 
 embeds.xml
 CalmDownandGamble.lua
+CalmDownandGamble_client.lua
 
 
