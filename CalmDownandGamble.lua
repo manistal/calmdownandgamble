@@ -316,54 +316,47 @@ function CalmDownandGamble:HighLow()
 	end
 	
 	-- Currently a play off -- 
-	local high_play = (TableLength(high_player_playoff) ~= 0)
-	local low_play = (TableLength(low_player_playoff) ~= 0)
-	-- Previously a play off -- 
-	local prev_high_play = (self.current_game.high_roller_playoff ~= nil)
-	local prev_low_play = (self.current_game.low_roller_playoff ~= nil)
+	local high_playoff = (TableLength(high_player_playoff) ~= 0)
+	local low_playoff = (TableLength(low_player_playoff) ~= 0)
 
-	
-	-- DONT SET TABLE IF ITS ALREADY SET!!!!
-	if prev_high_play and not high_play then
-		-- No playoff after a high playoff
-		self.current_game.winner = high_player
-	elseif (not prev_high_play) and (not high_play)
-		-- No play off for high player
-		self.current_game.winner = high_player 
-	end
-	if prev_low_play and not low_play then
-		-- No playoff after a low playoff
-		self.current_game.loser = low_player
-	elseif (not prev_low_play) and (not low_play)
-		-- No play off for low player
-		self.current_game.loser = low_player
-	end
+	local first_rolls = (self.current_game.high_roller_playoff == nil) and (self.current_game.low_roller_playoff == nil)
+	local prev_high_playoff = (self.current_game.high_roller_playoff ~= nil)
 
-	if (high_play and low_play) then
-		self.current_game.high_roller_playoff = CopyTable(high_player_playoff)
-		self.current_game.low_roller_playoff = CopyTable(low_player_playoff)
-		self:StartRolls()
-		return
-	elseif high_play and not prev_high_play then
-		self.current_game.high_roller_playoff = CopyTable(high_player_playoff)
-		self.current_game.loser = low_player
-		self:StartRolls()
-		return
-	elseif prev_high_play and not high_play then
-		-- This was a play off 
-		self.current_game.winner = high_player
+	if first_rolls then
+		if high_playoff then
+			self.current_game.high_roller_playoff = CopyTable(high_player_playoff)
+		else
+			self.current_game.winner = high_player
+		end
 		
-	elseif low_play and not prev_low_play then
-		self.current_game.low_roller_playoff = CopyTable(low_player_playoff)
-		self.current_game.winner = high_player
-		self:StartRolls()
-		return
-	elseif (prev_high_play or prev_low_play) then
+		if low_playoff then
+			self.current_game.low_roller_playoff = CopyTable(low_player_playoff)
+		else
+			self.current_game.loser = low_player
+		end
+		
+	elseif prev_high_playoff then
+		if high_playoff then
+			self.current_game.high_roller_playoff = CopyTable(high_player_playoff)
+		else
+			self.current_game.winner = high_player
+		end
+	else
+		if low_playoff then
+			self.current_game.low_roller_playoff = CopyTable(low_player_playoff)
+		else
+			self.current_game.loser = low_player
+		end
+	end
+	
+	local found_winner = (self.current_game.winner ~= nil)
+	local found_loser =  (self.current_game.loser ~= nil)
+
+	if not (found_winner and found_loser) then
 		self:StartRolls()
 		return
 	end
-
-
+	
 	self.current_game.cash_winnings = high_score - low_score
 
 end
