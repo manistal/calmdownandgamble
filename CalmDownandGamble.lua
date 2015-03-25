@@ -78,6 +78,7 @@ function CalmDownandGamble:SetGameMode()
 			{ label = "Inverse",   evaluate = function() self:Inverse() end,     init = function() self:DefaultGameInit() end }, -- Index 2
 			{ label = "MiddleMan", evaluate = function() self:Median() end,      init = function() self:DefaultGameInit() end }, -- Index 3
 			{ label = "Yahtzee",   evaluate = function() self:Yahtzee() end,     init = function() self:YahtzeeInit() end },     -- Index 4
+			{ label = "BigTWOS",   evaluate = function() self:HighLowWrap() end,     init = function() self:TwosInit() end },     -- Index 5
 	}	
 	
 	if DEBUG then self:Print(self.game.options[self.db.global.game_mode_index].label) end
@@ -141,9 +142,11 @@ function CalmDownandGamble:StartGame()
 	local welcome_msg = "CDG is now in session! Mode: "..self.game.options[self.db.global.game_mode_index].label..", Bet: "..self.current_game.gold_amount.." gold"
 	SendChatMessage(welcome_msg, self.chat.channel_const)
 	SendChatMessage("Press 1 to Join!", self.chat.channel_const)
+
 	
-	
-	
+	local start_args = self.current_game.roll_lower.." "..self.current_game.roll_upper.." "..self.current_game.gold_amount
+	self:SendCommMessage("CDG_NEW_GAME", start_args, self.chat.channel_const)
+	if DEBUG then self:Print(start_args) end
 end
 
 -- (2) After accepting entries via chat callbacks, start the rolls
@@ -194,8 +197,9 @@ end
 -- (4) Resets the game state machine, called from game mode evaluate after game
 -- is done and all tiebreakers have been resolved
 function CalmDownandGamble:EndGame()
-
 	-- Show me the results
+	local end_args = self.current_game.winner.." "..self.current_game.loser.." "..self.current_game.cash_winnings
+	self:SendCommMessage("CDG_END_GAME", end_args, self.chat.channel_const)
 	self.ui.CDG_Frame:SetStatusText(self.current_game.cash_winnings.."g  "..self.current_game.loser.." => "..self.current_game.winner)
 
 	-- Init our game
@@ -253,6 +257,8 @@ end
 -- DEFAULT INIT -- Used by almost everything
 function CalmDownandGamble:DefaultGameInit() 
 	self:SetGoldAmount()
+	self.current_game.roll_upper = self.current_game.gold_amount
+	self.current_game.roll_lower = 1
 	self.current_game.roll_range = "(1-"..self.current_game.gold_amount..")"
 end
 
@@ -260,6 +266,16 @@ end
 function CalmDownandGamble:YahtzeeInit() 
 	self:SetGoldAmount()
 	self.current_game.roll_range = "(11111-99999)"
+	self.current_game.roll_upper = 99999
+	self.current_game.roll_lower = 11111
+end
+
+-- Twos Init -- Yahtzee is different because fun. 
+function CalmDownandGamble:TwosInit() 
+	self:SetGoldAmount()
+	self.current_game.roll_range = "(1-2)"
+	self.current_game.roll_upper = 2
+	self.current_game.roll_lower = 1
 end
 
 -- Basic scoring function, will pick out highest and lowest from the list
@@ -299,29 +315,52 @@ function CalmDownandGamble:HighLow()
 		
 	end
 	
-	local high_play = TableLength(high_player_playoff)
-	local low_play = TableLength(low_player_playoff)
-	local playoff = ((high_play ~= 0) or (low_play ~= 0))
+	-- Currently a play off -- 
+	local high_play = (TableLength(high_player_playoff) ~= 0)
+	local low_play = (TableLength(low_player_playoff) ~= 0)
+	-- Previously a play off -- 
+	local prev_high_play = (self.current_game.high_roller_playoff ~= nil)
+	local prev_low_play = (self.current_game.low_roller_playoff ~= nil)
+
 	
-	if (high_play > 1) and (low_play > 1) then
+	-- DONT SET TABLE IF ITS ALREADY SET!!!!
+	if prev_high_play and not high_play then
+		-- No playoff after a high playoff
+		self.current_game.winner = high_player
+	elseif (not prev_high_play) and (not high_play)
+		-- No play off for high player
+		self.current_game.winner = high_player 
+	end
+	if prev_low_play and not low_play then
+		-- No playoff after a low playoff
+		self.current_game.loser = low_player
+	elseif (not prev_low_play) and (not low_play)
+		-- No play off for low player
+		self.current_game.loser = low_player
+	end
+
+	if (high_play and low_play) then
 		self.current_game.high_roller_playoff = CopyTable(high_player_playoff)
 		self.current_game.low_roller_playoff = CopyTable(low_player_playoff)
 		self:StartRolls()
 		return
-	elseif (high_play > 1) then
+	elseif high_play and not prev_high_play then
 		self.current_game.high_roller_playoff = CopyTable(high_player_playoff)
 		self.current_game.loser = low_player
 		self:StartRolls()
 		return
-	elseif (low_play > 1) then
+	elseif prev_high_play and not high_play then
+		-- This was a play off 
+		self.current_game.winner = high_player
+		
+	elseif low_play and not prev_low_play then
 		self.current_game.low_roller_playoff = CopyTable(low_player_playoff)
 		self.current_game.winner = high_player
 		self:StartRolls()
 		return
-	else
-		-- Ternary operator -- A ? B : C ==> A AND B OR C cause fuck lua
-		self.current_game.winner = (self.current_game.winner == nil) and high_player or self.current_game.winner
-		self.current_game.loser = (self.current_game.loser == nil) and low_player or self.current_game.loser
+	elseif (prev_high_play or prev_low_play) then
+		self:StartRolls()
+		return
 	end
 
 

@@ -20,7 +20,7 @@ function CDGClient:OnInitialize()
 			rankings = { },
 			chat_index = 1,
 			game_mode_index = 1, 
-			window_shown = false
+			window_shown = true
 		}
 	}
 
@@ -81,6 +81,8 @@ function CDGClient:RegisterCallbacks()
     self:RegisterComm("CDG_NEW_GAME", "NewGameCallback")
     self:RegisterComm("CDG_NEW_ROLL", "NewRollsCallback")
     self:RegisterComm("CDG_END_GAME", "GameResultsCallback")
+	
+	self:Print("REG COMPLETE")
 end
 
 function CDGClient:SetDebug()
@@ -130,12 +132,28 @@ end
 
 function CDGClient:NewGameCallback(...)
     -- Reset Game Settings -- 
-    self.current_game = {}
-
-    -- self.current_game.roll_lower = 
-    -- self.current_game.roll_upper = 
-    -- self.current_game.roll_range =
-    -- "("..self.current_game.roll_lower.."-"..self.current_game.roll_upper..")"
+    --self.current_game = {}
+	if DEBUG then self:Print("NEWGAME") end
+	local callback = select(1, ...)
+	local message = select(2, ...)
+	local chat = select(3, ...)
+	local sender = select(4, ...)
+	message = SplitString(message, "%S+")
+	
+	self.current_game = {}
+	self.current_game.roll_lower = message[1]
+	self.current_game.roll_upper = message[2]
+	self.current_game.cash_winnings = message[3]
+	self.current_game.channel_const = chat
+	self.current_game.roll_range = "("..self.current_game.roll_lower.."-"..self.current_game.roll_upper..")"
+	
+	if DEBUG then
+		self:Print(self.current_game.roll_lower)
+		self:Print(self.current_game.roll_upper)
+		self:Print(self.current_game.channel_const)
+		self:Print(self.current_game.roll_range)
+	end
+	
 end
 
 function CDGClient:NewRollsCallback(...)
@@ -143,9 +161,16 @@ function CDGClient:NewRollsCallback(...)
 end
 
 function CDGClient:GameResultsCallback(...)
-    -- self.current_game.accepting_rolls = false
-    -- self.current_game.winner = 
-    -- self.current_game.cash_winnings =
+	self.current_game.accepting_rolls = false
+	local callback = select(1, ...)
+	local message = select(2, ...)
+	local chat = select(3, ...)
+	local sender = select(4, ...)
+	message = SplitString(message, "%S+")
+     
+    self.current_game.winner = message[1]
+	self.current_game.loser = message[2]
+    self.current_game.cash_winnings = message[3]
 end
 
 -- Button Interaction Callbacks (State and Settings)
