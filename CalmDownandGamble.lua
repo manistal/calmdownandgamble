@@ -697,6 +697,7 @@ function CalmDownandGamble:ConstructUI()
 	self.ui.CDG_Frame:SetStatusText("")
 	self.ui.CDG_Frame:SetLayout("Flow")
 	self.ui.CDG_Frame:SetStatusTable(cdg_ui_elements.main_frame)
+	self.ui.CDG_Frame:EnableResize(false)
 	self.ui.CDG_Frame:SetCallback("OnClose", function() self:HideUI() end)
 	
 	-- Set up edit box for gold -- 
