@@ -320,9 +320,7 @@ function CalmDownandGamble:HighLow()
 		elseif (player_score == high_score) then
 			high_player_playoff[player] = -1
 			high_player_playoff[high_player] = -1
-		end
-		
-		if (player_score < low_score) then
+		elseif (player_score < low_score) then
 			low_player = player
 			low_score = player_score
 			low_player_playoff = {}
