@@ -347,6 +347,7 @@ function CalmDownandGamble:HighLow()
 			self.current_game.high_roller_playoff = CopyTable(high_player_playoff)
 		else
 			self.current_game.winner = high_player
+			self.current_game.high_roller_playoff = nil
 		end
 	else
 		if low_playoff then
@@ -495,8 +496,9 @@ end
 -- ==================================================== 
 function CalmDownandGamble:RollCallback(...)
 	-- Parse the input Args 
-	local message = select(2, ...)
-	message = SplitString(message, "%S+")
+	local channel = select(1, ...)
+	local roll_text = select(2, ...)
+	local message = SplitString(roll_text, "%S+")
 	local player, roll, roll_range = message[1], message[3], message[4]
 	
 	-- Check that the roll is valid ( also that the message is for us)
@@ -505,6 +507,7 @@ function CalmDownandGamble:RollCallback(...)
 	if valid_roll then 
 		if (self.current_game.player_rolls[player] == -1) then
 			if DEBUG then self:Print("Player: "..player.." Roll: "..roll.." RollRange: "..roll_range) end
+			if channel == "CDG_ROLL_DICE" then SendSystemMessage(roll_text) end
 			self.current_game.player_rolls[player] = tonumber(roll)
 			self:CheckRollsComplete(false)
 		end
