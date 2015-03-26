@@ -203,8 +203,12 @@ function CDGClient:OpenTradeWinner()
     if (self.current_game.trade_open) then
         local copper = self.current_game.cash_winnings * 100 * 100 
         SetTradeMoney(copper)
-		if DEBUG then self:Print(copper) end
+
+        local sys_msg = "You added "..self.current_game.cash_winnings.." gold to the trade window."
+        SendSystemMessage(sys_msg)
+
         self.current_game.trade_open = false
+		if DEBUG then self:Print(copper) end
     else
         InitiateTrade(self.current_game.winner)
         
