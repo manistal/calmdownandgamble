@@ -94,6 +94,11 @@ function CalmDownandGamble:RegisterCallbacks()
 	self:RegisterChatCommand("cdghide", "HideUI")
 	self:RegisterChatCommand("cdgreset", "ResetStats")
 	self:RegisterChatCommand("cdgdebug", "SetDebug")
+	
+	
+	-- self:RegisterComm("CDG_NEW_GAME", "NewGameCallback")
+    -- self:RegisterComm("CDG_NEW_ROLL", "NewRollsCallback")
+    -- self:RegisterComm("CDG_END_GAME", "GameResultsCallback")
 end
 
 function CalmDownandGamble:SetDebug()
@@ -131,6 +136,7 @@ function CalmDownandGamble:StartGame()
 	self.game.options[self.db.global.game_mode_index].init()
 	
 	-- Register game callbacks
+	self:RegisterComm("CDG_ROLL_DICE", "RollCallback")
 	self:RegisterEvent("CHAT_MSG_SYSTEM", function(...) self:RollCallback(...) end)
 	self:RegisterEvent(self.chat.channel_callback, function(...) self:ChatChannelCallback(...) end)
 	if (self.chat.channel_callback_leader) then
@@ -143,6 +149,7 @@ function CalmDownandGamble:StartGame()
 	SendChatMessage(welcome_msg, self.chat.channel_const)
 	SendChatMessage("Press 1 to Join!", self.chat.channel_const)
 
+	
 	
 	local start_args = self.current_game.roll_lower.." "..self.current_game.roll_upper.." "..self.current_game.gold_amount
 	self:SendCommMessage("CDG_NEW_GAME", start_args, self.chat.channel_const)
@@ -524,6 +531,7 @@ function CalmDownandGamble:ChatChannelCallback(...)
 
 end
 
+
 -- Button Interaction Callbacks (State and Settings)
 -- ==================================================== 
 function CalmDownandGamble:PrintBanlist()
@@ -686,6 +694,7 @@ function CalmDownandGamble:ConstructUI()
 	self.ui.CDG_Frame:SetStatusText("")
 	self.ui.CDG_Frame:SetLayout("Flow")
 	self.ui.CDG_Frame:SetStatusTable(cdg_ui_elements.main_frame)
+	self.ui.CDG_Frame:SetCallback("OnClose", function() self:HideUI() end)
 	
 	-- Set up edit box for gold -- 
 	self.ui.gold_amount_entry = AceGUI:Create("EditBox")

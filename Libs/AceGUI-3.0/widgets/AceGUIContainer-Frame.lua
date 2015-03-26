@@ -128,14 +128,6 @@ local methods = {
 		self.frame:Show()
 	end,
 
-    ["DisableResize"] = function(self)
-        self.frame:SetResizable(false)
-    end,
-
-    ["SetUserPlaced"] = function(self)
-        self.frame:SetUserPlaced(true)
-    end,
-
 	["EnableResize"] = function(self, state)
 		local func = state and "Show" or "Hide"
 		self.sizer_se[func](self.sizer_se)

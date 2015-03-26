@@ -5,7 +5,7 @@ CDGClient = LibStub("AceAddon-3.0"):NewAddon("CDGClient", "AceConsole-3.0", "Ace
 local CDGClient	= LibStub("AceAddon-3.0"):GetAddon("CDGClient")
 local AceGUI = LibStub("AceGUI-3.0")
 
-local DEBUG = true
+local DEBUG = false
 
 -- Basic Adddon Initialization stuff, virtually inherited functions 
 -- ================================================================ 
@@ -18,9 +18,9 @@ function CDGClient:OnInitialize()
 	local defaults = {
 	   global = {
 			rankings = { },
-			chat_index = 1,
 			game_mode_index = 1, 
-			window_shown = true
+			window_shown = false,
+			auto_pop = true
 		}
 	}
 
@@ -44,28 +44,6 @@ end
 -- Initialization Helper Functions
 -- ===========================================
 function CDGClient:InitState()
-	-- Chat Context -- 
-	self.chat = {}
-	self.game = {}
-	self:SetChannelSettings()
-end
-
-function CDGClient:SetChannelSettings() 
-
-	self.chat.options = {
-			{ label = "Raid"  , const = "RAID"  , callback = "CHAT_MSG_RAID"  , callback_leader = "CHAT_MSG_RAID_LEADER"  }, -- Index 1
-			{ label = "Party" , const = "PARTY" , callback = "CHAT_MSG_PARTY" , callback_leader = "CHAT_MSG_PARTY_LEADER" }, -- Index 2
-			{ label = "Guild" , const = "GUILD" , callback = "CHAT_MSG_GUILD" , callback_leader = nil },                     -- Index 3
-			{ label = "Say"   , const = "SAY"   , callback = "CHAT_MSG_SAY"   , callback_leader = nil },                     -- Index 4
-	}	
-	self.chat.channel_const = "RAID"   -- What the WoW API is looking for, CHANNEL for numeric channels
-	
-	if DEBUG then self:Print(self.chat.options[self.db.global.chat_index].label) end
-	
-	self.chat.channel_const = self.chat.options[self.db.global.chat_index].const
-	self.ui.chat_channel:SetText(self.chat.options[self.db.global.chat_index].label)
-	self.chat.channel_callback = self.chat.options[self.db.global.chat_index].callback
-	self.chat.channel_callback_leader = self.chat.options[self.db.global.chat_index].callback_leader
 
 end
 
@@ -76,13 +54,17 @@ function CDGClient:RegisterCallbacks()
 	self:RegisterChatCommand("cdgcshow", "ShowUI")
 	self:RegisterChatCommand("cdgchide", "HideUI")
 	self:RegisterChatCommand("cdgcdebug", "SetDebug")
+	self:RegisterChatCommand("cdgcdisable", "DisablePop")
+	self:RegisterChatCommand("cdgcenable", "EnablePop")
 
+	self:RegisterEvent("CHAT_MSG_SYSTEM", "RollCallback")
+	
     -- callbacks to get game information from master
     self:RegisterComm("CDG_NEW_GAME", "NewGameCallback")
     self:RegisterComm("CDG_NEW_ROLL", "NewRollsCallback")
     self:RegisterComm("CDG_END_GAME", "GameResultsCallback")
 	
-	self:Print("REG COMPLETE")
+	if DEBUG then self:Print("REGISTRATIONS COMPLETE") end
 end
 
 function CDGClient:SetDebug()
@@ -99,6 +81,13 @@ function CDGClient:HideUI()
 	self.db.global.window_shown = false
 end
 
+function CDGClient:DisablePop()
+	self.db.global.auto_pop = false
+end
+function CDGClient:EnablePop()
+	self.db.global.auto_pop = true
+end
+
 function CDGClient:ResetStats()
 	self.db.global.rankings = {}
 end
@@ -109,16 +98,22 @@ function CDGClient:RollCallback(...)
 	-- Parse the input Args 
 	local roll_text = select(2, ...)
 	local message = SplitString(roll_text, "%S+")
-	local player, roll, roll_range = message[1], message[3], message[4]
+	local sender, roll, roll_range = message[1], message[3], message[4]
 	
 	-- Check that the roll is valid ( also that the message is for us)
-	local valid_roll = (self.current_game.roll_range == roll_range) 
+	local valid_roll = self.current_game and (self.current_game.roll_range == roll_range) 
 
-	if valid_roll then 
+	local player, realm = UnitName("player")
+	local valid_source = (sender == player) 
+	
+	if valid_roll and valid_source then 
         -- BRODACAST TO MASTER -- 
         -- Example AceComm call to send rolls to master so we can do this in guild
         -- Master needs to register for CDG_ROLL_DICE event
-        -- self:SendCommMessage("CDG_ROLL_DICE", roll_text, "GUILD")
+        self:SendCommMessage("CDG_ROLL_DICE", roll_text, "GUILD")
+		local roll_msg = "Rolled: "..roll.." "..self.current_game.roll_range.."  Cash: "..self.current_game.cash_winnings
+		--self.ui.CDG_Frame:SetStatusText(roll_msg)
+		if DEBUG then self:Print(roll_text) end
 	end
 	
 end
@@ -147,12 +142,20 @@ function CDGClient:NewGameCallback(...)
 	self.current_game.channel_const = chat
 	self.current_game.roll_range = "("..self.current_game.roll_lower.."-"..self.current_game.roll_upper..")"
 	
+	if self.db.global.auto_pop then
+		self.ui.CDG_Frame:Show()
+		local new_game_msg = "Roll: "..self.current_game.roll_range.."   Cash: "..self.current_game.cash_winnings
+		self.ui.CDG_Frame:SetStatusText(new_game_msg)
+	end
+	
 	if DEBUG then
 		self:Print(self.current_game.roll_lower)
 		self:Print(self.current_game.roll_upper)
 		self:Print(self.current_game.channel_const)
 		self:Print(self.current_game.roll_range)
 	end
+	
+
 	
 end
 
@@ -171,6 +174,10 @@ function CDGClient:GameResultsCallback(...)
     self.current_game.winner = message[1]
 	self.current_game.loser = message[2]
     self.current_game.cash_winnings = message[3]
+	
+	local results_msg = self.current_game.cash_winnings.."g "..self.current_game.loser.." = > "..self.current_game.winner
+	self.ui.CDG_Frame:SetStatusText(results_msg)
+	
 end
 
 -- Button Interaction Callbacks (State and Settings)
@@ -180,14 +187,9 @@ function CDGClient:RollForMe()
 end
 
 function CDGClient:EnterForMe()
-	SendChatMessage("1", self.chat.channel_const)
-end
-
-function CDGClient:ChatChannelToggle()
-	self.db.global.chat_index = self.db.global.chat_index + 1
-	if self.db.global.chat_index > table.getn(self.chat.options) then self.db.global.chat_index = 1 end
-
-	self:SetChannelSettings()
+	if self.current_game then 
+		SendChatMessage("1", self.current_game.channel_const)
+	end
 end
 
 function CDGClient:TradeOpen()
@@ -195,13 +197,16 @@ function CDGClient:TradeOpen()
 end
 
 function CDGClient:OpenTradeWinner()
+	self:RegisterEvent("TRADE_SHOW", function() self:TradeOpen() end)
+
     if (self.current_game.trade_open) then
         local copper = self.current_game.cash_winnings * 100 * 100 
         SetTradeMoney(copper)
+		if DEBUG then self:Print(copper) end
         self.current_game.trade_open = false
     else
         InitiateTrade(self.current_game.winner)
-        self:RegisterEvent("TRADE_SHOW", function() self:TradeOpen() end)
+        
     end
 end
 
@@ -213,39 +218,32 @@ function CDGClient:ConstructUI()
 	local cdg_ui_elements = {
 		-- Main Box Frame -- 
 		main_frame = {
-			width = 300,
-			height = 125
+			width = 350,
+			height = 100
 		},
 		
 		-- Order in which the buttons are layed out -- 
 		button_index = {
-			"roll_for_me",
 			"enter_for_me",
-			"open_trade",
-			"chat_channel"
-            
+			"roll_for_me",
+			"open_trade"
 		},
 		
 		-- Button Definitions -- 
 		buttons = {
-			chat_channel = {
-				width = 125,
-				label = "Raid",
-				click_callback = function() self:ChatChannelToggle() end
-			},
 			roll_for_me = {
-				width = 125,
-				label = "Roll For Me",
+				width = 100,
+				label = "Roll",
 				click_callback = function() self:RollForMe() end
 			},
 			enter_for_me = {
-				width = 125,
-				label = "Enter Me",
+				width = 100,
+				label = "Enter",
 				click_callback = function() self:EnterForMe() end
 			},
 			open_trade = {
-				width = 125,
-				label = "Trade Winner",
+				width = 100,
+				label = "TradeGold",
 				click_callback = function() self:OpenTradeWinner() end
 			}
 		}
@@ -260,6 +258,10 @@ function CDGClient:ConstructUI()
 	self.ui.CDG_Frame:SetStatusText("")
 	self.ui.CDG_Frame:SetLayout("Flow")
 	self.ui.CDG_Frame:SetStatusTable(cdg_ui_elements.main_frame)
+	self.ui.CDG_Frame:EnableResize(false)
+	self.ui.CDG_Frame:SetCallback("OnClose", function() self:HideUI() end)
+	-- self.ui.CDG_Frame:DisableResize()
+	-- self.ui.CDG_Frame:SetUserPlaced()
 	
 	-- Set up Buttons Above Text Box-- 
 	for _, button_name in pairs(cdg_ui_elements.button_index) do
