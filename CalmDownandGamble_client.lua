@@ -142,7 +142,10 @@ function CDGClient:NewGameCallback(...)
 	self.current_game.channel_const = chat
 	self.current_game.roll_range = "("..self.current_game.roll_lower.."-"..self.current_game.roll_upper..")"
 	
-	if self.db.global.auto_pop then
+
+	local player, realm = UnitName("player")
+	local valid_source = (sender ~= player) 
+	if self.db.global.auto_pop and valid_source then
 		self.ui.CDG_Frame:Show()
 		local new_game_msg = "Roll: "..self.current_game.roll_range.."   Cash: "..self.current_game.cash_winnings
 		self.ui.CDG_Frame:SetStatusText(new_game_msg)
@@ -154,8 +157,6 @@ function CDGClient:NewGameCallback(...)
 		self:Print(self.current_game.channel_const)
 		self:Print(self.current_game.roll_range)
 	end
-	
-
 	
 end
 
