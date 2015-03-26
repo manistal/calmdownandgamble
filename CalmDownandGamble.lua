@@ -18,6 +18,7 @@ function CalmDownandGamble:OnInitialize()
 	local defaults = {
 	    global = {
 			rankings = { },
+			ban_list = { },
 			chat_index = 1,
 			game_mode_index = 1, 
 			window_shown = false
@@ -94,6 +95,8 @@ function CalmDownandGamble:RegisterCallbacks()
 	self:RegisterChatCommand("cdghide", "HideUI")
 	self:RegisterChatCommand("cdgreset", "ResetStats")
 	self:RegisterChatCommand("cdgdebug", "SetDebug")
+	self:RegisterChatCommand("cdgban", "BanPlayer")
+	self:RegisterChatCommand("cdgunban", "UnBanPlayer")
 	
 	
 	-- self:RegisterComm("CDG_NEW_GAME", "NewGameCallback")
@@ -103,6 +106,14 @@ end
 
 function CalmDownandGamble:SetDebug()
 	DEBUG = not DEBUG
+end
+
+function CalmDownandGamble:BanPlayer(player)
+    self.db.global.ban_list[player] = true
+end
+
+function CalmDownandGamble:BanPlayer(player)
+    self.db.global.ban_list[player] = nil
 end
 
 function CalmDownandGamble:ShowUI()
@@ -525,6 +536,7 @@ function CalmDownandGamble:ChatChannelCallback(...)
 		(self.current_game.player_rolls[sender] == nil) 
 		and (self.current_game.accepting_players) 
 		and (message == "1")
+        and (not self.db.global.ban_list[sender])
 	)
 	
 	if (player_join) then
@@ -538,7 +550,10 @@ end
 -- Button Interaction Callbacks (State and Settings)
 -- ==================================================== 
 function CalmDownandGamble:PrintBanlist()
-    -- Todo implement bans -- 
+	SendChatMessage("Hall of GTFO:", self.chat.channel_const)
+	for player, _ in pairs(self.db.global.ban_list) do
+		SendChatMessage(player, self.chat.channel_const)
+    end
 end
 
 function CalmDownandGamble:PrintRanklist()
