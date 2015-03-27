@@ -75,11 +75,11 @@ end
 function CalmDownandGamble:SetGameMode() 
 
 	self.game.options = {
-			{ label = "High-Low",  evaluate = function() self:HighLowWrap() end, init = function() self:DefaultGameInit() end }, -- Index 1
-			{ label = "Inverse",   evaluate = function() self:Inverse() end,     init = function() self:DefaultGameInit() end }, -- Index 2
-			{ label = "MiddleMan", evaluate = function() self:Median() end,      init = function() self:DefaultGameInit() end }, -- Index 3
-			{ label = "Yahtzee",   evaluate = function() self:Yahtzee() end,     init = function() self:YahtzeeInit() end },     -- Index 4
-			{ label = "BigTWOS",   evaluate = function() self:HighLowWrap() end,     init = function() self:TwosInit() end },     -- Index 5
+			{ label = "High-Low",  evaluate = function() self:HighLow() end, init = function() self:DefaultGameInit() end }, -- Index 1
+			{ label = "Inverse",   evaluate = function() self:Inverse() end, init = function() self:DefaultGameInit() end }, -- Index 2
+			{ label = "MiddleMan", evaluate = function() self:Median() end,  init = function() self:DefaultGameInit() end }, -- Index 3
+			{ label = "Yahtzee",   evaluate = function() self:Yahtzee() end, init = function() self:YahtzeeInit() end },     -- Index 4
+			{ label = "BigTWOS",   evaluate = function() self:Twos() end, init = function() self:TwosInit() end },     -- Index 5
 	}	
 	
 	if DEBUG then self:Print(self.game.options[self.db.global.game_mode_index].label) end
@@ -137,11 +137,18 @@ end
 -- (1) Game will always start here in start game
 function CalmDownandGamble:StartGame()
 	-- Init our game
-	self.current_game = {}
-	self.current_game.accepting_rolls = false
-	self.current_game.accepting_players = true
-	self.current_game.high_roller_playoff = nil
-	self.current_game.low_roller_playoff = nil
+	self.current_game = {
+		accepting_players = true,
+		accepting_rolls = false,
+		high_tiebreaker = false,
+		low_tiebreaker = false,
+		high_roller_playoff = nil,
+		low_roller_playoff = nil,
+		winner = nil,
+		loser = nil,
+		player_rolls = {}
+	}
+
 	self.current_game.player_rolls = {}
 	
 	self.game.options[self.db.global.game_mode_index].init()
@@ -174,9 +181,11 @@ function CalmDownandGamble:StartRolls()
 	if (self.current_game.high_roller_playoff) then
 		self.current_game.player_rolls = CopyTable(self.current_game.high_roller_playoff)
 		roll_msg = "High Roller TieBreaker! "..format_player_names(self.current_game.high_roller_playoff)
+		self.current_game.high_tiebreaker = true
 	elseif (self.current_game.low_roller_playoff) then
 		self.current_game.player_rolls = CopyTable(self.current_game.low_roller_playoff)
 		roll_msg = "Low Roller TieBreaker! "..format_player_names(self.current_game.low_roller_playoff)
+		self.current_game.low_tiebreaker = true
 	else
 		roll_msg = "Time to roll! Good Luck! Command:   /roll "..self.current_game.roll_range
 	end
@@ -272,6 +281,95 @@ end
 -- cashwinnings winner and loser
 -- ============================================================================
 
+-- SCORING FUNCTION
+-- ===================
+function CalmDownandGamble:EvaluateScores()
+	
+	if DEBUG then self:Print("Evaluating Scores") end
+		
+	local winners = {}
+	local high_player = nil
+	local losers = {}
+	local low_player = nil
+	
+	-- Iterate downwards over the list and find highest scores
+	local descending_itr = 1
+	local high_score = 0
+	local sort_descending = function(t,a,b) return t[b] < t[a] end
+	for player, score in sortedpairs(self.current_game.player_rolls, sort_descending) do
+		self:Print(player.." "..score)
+		if descending_itr == 1 then
+			high_score = score
+			high_player = player
+			winners[player] = -1
+		elseif descending_itr > 1 and score == high_score then
+			winners[player] = -1
+		else
+			break
+		end
+		descending_itr = descending_itr + 1
+	end
+	
+	if (TableLength(winners) ~= TableLength(self.current_game.player_rolls)) then 
+		-- Iterate upwards over the list and find lowest scores
+		local ascending_itr = 1
+		local low_score = 0
+		local sort_ascending = function(t,a,b) return t[b] > t[a] end
+		for player, score in sortedpairs(self.current_game.player_rolls, sort_ascending) do
+			self:Print(player.." "..score)
+			if ascending_itr == 1 then
+				low_score = score
+				low_player = player
+				losers[player] = -1
+			elseif ascending_itr > 1 and score == low_score then
+				losers[player] = -1
+			else
+				break
+			end
+			ascending_itr = ascending_itr + 1
+		end
+	end
+	
+	-- Determine if we have a winner
+	if (not self.current_game.low_tiebreaker) then 
+		if (TableLength(winners) == 1) then
+			self.current_game.winner = high_player
+			self.current_game.winning_roll = self.current_game.player_rolls[high_player]
+			self.current_game.high_tiebreaker = false
+			self:Print("FOUND WINNER "..high_player) 
+		else
+			self.current_game.high_roller_playoff = CopyTable(winners)
+			self:Print("HIGH TIE")
+		end
+	end
+	
+	-- Determine if we have a loser
+	if (not self.current_game.high_tiebreaker) then 
+		if (TableLength(losers) == 1) then 
+			self.current_game.loser = low_player
+			self.current_game.losing_roll = self.current_game.player_rolls[low_player]
+			self.current_game.low_tiebreaker = false
+			self:Print("FOUND LOSER "..low_player..self.current_game.high_tiebreaker) 
+		else
+			self.current_game.low_roller_playoff = CopyTable(losers)
+			self:Print("Low TIE")
+		end
+	end
+	
+	local game_over = ((self.current_game.winner ~= nil) and (self.current_game.loser ~= nil))
+	
+	self:Print(game_over)
+	if not game_over then
+		self:StartRolls()
+		return false
+	end
+	self:Print("RETURNING TRUE")
+	return true
+end
+
+-- GAME MODE INITS 
+-- =========================
+
 -- DEFAULT INIT -- Used by almost everything
 function CalmDownandGamble:DefaultGameInit() 
 	self:SetGoldAmount()
@@ -296,87 +394,48 @@ function CalmDownandGamble:TwosInit()
 	self.current_game.roll_lower = 1
 end
 
--- Basic scoring function, will pick out highest and lowest from the list
--- of rolls, can be overloaded (such as in inverse and yahtzee)
+-- Game mode: High Low
+-- =================================================
 function CalmDownandGamble:HighLow()
+	if (CalmDownandGamble:EvaluateScores()) then
+		self:Print("RETURNED TRUE")
+		self.cash_winnings = self.current_game.winning_roll - self.current_game.losing_roll
+		SendChatMessage(self.current_game.loser.." owes "..self.current_game.winner.." "..self.current_game.cash_winnings.." gold!", self.chat.channel_const)
 	
-	if DEBUG then self:Print("Evaluating High Low") end
-	
-	local high_player, low_player = "", ""
-	local high_score, low_score = 0, 999999
-	
-	local high_player_playoff = {}
-	local low_player_playoff = {}
-	
-	for player, roll in pairs(self.current_game.player_rolls) do
-	
-		player_score = tonumber(roll)
-		if DEBUG then self:Print(player.." "..player_score) end
-		
-		if (player_score > high_score) then
-			high_player = player
-			high_score = player_score
-			high_player_playoff = {}
-		elseif (player_score == high_score) then
-			high_player_playoff[player] = -1
-			high_player_playoff[high_player] = -1
-		elseif (player_score < low_score) then
-			low_player = player
-			low_score = player_score
-			low_player_playoff = {}
-		elseif (player_score == low_score) then
-			low_player_playoff[player] = -1
-			low_player_playoff[low_player] = -1
-		end
-		
+		-- Log Results -- All game modes must call these two explicitly
+		self:LogResults()
+		self:EndGame()
 	end
-	
-	-- Currently a play off -- 
-	local high_playoff = (TableLength(high_player_playoff) ~= 0)
-	local low_playoff = (TableLength(low_player_playoff) ~= 0)
-
-	local first_rolls = (self.current_game.high_roller_playoff == nil) and (self.current_game.low_roller_playoff == nil)
-	local prev_high_playoff = (self.current_game.high_roller_playoff ~= nil)
-
-	if first_rolls then
-		if high_playoff then
-			self.current_game.high_roller_playoff = CopyTable(high_player_playoff)
-		else
-			self.current_game.winner = high_player
-		end
-		
-		if low_playoff then
-			self.current_game.low_roller_playoff = CopyTable(low_player_playoff)
-		else
-			self.current_game.loser = low_player
-		end
-		
-	elseif prev_high_playoff then
-		if high_playoff then
-			self.current_game.high_roller_playoff = CopyTable(high_player_playoff)
-		else
-			self.current_game.winner = high_player
-			self.current_game.high_roller_playoff = nil
-		end
-	else
-		if low_playoff then
-			self.current_game.low_roller_playoff = CopyTable(low_player_playoff)
-		else
-			self.current_game.loser = low_player
-		end
-	end
-	
-	local found_winner = (self.current_game.winner ~= nil)
-	local found_loser =  (self.current_game.loser ~= nil)
-
-	if not (found_winner and found_loser) then
-		self:StartRolls()
-		return
-	end
-	
-	self.current_game.cash_winnings = high_score - low_score
-
 end
+
+-- Game mode: Twos
+-- =================================================
+function CalmDownandGamble:Twos()
+	if (CalmDownandGamble:EvaluateScores()) then
+		self:Print("RETURNED TRUE")
+		self.current_game.cash_winnings = self.current_game.gold_amount
+		SendChatMessage(self.current_game.loser.." owes "..self.current_game.winner.." "..self.current_game.cash_winnings.." gold!", self.chat.channel_const)
+	
+		-- Log Results -- All game modes must call these two explicitly
+		self:LogResults()
+		self:EndGame()
+	end
+end
+
+
+-- Game mode: Inverse
+-- =================================================
+function CalmDownandGamble:Inverse()
+	if (CalmDownandGamble:EvaluateScores()) then
+		self.current_game.winner, self.current_game.loser = self.current_game.loser, self.current_game.winner
+		SendChatMessage(self.current_game.loser.." owes "..self.current_game.winner.." "..self.current_game.cash_winnings.." gold!", self.chat.channel_const)
+	
+		-- Log Results -- All game modes must call these two explicitly
+		self:LogResults()
+		self:EndGame()
+	end
+end
+
 
 -- Game mode: Yahtze 
 -- =================================================
@@ -401,7 +460,6 @@ function CalmDownandGamble:ScoreYahtzee(roll)
 	return score
 end
 
-
 function CalmDownandGamble:Yahtzee()
 
 	local player_scores = {}
@@ -417,14 +475,15 @@ function CalmDownandGamble:Yahtzee()
 
 	self.current_game.player_rolls = {}
 	self.current_game.player_rolls = CopyTable(player_scores)
-	self:HighLow()
-	self.current_game.cash_winnings = self.current_game.gold_amount
 	
-	SendChatMessage(self.current_game.loser.." owes "..self.current_game.winner.." "..self.current_game.cash_winnings.." gold!", self.chat.channel_const)
+	if (self:EvaluateScores()) then 
+		self.current_game.cash_winnings = self.current_game.gold_amount
+		SendChatMessage(self.current_game.loser.." owes "..self.current_game.winner.." "..self.current_game.cash_winnings.." gold!", self.chat.channel_const)
 	
-	-- Log Results -- All game modes must call these two explicitly
-	self:LogResults()
-	self:EndGame()
+		-- Log Results -- All game modes must call these two explicitly
+		self:LogResults()
+		self:EndGame()
+	end
 	
 end
 
@@ -472,33 +531,6 @@ function CalmDownandGamble:Median()
 	
 	self:EndGame()
 end
-
--- Game mode: High Low
--- =================================================
-function CalmDownandGamble:HighLowWrap()
-	CalmDownandGamble:HighLow()
-	
-	SendChatMessage(self.current_game.loser.." owes "..self.current_game.winner.." "..self.current_game.cash_winnings.." gold!", self.chat.channel_const)
-	
-	-- Log Results -- All game modes must call these two explicitly
-	self:LogResults()
-	self:EndGame()
-end
-
--- Game mode: Inverse
--- =================================================
-function CalmDownandGamble:Inverse()
-	CalmDownandGamble:HighLow()
-	
-	self.current_game.winner, self.current_game.loser = self.current_game.loser, self.current_game.winner
-	
-	SendChatMessage(self.current_game.loser.." owes "..self.current_game.winner.." "..self.current_game.cash_winnings.." gold!", self.chat.channel_const)
-	
-	-- Log Results -- All game modes must call these two explicitly
-	self:LogResults()
-	self:EndGame()
-end
-
 
 
 -- ChatFrame Interaction Callbacks (Entry and Rolls)
@@ -556,10 +588,10 @@ end
 
 function CalmDownandGamble:PrintRanklist()
 
-	sort_by_score = function(t,a,b) return t[b] < t[a] end
-	index = 1
 	SendChatMessage("Hall of Fame: ", self.chat.channel_const)
-	for player, gold in sortedpairs(self.db.global.rankings, sort_by_score) do
+	local index = 1
+	local sort_descending = function(t,a,b) return t[b] < t[a] end
+	for player, gold in sortedpairs(self.db.global.rankings, sort_descending) do
 		if gold <= 0 then break end
 		
 		local msg = string.format("%d. %s won %d gold.", index, player, gold)
@@ -569,10 +601,10 @@ function CalmDownandGamble:PrintRanklist()
 	
 	SendChatMessage("~~~~~~", self.chat.channel_const)
 	
-	sort_by_score = function(t,a,b) return t[b] > t[a] end
-	index = 1
 	SendChatMessage("Hall of Shame: ", self.chat.channel_const)
-	for player, gold in sortedpairs(self.db.global.rankings, sort_by_score) do
+	index = 1
+	local sort_ascending = function(t,a,b) return t[b] > t[a] end
+	for player, gold in sortedpairs(self.db.global.rankings, sort_ascending) do
 		if gold >= 0 then break end
 	
 		local msg = string.format("%d. %s lost %d gold.", index, player, math.abs(gold))
@@ -583,7 +615,7 @@ function CalmDownandGamble:PrintRanklist()
 end
 
 function CalmDownandGamble:RollForMe()
-	RandomRoll(1, self.current_game.gold_amount)
+	RandomRoll(self.current_game.roll_lower, self.current_game.roll_upper)
 end
 
 function CalmDownandGamble:EnterForMe()
