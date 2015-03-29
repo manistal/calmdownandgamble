@@ -97,7 +97,7 @@ function CalmDownandGamble:RegisterCallbacks()
 	self:RegisterChatCommand("cdgdebug", "SetDebug")
 	self:RegisterChatCommand("cdgban", "BanPlayer")
 	self:RegisterChatCommand("cdgunban", "UnBanPlayer")
-	
+
 	
 	-- self:RegisterComm("CDG_NEW_GAME", "NewGameCallback")
     -- self:RegisterComm("CDG_NEW_ROLL", "NewRollsCallback")
@@ -148,8 +148,6 @@ function CalmDownandGamble:StartGame()
 		loser = nil,
 		player_rolls = {}
 	}
-
-	self.current_game.player_rolls = {}
 	
 	self.game.options[self.db.global.game_mode_index].init()
 	
@@ -166,8 +164,6 @@ function CalmDownandGamble:StartGame()
 	local welcome_msg = "CDG is now in session! Mode: "..self.game.options[self.db.global.game_mode_index].label..", Bet: "..self.current_game.gold_amount.." gold"
 	SendChatMessage(welcome_msg, self.chat.channel_const)
 	SendChatMessage("Press 1 to Join!", self.chat.channel_const)
-
-	
 	
 	local start_args = self.current_game.roll_lower.." "..self.current_game.roll_upper.." "..self.current_game.gold_amount
 	self:SendCommMessage("CDG_NEW_GAME", start_args, self.chat.channel_const)
@@ -175,22 +171,13 @@ function CalmDownandGamble:StartGame()
 end
 
 -- (2) After accepting entries via chat callbacks, start the rolls
-function CalmDownandGamble:StartRolls()
-
-	local roll_msg = ""
-	if (self.current_game.high_roller_playoff) then
-		self.current_game.player_rolls = CopyTable(self.current_game.high_roller_playoff)
-		roll_msg = "High Roller TieBreaker! "..format_player_names(self.current_game.high_roller_playoff)
-		self.current_game.high_tiebreaker = true
-	elseif (self.current_game.low_roller_playoff) then
-		self.current_game.player_rolls = CopyTable(self.current_game.low_roller_playoff)
-		roll_msg = "Low Roller TieBreaker! "..format_player_names(self.current_game.low_roller_playoff)
-		self.current_game.low_tiebreaker = true
-	else
-		roll_msg = "Time to roll! Good Luck! Command:   /roll "..self.current_game.roll_range
-	end
+function CalmDownandGamble:NewRolls()
+	local roll_msg = "Time to roll! Good Luck! Command:   /roll "..self.current_game.roll_range
 	SendChatMessage(roll_msg, self.chat.channel_const)
-	
+	self:StartRolls()
+end
+
+function CalmDownandGamble:StartRolls()
 	self.current_game.accepting_rolls = true
 	self.current_game.accepting_players = false
 end
@@ -270,6 +257,7 @@ function CalmDownandGamble:CheckRollsComplete(print_players)
 	end
 	
 	if (rolls_complete) then
+		self.game.accepting_rolls = false
 		self.game.options[self.db.global.game_mode_index].evaluate()
 	end
 	
@@ -310,6 +298,7 @@ function CalmDownandGamble:EvaluateScores()
 		descending_itr = descending_itr + 1
 	end
 	
+	-- In the case that everyone is tied for winning, dont look for losers
 	if (TableLength(winners) ~= TableLength(self.current_game.player_rolls)) then 
 		-- Iterate upwards over the list and find lowest scores
 		local ascending_itr = 1
@@ -335,7 +324,7 @@ function CalmDownandGamble:EvaluateScores()
 		if (TableLength(winners) == 1) then
 			self.current_game.winner = high_player
 			self.current_game.winning_roll = self.current_game.player_rolls[high_player]
-			self.current_game.high_tiebreaker = false
+
 			self:Print("FOUND WINNER "..high_player) 
 		else
 			self.current_game.high_roller_playoff = CopyTable(winners)
@@ -344,11 +333,12 @@ function CalmDownandGamble:EvaluateScores()
 	end
 	
 	-- Determine if we have a loser
-	if (not self.current_game.high_tiebreaker) then 
+	local loser_high_roller = (self.current_game.low_roller_playoff == nil) and (self.current_game.high_roller_playoff) and (self.current_game.loser == nil)
+	if (not self.current_game.high_tiebreaker) or loser_high_roller then 
 		if (TableLength(losers) == 1) then 
 			self.current_game.loser = low_player
 			self.current_game.losing_roll = self.current_game.player_rolls[low_player]
-			self.current_game.low_tiebreaker = false
+
 			self:Print("FOUND LOSER "..low_player..self.current_game.high_tiebreaker) 
 		else
 			self.current_game.low_roller_playoff = CopyTable(losers)
@@ -356,14 +346,36 @@ function CalmDownandGamble:EvaluateScores()
 		end
 	end
 	
-	local game_over = ((self.current_game.winner ~= nil) and (self.current_game.loser ~= nil))
 	
+	local game_over = ((self.current_game.winner ~= nil) and (self.current_game.loser ~= nil))
 	self:Print(game_over)
+	
+	-- DETERMINE TIEBREAKER
 	if not game_over then
+		self:Print("GAME OVER")
+		if (TableLength(self.current_game.high_roller_playoff) > 1) then
+			self:Print("HIGH ROLLERS")
+			self.current_game.player_rolls = CopyTable(self.current_game.high_roller_playoff)
+			self.current_game.high_tiebreaker = true
+			self.current_game.low_tiebreaker = false
+			
+			local roll_msg = "High Roller TieBreaker! "..format_player_names(self.current_game.high_roller_playoff)
+			SendChatMessage(roll_msg, self.chat.channel_const)
+			
+		elseif (TableLength(self.current_game.low_roller_playoff) > 1) then
+			self:Print("LOW ROLLERS")
+			self.current_game.player_rolls = CopyTable(self.current_game.low_roller_playoff)
+			self.current_game.high_tiebreaker = false
+			self.current_game.low_tiebreaker = true
+			
+			local roll_msg = "Low Roller TieBreaker! "..format_player_names(self.current_game.low_roller_playoff)
+			SendChatMessage(roll_msg, self.chat.channel_const)
+		end
+		
 		self:StartRolls()
 		return false
 	end
-	self:Print("RETURNING TRUE")
+
 	return true
 end
 
@@ -627,7 +639,7 @@ function CalmDownandGamble:LastCall()
 		self:CheckRollsComplete(true)
 	elseif (self.current_game.accepting_players) then
 		SendChatMessage("Last call! 10 seconds left!", self.chat.channel_const)
-		self:ScheduleTimer("StartRolls", 10)
+		self:ScheduleTimer("NewRolls", 10)
 	end
 end
 
@@ -716,7 +728,7 @@ function CalmDownandGamble:ConstructUI()
 			start_gambling = {
 				width = 100,
 				label = "Start Rolls!",
-				click_callback = function() self:StartRolls() end
+				click_callback = function() self:NewRolls() end
 			},
 			last_call = {
 				width = 100,
@@ -789,6 +801,7 @@ function CopyTable(T)
 end
 
 function TableLength(T)
+  if (T == nil) then return 0 end
   local count = 0
   for _ in pairs(T) do count = count + 1 end
   return count
