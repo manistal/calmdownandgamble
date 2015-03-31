@@ -275,108 +275,109 @@ function CalmDownandGamble:EvaluateScores()
 	
 	if DEBUG then self:Print("Evaluating Scores") end
 		
-	local winners = {}
-	local high_player = nil
-	local losers = {}
-	local low_player = nil
+    -- Init the loop vars
+	local high_player, low_player = "", ""
+	local high_score, low_score = 0, 999999
+	local high_player_playoff = {}
+	local low_player_playoff = {}
 	
-	-- Iterate downwards over the list and find highest scores
-	local descending_itr = 1
-	local high_score = 0
-	local sort_descending = function(t,a,b) return t[b] < t[a] end
-	for player, score in sortedpairs(self.current_game.player_rolls, sort_descending) do
-		self:Print(player.." "..score)
-		if descending_itr == 1 then
-			high_score = score
+    -- Loop over the players and look for highest/lowest/etc
+	for player, roll in pairs(self.current_game.player_rolls) do
+	
+		player_score = tonumber(roll)
+		if DEBUG then self:Print(player.." "..player_score) end
+		
+		if (player_score > high_score) then
 			high_player = player
-			winners[player] = -1
-		elseif descending_itr > 1 and score == high_score then
-			winners[player] = -1
-		else
-			break
-		end
-		descending_itr = descending_itr + 1
-	end
-	
-	-- In the case that everyone is tied for winning, dont look for losers
-	if (TableLength(winners) ~= TableLength(self.current_game.player_rolls)) then 
-		-- Iterate upwards over the list and find lowest scores
-		local ascending_itr = 1
-		local low_score = 0
-		local sort_ascending = function(t,a,b) return t[b] > t[a] end
-		for player, score in sortedpairs(self.current_game.player_rolls, sort_ascending) do
-			self:Print(player.." "..score)
-			if ascending_itr == 1 then
-				low_score = score
-				low_player = player
-				losers[player] = -1
-			elseif ascending_itr > 1 and score == low_score then
-				losers[player] = -1
-			else
-				break
-			end
-			ascending_itr = ascending_itr + 1
-		end
-	end
-	
-	-- Determine if we have a winner
-	if (not self.current_game.low_tiebreaker) then 
-		if (TableLength(winners) == 1) then
-			self.current_game.winner = high_player
-			self.current_game.winning_roll = self.current_game.player_rolls[high_player]
+			high_score = player_score
+			high_player_playoff = {}
+		elseif (player_score == high_score) then
+			high_player_playoff[player] = -1
+			high_player_playoff[high_player] = -1
+        end
 
-			self:Print("FOUND WINNER "..high_player) 
-		else
-			self.current_game.high_roller_playoff = CopyTable(winners)
-			self:Print("HIGH TIE")
-		end
-	end
-	
-	-- Determine if we have a loser
-	local loser_high_roller = (self.current_game.low_roller_playoff == nil) and (self.current_game.high_roller_playoff) and (self.current_game.loser == nil)
-	if (not self.current_game.high_tiebreaker) or loser_high_roller then 
-		if (TableLength(losers) == 1) then 
-			self.current_game.loser = low_player
-			self.current_game.losing_roll = self.current_game.player_rolls[low_player]
-
-			self:Print("FOUND LOSER "..low_player..self.current_game.high_tiebreaker) 
-		else
-			self.current_game.low_roller_playoff = CopyTable(losers)
-			self:Print("Low TIE")
-		end
-	end
-	
-	
-	local game_over = ((self.current_game.winner ~= nil) and (self.current_game.loser ~= nil))
-	self:Print(game_over)
-	
-	-- DETERMINE TIEBREAKER
-	if not game_over then
-		self:Print("GAME OVER")
-		if (TableLength(self.current_game.high_roller_playoff) > 1) then
-			self:Print("HIGH ROLLERS")
-			self.current_game.player_rolls = CopyTable(self.current_game.high_roller_playoff)
-			self.current_game.high_tiebreaker = true
-			self.current_game.low_tiebreaker = false
-			
-			local roll_msg = "High Roller TieBreaker! "..format_player_names(self.current_game.high_roller_playoff)
-			SendChatMessage(roll_msg, self.chat.channel_const)
-			
-		elseif (TableLength(self.current_game.low_roller_playoff) > 1) then
-			self:Print("LOW ROLLERS")
-			self.current_game.player_rolls = CopyTable(self.current_game.low_roller_playoff)
-			self.current_game.high_tiebreaker = false
-			self.current_game.low_tiebreaker = true
-			
-			local roll_msg = "Low Roller TieBreaker! "..format_player_names(self.current_game.low_roller_playoff)
-			SendChatMessage(roll_msg, self.chat.channel_const)
+        if (player_score < low_score) then
+			low_player = player
+			low_score = player_score
+			low_player_playoff = {}
+		elseif (player_score == low_score) then
+			low_player_playoff[player] = -1
+			low_player_playoff[low_player] = -1
 		end
 		
-		self:StartRolls()
-		return false
+	end
+	
+	-- Did this evaluate result in a tie?
+	local high_playoff = (TableLength(high_player_playoff) ~= 0)
+	local low_playoff = (TableLength(low_player_playoff) ~= 0)
+
+    -- Are we currently trying to evaluate a tie?
+	local first_rolls = (self.current_game.high_roller_playoff == nil) and (self.current_game.low_roller_playoff == nil)
+	local prev_high_playoff = (self.current_game.high_roller_playoff ~= nil)
+	local prev_low_playoff = (self.current_game.low_roller_playoff ~= nil)
+
+    -- Special case, loser was not selected during last round, effectively
+    -- like starting over entirely
+    local all_prev_winners = prev_high_playoff and (self.current_game.low_roller_playoff == nil) and (self.current_game.loser == nil)
+
+    -- If we're evaluating for the first time
+	if first_rolls or all_prev_winners then
+
+        -- If theres currently a tie or not
+		if high_playoff then
+			self.current_game.high_roller_playoff = CopyTable(high_player_playoff)
+		else
+			self.current_game.winner = high_player
+		end
+		
+		if low_playoff then
+			self.current_game.low_roller_playoff = CopyTable(low_player_playoff)
+		else
+			self.current_game.loser = low_player
+		end
+		
+    -- If there was a high player playoff we need to resolve it
+	elseif prev_high_playoff then
+
+        -- Check to see if we've actually resolved it or need to try again
+		if high_playoff then
+			self.current_game.high_roller_playoff = CopyTable(high_player_playoff)
+		else
+			self.current_game.winner = high_player
+			self.current_game.high_roller_playoff = nil
+		end
+
+    -- If there was a low player playoff we need to resolve it
+    elseif prev_low_playoff then
+
+        -- Check to see if we've actually resolved it or need to try again
+		if low_playoff then
+			self.current_game.low_roller_playoff = CopyTable(low_player_playoff)
+		else
+			self.current_game.loser = low_player
+		end
+
+	end
+	
+	local found_winner = (self.current_game.winner ~= nil)
+	local found_loser =  (self.current_game.loser ~= nil)
+
+	if not (found_winner and found_loser) then
+        local roll_msg = ""
+        if (self.current_game.high_roller_playoff) then
+            self.current_game.player_rolls = CopyTable(self.current_game.high_roller_playoff)
+            roll_msg = "High Roller TieBreaker! "..format_player_names(self.current_game.high_roller_playoff)
+        elseif (self.current_game.low_roller_playoff) then
+            self.current_game.player_rolls = CopyTable(self.current_game.low_roller_playoff)
+            roll_msg = "Low Roller TieBreaker! "..format_player_names(self.current_game.low_roller_playoff)
+        end
+
+        SendChatMessage(roll_msg, self.chat.channel_const) 
+        self:StartRolls()
+        return false
 	end
 
-	return true
+    return true
 end
 
 -- GAME MODE INITS 
