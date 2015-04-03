@@ -97,7 +97,8 @@ function CalmDownandGamble:RegisterCallbacks()
 	self:RegisterChatCommand("cdgreset", "ResetStats")
 	self:RegisterChatCommand("cdgdebug", "SetDebug")
 	self:RegisterChatCommand("cdgban", "BanPlayer")
-	self:RegisterChatCommand("cdgunban", "UnBanPlayer")
+	self:RegisterChatCommand("cdgunban", "UnbanPlayer")
+	self:RegisterChatCommand("cdgbanreset", "ResetBans")
 	
 	-- UNIT TESTING -- 
 	self:RegisterChatCommand("cdgTESTA", "TESTA")
@@ -112,7 +113,7 @@ end
 function CalmDownandGamble:TESTA()
 	
 	self.current_game.player_rolls.Metafuzz = 2
-	self.current_game.player_rolls.PlayerA = 2
+	self.current_game.player_rolls.PlayerA = 1
 	self.current_game.player_rolls.PlayerB = 1
 	self.current_game.player_rolls.PlayerC = 1
 	self:CheckRollsComplete()
@@ -120,17 +121,19 @@ function CalmDownandGamble:TESTA()
 end
 
 function CalmDownandGamble:TESTB()
-	
+
+	self.current_game.player_rolls.PlayerA = 1
 	self.current_game.player_rolls.PlayerB = 1
-	self.current_game.player_rolls.PlayerC = 2
+	self.current_game.player_rolls.PlayerC = 1
 	self:CheckRollsComplete()
 
 end
 
 function CalmDownandGamble:TESTC()
 	
-	self.current_game.player_rolls.Metafuzz = 2
-	self.current_game.player_rolls.PlayerA = 1
+	self.current_game.player_rolls.PlayerA = 2
+	self.current_game.player_rolls.PlayerB = 2
+	self.current_game.player_rolls.PlayerC = 1
 	self:CheckRollsComplete()
 
 end
@@ -140,12 +143,16 @@ function CalmDownandGamble:SetDebug()
 	DEBUG = not DEBUG
 end
 
-function CalmDownandGamble:BanPlayer(player)
-    self.db.global.ban_list[player] = true
+function CalmDownandGamble:BanPlayer(player, editbox)
+	self.db.global.ban_list[player] = true
 end
 
-function CalmDownandGamble:BanPlayer(player)
-    self.db.global.ban_list[player] = nil
+function CalmDownandGamble:UnbanPlayer(player, editbox)
+	self.db.global.ban_list[player] = nil
+end
+
+function CalmDownandGamble:ResetBans()
+	self.db.global.ban_list = {}
 end
 
 function CalmDownandGamble:ShowUI()
@@ -195,7 +202,14 @@ function CalmDownandGamble:StartGame()
 	
 	if DEBUG then self:Print("Init'd game state and registered callbacks") end
 	
+	local player_name, realm_name = UnitName("player")
 	local welcome_msg = "CDG is now in session! Mode: "..self.game.options[self.db.global.game_mode_index].label..", Bet: "..self.current_game.gold_amount.." gold"
+
+	-- Secret meepz mode
+	if (player_name == "Meepz") then 
+		welcome_msg = "Welcome to Meepz's Gambling Intervention! Help Me!  "..self.game.options[self.db.global.game_mode_index].label.." - "..self.current_game.gold_amount.." gold"
+	end
+	
 	SendChatMessage(welcome_msg, self.chat.channel_const)
 	SendChatMessage("Press 1 to Join!", self.chat.channel_const)
 	
@@ -283,9 +297,10 @@ end
 function CalmDownandGamble:CheckRollsComplete(print_players)
 
 	local rolls_complete = true
+	
+	if DEBUG then self:Print("CHECK ROLLS COMPLETE") end 
 
 	for player, roll in pairs(self.current_game.player_rolls) do
-		if DEBUG then self:Print(" "..player.." "..roll.." ") end 
 		if (roll == -1) then
 			rolls_complete = false
 			if print_players then
@@ -384,11 +399,25 @@ function CalmDownandGamble:EvaluateScores()
 		end
 	-- Low Tiebreaker -- 
 	elseif self.current_game.low_tiebreaker then 
+
+		
+		-- if total_players == high_rollers
+		if (high_roller_count == TableLength(self.current_game.player_rolls)) then
+			
+		end
+	
 		if found_loser then 
 			self.current_game.loser = loser
 			self.current_game.losing_roll = losing_roll
 			self.current_game.low_tiebreaker = false
 			self.current_game.low_roller_playoff = {}
+		elseif (high_roller_count == TableLength(self.current_game.player_rolls)) then
+		-- all low tied again? will show up in "high_roller_playoff"
+			self.current_game.player_rolls = CopyTable(high_roller_playoff)
+			self.current_game.low_tiebreaker = true
+			self:StartRolls()
+			self:Print("LOWTIE4")
+			return false
 		else
 			self.current_game.player_rolls = CopyTable(low_roller_playoff)
 			self.current_game.low_tiebreaker = true
@@ -508,6 +537,8 @@ end
 -- =================================================
 function CalmDownandGamble:Inverse()
 	if (CalmDownandGamble:EvaluateScores()) then
+		
+		self.current_game.cash_winnings = self.current_game.winning_roll - self.current_game.losing_roll
 		self.current_game.winner, self.current_game.loser = self.current_game.loser, self.current_game.winner
 		SendChatMessage(self.current_game.loser.." owes "..self.current_game.winner.." "..self.current_game.cash_winnings.." gold!", self.chat.channel_const)
 	
@@ -640,6 +671,8 @@ end
 function CalmDownandGamble:ChatChannelCallback(...)
 	local message = select(2, ...)
 	local sender = select(3, ...)
+	
+	message = message:gsub("%s+", "") -- trim whitespace
 	
 	sender = SplitString(sender, "%w+")[1]
 	
@@ -903,11 +936,6 @@ function sortedpairs(t, order)
         end
     end
 end
-
-
-
-
-
 
 
 
