@@ -736,12 +736,18 @@ function CalmDownandGamble:EnterForMe()
 	SendChatMessage("1", self.chat.channel_const)
 end
 
+function CalmDownandGamble:TimedStart() 
+	if not self.current_game.accepting_rolls then 
+		self:StartRolls()
+	end
+end
+
 function CalmDownandGamble:LastCall()
 	if (self.current_game.accepting_rolls) then
 		self:CheckRollsComplete(true)
 	elseif (self.current_game.accepting_players) then
 		SendChatMessage("Last call! 10 seconds left!", self.chat.channel_const)
-		self:ScheduleTimer("StartRolls", 10)
+		self:ScheduleTimer("TimedStart", 10)
 	end
 end
 
