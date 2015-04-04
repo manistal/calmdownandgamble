@@ -213,7 +213,7 @@ function CalmDownandGamble:StartGame()
 	SendChatMessage(welcome_msg, self.chat.channel_const)
 	SendChatMessage("Press 1 to Join!", self.chat.channel_const)
 	
-	local start_args = self.current_game.roll_lower.." "..self.current_game.roll_upper.." "..self.current_game.gold_amount
+	local start_args = self.current_game.roll_lower.." "..self.current_game.roll_upper.." "..self.current_game.gold_amount.." "..self.chat.channel_const
 	self:SendCommMessage("CDG_NEW_GAME", start_args, self.chat.addon_const)
 	if DEBUG then self:Print(start_args) end
 end
@@ -341,7 +341,7 @@ function CalmDownandGamble:EvaluateScores()
 	for player, roll in sortedpairs(self.current_game.player_rolls, sort_descending) do
 	
 		player_score = tonumber(roll)
-		self:Print(player.." "..player_score) 
+		if DEBUG then self:Print(player.." "..player_score) end
 		
 		if (winning_roll == nil) then  -- haven't seen anything yet
 			winning_roll = player_score
@@ -372,7 +372,6 @@ function CalmDownandGamble:EvaluateScores()
 			low_roller_playoff[player] = -1
 			
 		else
-			self:Print("WTFFFF")
 		end
 			
 	end
@@ -394,7 +393,7 @@ function CalmDownandGamble:EvaluateScores()
 			self.current_game.player_rolls = CopyTable(high_roller_playoff)
 			self.current_game.high_tiebreaker = true
 			self:StartRolls()
-			self:Print("HIGHTIE2")
+			if DEBUG then self:Print("HIGHTIE2") end
 			return false
 		end
 	-- Low Tiebreaker -- 
@@ -416,13 +415,13 @@ function CalmDownandGamble:EvaluateScores()
 			self.current_game.player_rolls = CopyTable(high_roller_playoff)
 			self.current_game.low_tiebreaker = true
 			self:StartRolls()
-			self:Print("LOWTIE4")
+			if DEBUG then self:Print("LOWTIE4") end
 			return false
 		else
 			self.current_game.player_rolls = CopyTable(low_roller_playoff)
 			self.current_game.low_tiebreaker = true
 			self:StartRolls()
-			self:Print("LOWTIE2")
+			if DEBUG then self:Print("LOWTIE2") end
 			return false
 		end
 	-- No Tiebreaker -- 
@@ -449,20 +448,20 @@ function CalmDownandGamble:EvaluateScores()
 	
 	
 	if (TableLength(self.current_game.low_roller_playoff) > 1) then 
-		self:Print("LOWTIE1")
+		if DEBUG then self:Print("LOWTIE1") end
 		-- start low tiebreaker -- 
 		self.current_game.low_tiebreaker = true
 		self.current_game.player_rolls = CopyTable(self.current_game.low_roller_playoff)
 		self:StartRolls()
 		return false
 	elseif (TableLength(self.current_game.high_roller_playoff) > 1) then 
-		self:Print("HIGHTIE1")
+		if DEBUG then self:Print("HIGHTIE1") end
 		self.current_game.high_tiebreaker = true
 		self.current_game.player_rolls = CopyTable(self.current_game.high_roller_playoff)
 		self:StartRolls()
 		return false
 	elseif (self.current_game.loser == nil) and (not found_loser) then  -- special case, everyone was a high roller
-		self:Print("LOWTIE3")
+		if DEBUG then self:Print("LOWTIE3") end
 		self.current_game.low_tiebreaker = true
 		self.current_game.player_rolls = CopyTable(low_roller_playoff)
 		self:StartRolls()
@@ -475,7 +474,6 @@ function CalmDownandGamble:EvaluateScores()
 		return true
 	end
 		
-	self:Print(" SHOULD NOT HAVE GOTTEN HERE ") 
 end
 
 -- GAME MODE INITS 
@@ -522,7 +520,6 @@ end
 -- =================================================
 function CalmDownandGamble:Twos()
 	if (CalmDownandGamble:EvaluateScores()) then
-		self:Print("RETURNED TRUE")
 		self.current_game.cash_winnings = self.current_game.gold_amount
 		SendChatMessage(self.current_game.loser.." owes "..self.current_game.winner.." "..self.current_game.cash_winnings.." gold!", self.chat.channel_const)
 	
@@ -613,7 +610,7 @@ function CalmDownandGamble:Median()
 
 	local player_index = 1
 	for player, roll in sortedpairs(self.current_game.player_rolls, sort_by_score) do
-		self:Print(player.." "..roll)
+		if DEBUG then self:Print(player.." "..roll) end
 		if player_index == 1 then 
 			high_player = player
 			high_score = roll

@@ -110,7 +110,7 @@ function CDGClient:RollCallback(...)
         -- BRODACAST TO MASTER -- 
         -- Example AceComm call to send rolls to master so we can do this in guild
         -- Master needs to register for CDG_ROLL_DICE event
-        self:SendCommMessage("CDG_ROLL_DICE", roll_text, "GUILD")
+        self:SendCommMessage("CDG_ROLL_DICE", roll_text, self.current_game.addon_const)
 		local roll_msg = "Rolled: "..roll.." "..self.current_game.roll_range.."  Cash: "..self.current_game.cash_winnings
 		--self.ui.CDG_Frame:SetStatusText(roll_msg)
 		if DEBUG then self:Print(roll_text) end
@@ -139,11 +139,14 @@ function CDGClient:NewGameCallback(...)
 	self.current_game.roll_lower = message[1]
 	self.current_game.roll_upper = message[2]
 	self.current_game.cash_winnings = message[3]
-	self.current_game.channel_const = chat
+	self.current_game.channel_const = message[4]
+	self.current_game.addon_const = chat
 	self.current_game.roll_range = "("..self.current_game.roll_lower.."-"..self.current_game.roll_upper..")"
 	
 
 	local player, realm = UnitName("player")
+	if DEBUG then player = "DEBUG" end
+	
 	local valid_source = (sender ~= player) 
 	if self.db.global.auto_pop and valid_source then
 		self.ui.CDG_Frame:Show()
