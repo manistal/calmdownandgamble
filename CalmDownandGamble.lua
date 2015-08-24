@@ -670,9 +670,9 @@ function CalmDownandGamble:ChatChannelCallback(...)
 	local sender = select(3, ...)
 	
 	message = message:gsub("%s+", "") -- trim whitespace
-	
-	sender = SplitString(sender, "%w+")[1]
-	
+	sender = Ambiguate(sender, "none")
+
+
 	local player_join = (
 		(self.current_game.player_rolls[sender] == nil) 
 		and (self.current_game.accepting_players) 
