@@ -338,7 +338,7 @@ function CalmDownandGamble:EvaluateScores()
     -- Loop over the players and look for highest/lowest/etc
 	-- TODO -- Sort from high to low
 	local sort_descending = function(t,a,b) return t[b] < t[a] end
-	for player, roll in sortedpairs(self.current_game.player_rolls, sort_descending) do
+	for player, roll in self:sortedpairs(self.current_game.player_rolls, sort_descending) do
 	
 		player_score = tonumber(roll)
 		if DEBUG then self:Print(player.." "..player_score) end
@@ -376,8 +376,8 @@ function CalmDownandGamble:EvaluateScores()
 			
 	end
 	
-	local high_roller_count = TableLength(high_roller_playoff)
-	local low_roller_count = TableLength(low_roller_playoff)
+	local high_roller_count = self:TableLength(high_roller_playoff)
+	local low_roller_count = self:TableLength(low_roller_playoff)
 	
 	local found_winner = (high_roller_count == 1) 
 	local found_loser = (low_roller_count == 1) 
@@ -390,7 +390,7 @@ function CalmDownandGamble:EvaluateScores()
 			self.current_game.high_tiebreaker = false
 			self.current_game.high_roller_playoff = {}
 		else
-			self.current_game.player_rolls = CopyTable(high_roller_playoff)
+			self.current_game.player_rolls = self:CopyTable(high_roller_playoff)
 			self.current_game.high_tiebreaker = true
 			self:StartRolls()
 			if DEBUG then self:Print("HIGHTIE2") end
@@ -401,7 +401,7 @@ function CalmDownandGamble:EvaluateScores()
 
 		
 		-- if total_players == high_rollers
-		if (high_roller_count == TableLength(self.current_game.player_rolls)) then
+		if (high_roller_count == self:TableLength(self.current_game.player_rolls)) then
 			
 		end
 	
@@ -410,15 +410,15 @@ function CalmDownandGamble:EvaluateScores()
 			self.current_game.losing_roll = losing_roll
 			self.current_game.low_tiebreaker = false
 			self.current_game.low_roller_playoff = {}
-		elseif (high_roller_count == TableLength(self.current_game.player_rolls)) then
+		elseif (high_roller_count == self:TableLength(self.current_game.player_rolls)) then
 		-- all low tied again? will show up in "high_roller_playoff"
-			self.current_game.player_rolls = CopyTable(high_roller_playoff)
+			self.current_game.player_rolls = self:CopyTable(high_roller_playoff)
 			self.current_game.low_tiebreaker = true
 			self:StartRolls()
 			if DEBUG then self:Print("LOWTIE4") end
 			return false
 		else
-			self.current_game.player_rolls = CopyTable(low_roller_playoff)
+			self.current_game.player_rolls = self:CopyTable(low_roller_playoff)
 			self.current_game.low_tiebreaker = true
 			self:StartRolls()
 			if DEBUG then self:Print("LOWTIE2") end
@@ -432,7 +432,7 @@ function CalmDownandGamble:EvaluateScores()
 			self.current_game.high_tiebreaker = false
 			self.current_game.high_roller_playoff = {}
 		else 
-			self.current_game.high_roller_playoff = CopyTable(high_roller_playoff)
+			self.current_game.high_roller_playoff = self:CopyTable(high_roller_playoff)
 		end
 		
 		if found_loser then 
@@ -441,29 +441,29 @@ function CalmDownandGamble:EvaluateScores()
 			self.current_game.low_tiebreaker = false
 			self.current_game.low_roller_playoff = {}
 		else
-			self.current_game.low_roller_playoff = CopyTable(low_roller_playoff)
+			self.current_game.low_roller_playoff = self:CopyTable(low_roller_playoff)
 		end
 
 	end
 	
 	
-	if (TableLength(self.current_game.low_roller_playoff) > 1) then 
+	if (self:TableLength(self.current_game.low_roller_playoff) > 1) then 
 		if DEBUG then self:Print("LOWTIE1") end
 		-- start low tiebreaker -- 
 		self.current_game.low_tiebreaker = true
-		self.current_game.player_rolls = CopyTable(self.current_game.low_roller_playoff)
+		self.current_game.player_rolls = self:CopyTable(self.current_game.low_roller_playoff)
 		self:StartRolls()
 		return false
-	elseif (TableLength(self.current_game.high_roller_playoff) > 1) then 
+	elseif (self:TableLength(self.current_game.high_roller_playoff) > 1) then 
 		if DEBUG then self:Print("HIGHTIE1") end
 		self.current_game.high_tiebreaker = true
-		self.current_game.player_rolls = CopyTable(self.current_game.high_roller_playoff)
+		self.current_game.player_rolls = self:CopyTable(self.current_game.high_roller_playoff)
 		self:StartRolls()
 		return false
 	elseif (self.current_game.loser == nil) and (not found_loser) then  -- special case, everyone was a high roller
 		if DEBUG then self:Print("LOWTIE3") end
 		self.current_game.low_tiebreaker = true
-		self.current_game.player_rolls = CopyTable(low_roller_playoff)
+		self.current_game.player_rolls = self:CopyTable(low_roller_playoff)
 		self:StartRolls()
 		return false
 	elseif (self.current_game.loser == nil) and found_loser then  -- special case, everyone was a high roller, 1v1
@@ -578,12 +578,12 @@ function CalmDownandGamble:Yahtzee()
 	end
 	
 	local sort_by_score = function(t,a,b) return t[b] < t[a] end
-	for player, score in sortedpairs(player_scores, sort_by_score) do
+	for player, score in self:sortedpairs(player_scores, sort_by_score) do
 		SendChatMessage(player.." Roll: "..format_yahtzee_roll(self.current_game.player_rolls[player]).." Score: "..score, self.chat.channel_const)
 	end
 
 	self.current_game.player_rolls = {}
-	self.current_game.player_rolls = CopyTable(player_scores)
+	self.current_game.player_rolls = self:CopyTable(player_scores)
 	
 	if (self:EvaluateScores()) then 
 		self.current_game.cash_winnings = self.current_game.gold_amount
@@ -604,12 +604,12 @@ function CalmDownandGamble:Median()
 	local high_player, median_player, low_player = "", "", ""
 	local high_score, median_score, low_score = 0, 0, 0
 	
-	local total_players = TableLength(self.current_game.player_rolls)
+	local total_players = self:TableLength(self.current_game.player_rolls)
 	local last_number = total_players
 	local median_number = math.floor((total_players + 1) / 2)
 
 	local player_index = 1
-	for player, roll in sortedpairs(self.current_game.player_rolls, sort_by_score) do
+	for player, roll in self:sortedpairs(self.current_game.player_rolls, sort_by_score) do
 		if DEBUG then self:Print(player.." "..roll) end
 		if player_index == 1 then 
 			high_player = player
@@ -648,7 +648,7 @@ function CalmDownandGamble:RollCallback(...)
 	-- Parse the input Args 
 	local channel = select(1, ...)
 	local roll_text = select(2, ...)
-	local message = SplitString(roll_text, "%S+")
+	local message = self:SplitString(roll_text, "%S+")
 	local player, roll, roll_range = message[1], message[3], message[4]
 	
 	-- Check that the roll is valid ( also that the message is for us)
@@ -702,7 +702,7 @@ function CalmDownandGamble:PrintRanklist()
 	SendChatMessage("Hall of Fame: ", self.chat.channel_const)
 	local index = 1
 	local sort_descending = function(t,a,b) return t[b] < t[a] end
-	for player, gold in sortedpairs(self.db.global.rankings, sort_descending) do
+	for player, gold in self:sortedpairs(self.db.global.rankings, sort_descending) do
 		if gold <= 0 then break end
 		
 		local msg = string.format("%d. %s won %d gold.", index, player, gold)
@@ -715,7 +715,7 @@ function CalmDownandGamble:PrintRanklist()
 	SendChatMessage("Hall of Shame: ", self.chat.channel_const)
 	index = 1
 	local sort_ascending = function(t,a,b) return t[b] > t[a] end
-	for player, gold in sortedpairs(self.db.global.rankings, sort_ascending) do
+	for player, gold in self:sortedpairs(self.db.global.rankings, sort_ascending) do
 		if gold >= 0 then break end
 	
 		local msg = string.format("%d. %s lost %d gold.", index, player, math.abs(gold))
@@ -889,7 +889,7 @@ end
 
 -- Util Functions -- Lua doesnt provide alot of basic functionality
 -- =======================================================================
-function SplitString(str, pattern)
+function CalmDownandGamble:SplitString(str, pattern)
 	local ret_list = {}
 	local index = 1
 	for token in string.gmatch(str, pattern) do
@@ -899,26 +899,26 @@ function SplitString(str, pattern)
 	return ret_list
 end
 
-function CopyTable(T)
+function CalmDownandGamble:CopyTable(T)
   local u = { }
   for k, v in pairs(T) do u[k] = v end
   return setmetatable(u, getmetatable(T))
 end
 
-function TableLength(T)
+function CalmDownandGamble:TableLength(T)
   if (T == nil) then return 0 end
   local count = 0
   for _ in pairs(T) do count = count + 1 end
   return count
 end
 
-function PrintTable(T)
+function CalmDownandGamble:PrintTable(T)
 	for k, v in pairs(T) do
 		CalmDownandGamble:Print(k.."  "..v)
 	end
 end
 
-function sortedpairs(t, order)
+function CalmDownandGamble:sortedpairs(t, order)
     -- collect the keys
     local keys = {}
     for k in pairs(t) do keys[#keys+1] = k end
