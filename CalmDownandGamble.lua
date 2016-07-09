@@ -733,6 +733,10 @@ function CalmDownandGamble:PrintRanklist()
 end
 
 function CalmDownandGamble:RollForMe()
+	if self.current_game == nil then 
+		SendSystemMessage("You need an active game for me to roll for you!")
+		return
+	end
 	RandomRoll(self.current_game.roll_lower, self.current_game.roll_upper)
 end
 
