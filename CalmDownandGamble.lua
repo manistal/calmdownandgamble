@@ -268,8 +268,6 @@ function CalmDownandGamble:EndGame()
 	self:SendCommMessage("CDG_END_GAME", end_args, self.chat.addon_const)
 	self.ui.CDG_Frame:SetStatusText(self.current_game.cash_winnings.."g  "..self.current_game.loser.." => "..self.current_game.winner)
 
-	-- Init our game
-	self.current_game = nil
 	
 	-- Register game callbacks
 	self:UnregisterEvent("CHAT_MSG_SYSTEM")
@@ -277,6 +275,9 @@ function CalmDownandGamble:EndGame()
 	if (self.chat.channel_callback_leader) then
 		self:UnregisterEvent(self.chat.channel_callback_leader)
 	end
+	
+	-- Init our game
+	self.current_game = nil
 end
 
 
@@ -625,6 +626,10 @@ function CalmDownandGamble:Median()
 		player_index = player_index + 1
 	end
 
+	if median_player == "" then
+		SendChatMessage("You need at least 3 players!!", self.chat.channel_const)
+		median_player = high_player
+	end
 	self.current_game.winner = median_player
 	
 
@@ -645,12 +650,14 @@ end
 -- ChatFrame Interaction Callbacks (Entry and Rolls)
 -- ==================================================== 
 function CalmDownandGamble:RollCallback(...)
+
 	-- Parse the input Args 
 	local channel = select(1, ...)
 	local roll_text = select(2, ...)
 	local message = self:SplitString(roll_text, "%S+")
 	local player, roll, roll_range = message[1], message[3], message[4]
 	
+	if DEBUG then self:Print("CHECK VALID ROLL "..self.current_game.roll_range) end
 	-- Check that the roll is valid ( also that the message is for us)
 	local valid_roll = (self.current_game.roll_range == roll_range) and self.current_game.accepting_rolls
 
@@ -749,6 +756,13 @@ function CalmDownandGamble:LastCall()
 end
 
 function CalmDownandGamble:ResetGame()
+	-- Register game callbacks
+	self:UnregisterEvent("CHAT_MSG_SYSTEM")
+	self:UnregisterEvent(self.chat.channel_callback)
+	if (self.chat.channel_callback_leader) then
+		self:UnregisterEvent(self.chat.channel_callback_leader)
+	end
+	
 	self.current_game = nil
 	SendChatMessage("Game has been reset.", self.chat.channel_const)
 end

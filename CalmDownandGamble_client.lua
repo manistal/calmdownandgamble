@@ -173,8 +173,9 @@ function CDGClient:GameResultsCallback(...)
 	local message = select(2, ...)
 	local chat = select(3, ...)
 	local sender = select(4, ...)
-	message = self:SplitString(message, "%S+")
-     
+
+	message = self:SplitString(message, "%S+")	
+	
     self.current_game.winner = message[1]
 	self.current_game.loser = message[2]
     self.current_game.cash_winnings = message[3]
