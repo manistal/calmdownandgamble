@@ -51,7 +51,7 @@ function CalmDownandGamble:InitState()
 	self.game = {}
 	self:SetChannelSettings()
 	self:SetGameMode()
-	self:SetGameStage()
+	self:ResetGameStage()
 	
 end
 
@@ -90,6 +90,11 @@ function CalmDownandGamble:SetGameMode()
 
 end
 
+function CalmDownandGamble:ResetGameStage() 
+	self.db.global.game_stage_index = 1
+	self:SetGameStage()
+end
+
 function CalmDownandGamble:SetGameStage() 
 
 	self.game.stages = {
@@ -107,7 +112,7 @@ end
 -- =========================================================
 function CalmDownandGamble:RegisterCallbacks()
 	-- Register Some Slash Commands
-	self:RegisterChatCommand("cdgshow", "ShowUI")
+	self:RegisterChatCommand("cdg", "ShowUI")
 	self:RegisterChatCommand("cdghide", "HideUI")
 	self:RegisterChatCommand("cdgreset", "ResetStats")
 	self:RegisterChatCommand("cdgdebug", "SetDebug")
@@ -783,8 +788,7 @@ function CalmDownandGamble:ResetGame()
 	end
 	
 	self.current_game = nil
-	self.db.global.game_stage_index = 1
-	self:SetGameStage()
+	self:ResetGameStage()
 	SendChatMessage("Game has been reset.", self.chat.channel_const)
 end
 
@@ -821,73 +825,71 @@ function CalmDownandGamble:ConstructUI()
 	local cdg_ui_elements = {
 		-- Main Box Frame -- 
 		main_frame = {
-			width = 335,
-			height = 170	
+			width = 440,
+			height = 150	
 		},
 		
 		-- Order in which the buttons are layed out -- 
 		button_index = {
-			"enter_for_me",
-			"roll_for_me",
 			"game_stage",
-			"last_call",
-			"start_gambling",
 			"game_mode",
 			"chat_channel",
+			"enter_for_me",
+			"roll_for_me",
+			"print_stats_table",
 			"reset_game"
-			--"print_stats_table", <-- PUT ME BACK IN! Only removed to maintain 3x3 beauty
 			--"print_ban_list",
 		},
 		
 		-- Button Definitions -- 
 		buttons = {
 			chat_channel = {
-				width = 97,
+				width = 100,
 				label = "Raid",
 				click_callback = function() self:ChatChannelToggle() end
 			},
 			game_mode = {
-				width = 97,
+				width = 100,
 				label = "(Classic)",
 				click_callback = function() self:ButtonGameMode() end
 			},
 			print_ban_list = {
-				width = 97,
+				width = 100,
 				label = "Print bans",
 				click_callback = function() self:PrintBanlist() end
 			},
 			print_stats_table = {
-				width = 97,
+				width = 100,
 				label = "Print stats",
 				click_callback = function() self:PrintRanklist() end
 			},
 			reset_game = {
-				width = 97,
+				width = 100,
 				label = "Reset",
 				click_callback = function() self:ResetGame() end
 			},
 			enter_for_me = {
-				width = 97,
+				width = 100,
 				label = "Enter me",
 				click_callback = function() self:EnterForMe() end
 			},			
 			roll_for_me = {
-				width = 97,
+				width = 100,
 				label = "Roll!",
 				click_callback = function() self:RollForMe() end
 			},
 			start_gambling = {
-				width = 97,
+				width = 100,
 				label = "Start roll",
 				click_callback = function() self:StartRolls() end
 			},
 			last_call = {
-				width = 97,
+				width = 100,
 				label = "Last call!",
 				click_callback = function() self:LastCall() end
 			},
 			game_stage = {
-				width = 97,
+				width = 100,
 				label = "New Game",
 				click_callback = function() self:ButtonGameStage() end
 
