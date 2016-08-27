@@ -50,6 +50,7 @@ function CalmDownandGamble:InitState()
 	self.game = {}
 	self:SetChannelSettings()
 	self:SetGameMode()
+	self:SetGameStart()
 	
 end
 
@@ -85,6 +86,19 @@ function CalmDownandGamble:SetGameMode()
 	
 	if DEBUG then self:Print(self.game.options[self.db.global.game_mode_index].label) end
 	self.ui.game_mode:SetText(self.game.options[self.db.global.game_mode_index].label)
+
+end
+
+function CalmDownandGamble:SetGameStart() 
+
+	self.start.options = {
+			{ label = "New Game",  evaluate = function() self:StartGame() end}, -- Index 1
+			{ label = "Last Call!",   evaluate = function() self:LastCall() end}, -- Index 2
+			{ label = "Start Rolls!", evaluate = function() self:GameStart() end}, -- Index 3
+	}	
+
+	--if DEBUG then self:Print(self.game.options[self.db.global.game_mode_index].label) end
+	--self.ui.game_mode:SetText(self.game.options[self.db.global.game_mode_index].label)
 
 end
 
@@ -768,6 +782,7 @@ function CalmDownandGamble:ResetGame()
 	end
 	
 	self.current_game = nil
+	self.db.global.game_start_index = 0 
 	SendChatMessage("Game has been reset.", self.chat.channel_const)
 end
 
@@ -785,6 +800,12 @@ function CalmDownandGamble:ButtonGameMode()
 	self:SetGameMode()
 end
 
+function CalmDownandGamble:ButtonGameStart()
+	self.db.global.game_start_index = self.db.global.game_start_index + 1
+	if self.db.global.game_start_index > table.getn(self.start.options) then self.db.global.game_start_index = 1 end
+
+	self:SetGameStart()
+end
 --self.db.global.game_start_index = 0 to default to 'new game'
 
 
@@ -797,18 +818,18 @@ function CalmDownandGamble:ConstructUI()
 		-- Main Box Frame -- 
 		main_frame = {
 			width = 440,
-			height = 170
+			height = 150
 		},
 		
 		-- Order in which the buttons are layed out -- 
 		button_index = {
 			"new_game",
-			"last_call",
-			"start_gambling",
+			--"last_call",
+			--"start_gambling",
 			"enter_for_me",
 			"roll_for_me",
 			"print_stats_table",
-			"print_ban_list",
+			--"print_ban_list",
 			"chat_channel",
 			"game_mode",
 			"reset_game"
@@ -848,7 +869,7 @@ function CalmDownandGamble:ConstructUI()
 			},			
 			roll_for_me = {
 				width = 100,
-				label = "Roll For Me",
+				label = "Roll!",
 				click_callback = function() self:RollForMe() end
 			},
 			start_gambling = {
@@ -864,7 +885,7 @@ function CalmDownandGamble:ConstructUI()
 			new_game = {
 				width = 100,
 				label = "New Game",
-				click_callback = function() self:StartGame() end
+				click_callback = function() self:ButtonGameStart() end
 			}
 		}
 		
