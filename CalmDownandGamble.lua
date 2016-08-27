@@ -785,6 +785,9 @@ function CalmDownandGamble:ButtonGameMode()
 	self:SetGameMode()
 end
 
+--self.db.global.game_start_index = 0 to default to 'new game'
+
+
 -- UI ELEMENTS 
 -- ======================================================
 function CalmDownandGamble:ConstructUI()
@@ -802,8 +805,8 @@ function CalmDownandGamble:ConstructUI()
 			"new_game",
 			"last_call",
 			"start_gambling",
-			"roll_for_me",
 			"enter_for_me",
+			"roll_for_me",
 			"print_stats_table",
 			"print_ban_list",
 			"chat_channel",
@@ -838,15 +841,15 @@ function CalmDownandGamble:ConstructUI()
 				label = "Reset",
 				click_callback = function() self:ResetGame() end
 			},
-			roll_for_me = {
-				width = 100,
-				label = "Roll For Me",
-				click_callback = function() self:RollForMe() end
-			},
 			enter_for_me = {
 				width = 100,
 				label = "Enter Me",
 				click_callback = function() self:EnterForMe() end
+			},			
+			roll_for_me = {
+				width = 100,
+				label = "Roll For Me",
+				click_callback = function() self:RollForMe() end
 			},
 			start_gambling = {
 				width = 100,
