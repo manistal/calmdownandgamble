@@ -89,18 +89,15 @@ function CalmDownandGamble:SetGameMode()
 
 end
 
-function CalmDownandGamble:SetGameStart() 
+-- function CalmDownandGamble:SetGameStart() 
 
-	self.start.options = {
-			{ label = "New Game",  evaluate = function() self:StartGame() end}, -- Index 1
-			{ label = "Last Call!",   evaluate = function() self:LastCall() end}, -- Index 2
-			{ label = "Start Rolls!", evaluate = function() self:GameStart() end}, -- Index 3
-	}	
+	-- self.start.options = {
+			-- { label = "New Game",  evaluate = function() self:StartGame() end}, -- Index 1
+			-- { label = "Last Call!",   evaluate = function() self:LastCall() end}, -- Index 2
+			-- { label = "Start Rolls!", evaluate = function() self:GameStart() end}, -- Index 3
+	-- }	
 
-	--if DEBUG then self:Print(self.game.options[self.db.global.game_mode_index].label) end
-	--self.ui.game_mode:SetText(self.game.options[self.db.global.game_mode_index].label)
-
-end
+-- end
 
 -- Slash Command Setup and Calls
 -- =========================================================
@@ -818,14 +815,14 @@ function CalmDownandGamble:ConstructUI()
 		-- Main Box Frame -- 
 		main_frame = {
 			width = 435,
-			height = 150
+			height = 170
 		},
 		
 		-- Order in which the buttons are layed out -- 
 		button_index = {
 			"new_game",
-			--"last_call",
-			--"start_gambling",
+			"last_call",
+			"start_gambling",
 			"enter_for_me",
 			"roll_for_me",
 			"print_stats_table",
@@ -885,7 +882,7 @@ function CalmDownandGamble:ConstructUI()
 			new_game = {
 				width = 100,
 				label = "New Game",
-				click_callback = function() self:ButtonGameStart() end
+				click_callback = function() self:StartGame() end
 			}
 		}
 		
