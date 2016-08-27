@@ -21,6 +21,7 @@ function CalmDownandGamble:OnInitialize()
 			ban_list = { },
 			chat_index = 1,
 			game_mode_index = 1, 
+			game_stage_index = 1,
 			window_shown = false
 		}
 	}
@@ -50,7 +51,7 @@ function CalmDownandGamble:InitState()
 	self.game = {}
 	self:SetChannelSettings()
 	self:SetGameMode()
-	self:SetGameStart()
+	self:SetGameStage()
 	
 end
 
@@ -89,15 +90,18 @@ function CalmDownandGamble:SetGameMode()
 
 end
 
--- function CalmDownandGamble:SetGameStart() 
+function CalmDownandGamble:SetGameStage() 
 
-	-- self.start.options = {
-			-- { label = "New Game",  evaluate = function() self:StartGame() end}, -- Index 1
-			-- { label = "Last Call!",   evaluate = function() self:LastCall() end}, -- Index 2
-			-- { label = "Start Rolls!", evaluate = function() self:GameStart() end}, -- Index 3
-	-- }	
+	self.game.stages = {
+			{ label = "New Game",  callback = function() self:StartGame() end }, -- Index 1
+			{ label = "Last Call!",   callback = function() self:LastCall() end }, -- Index 2
+			{ label = "Start Rolls!", callback = function() self:StartRolls() end }, -- Index 3
+	}	
+	
+	if DEBUG then self:Print(self.game.stages[self.db.global.game_stage_index].label) end
+	self.ui.game_stage:SetText(self.game.stages[self.db.global.game_stage_index].label)
 
--- end
+end
 
 -- Slash Command Setup and Calls
 -- =========================================================
@@ -779,7 +783,8 @@ function CalmDownandGamble:ResetGame()
 	end
 	
 	self.current_game = nil
-	self.db.global.game_start_index = 0 
+	self.db.global.game_stage_index = 1
+	self:SetGameStage()
 	SendChatMessage("Game has been reset.", self.chat.channel_const)
 end
 
@@ -797,13 +802,15 @@ function CalmDownandGamble:ButtonGameMode()
 	self:SetGameMode()
 end
 
--- function CalmDownandGamble:ButtonGameStart()
-	-- self.db.global.game_start_index = self.db.global.game_start_index + 1
-	-- if self.db.global.game_start_index > table.getn(self.start.options) then self.db.global.game_start_index = 1 end
-
-	-- self:SetGameStart()
--- end
---self.db.global.game_start_index = 0 to default to 'new game'
+function CalmDownandGamble:ButtonGameStage()
+	self.game.stages[self.db.global.game_stage_index].callback()
+	
+	self.db.global.game_stage_index = self.db.global.game_stage_index + 1
+	if self.db.global.game_stage_index > table.getn(self.game.stages) then self.db.global.game_stage_index = 1 end
+	self:SetGameStage()
+	
+	self:Print(self.db.global.game_stage_index)
+end
 
 
 -- UI ELEMENTS 
@@ -822,7 +829,7 @@ function CalmDownandGamble:ConstructUI()
 		button_index = {
 			"enter_for_me",
 			"roll_for_me",
-			"new_game",
+			"game_stage",
 			"last_call",
 			"start_gambling",
 			"game_mode",
@@ -879,10 +886,10 @@ function CalmDownandGamble:ConstructUI()
 				label = "Last Call!",
 				click_callback = function() self:LastCall() end
 			},
-			new_game = {
+			game_stage = {
 				width = 97,
 				label = "New Game",
-				click_callback = function() self:StartGame() end
+				click_callback = function() self:ButtonGameStage() end
 			}
 		}
 		
