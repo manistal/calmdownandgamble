@@ -227,8 +227,8 @@ function CDGClient:ConstructUI()
 	local cdg_ui_elements = {
 		-- Main Box Frame -- 
 		main_frame = {
-			width = 350,
-			height = 100
+			width = 335,
+			height = 95
 		},
 		
 		-- Order in which the buttons are layed out -- 
@@ -241,18 +241,18 @@ function CDGClient:ConstructUI()
 		-- Button Definitions -- 
 		buttons = {
 			roll_for_me = {
-				width = 100,
+				width = 97,
 				label = "Roll",
 				click_callback = function() self:RollForMe() end
 			},
 			enter_for_me = {
-				width = 100,
+				width = 97,
 				label = "Enter",
 				click_callback = function() self:EnterForMe() end
 			},
 			open_trade = {
-				width = 100,
-				label = "TradeGold",
+				width = 97,
+				label = "Payout",
 				click_callback = function() self:OpenTradeWinner() end
 			}
 		}

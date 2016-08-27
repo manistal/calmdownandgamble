@@ -797,12 +797,12 @@ function CalmDownandGamble:ButtonGameMode()
 	self:SetGameMode()
 end
 
-function CalmDownandGamble:ButtonGameStart()
-	self.db.global.game_start_index = self.db.global.game_start_index + 1
-	if self.db.global.game_start_index > table.getn(self.start.options) then self.db.global.game_start_index = 1 end
+-- function CalmDownandGamble:ButtonGameStart()
+	-- self.db.global.game_start_index = self.db.global.game_start_index + 1
+	-- if self.db.global.game_start_index > table.getn(self.start.options) then self.db.global.game_start_index = 1 end
 
-	self:SetGameStart()
-end
+	-- self:SetGameStart()
+-- end
 --self.db.global.game_start_index = 0 to default to 'new game'
 
 
@@ -814,73 +814,73 @@ function CalmDownandGamble:ConstructUI()
 	local cdg_ui_elements = {
 		-- Main Box Frame -- 
 		main_frame = {
-			width = 435,
-			height = 170
+			width = 335,
+			height = 170	
 		},
 		
 		-- Order in which the buttons are layed out -- 
 		button_index = {
+			"enter_for_me",
+			"roll_for_me",
 			"new_game",
 			"last_call",
 			"start_gambling",
-			"enter_for_me",
-			"roll_for_me",
-			"print_stats_table",
-			--"print_ban_list",
-			"chat_channel",
 			"game_mode",
+			"chat_channel",
 			"reset_game"
+			--"print_stats_table", <-- PUT ME BACK IN! Only removed to maintain 3x3 beauty
+			--"print_ban_list",
 		},
 		
 		-- Button Definitions -- 
 		buttons = {
 			chat_channel = {
-				width = 100,
+				width = 97,
 				label = "Raid",
 				click_callback = function() self:ChatChannelToggle() end
 			},
 			game_mode = {
-				width = 100,
+				width = 97,
 				label = "(Classic)",
 				click_callback = function() self:ButtonGameMode() end
 			},
 			print_ban_list = {
-				width = 100,
+				width = 97,
 				label = "Print Bans",
 				click_callback = function() self:PrintBanlist() end
 			},
 			print_stats_table = {
-				width = 100,
+				width = 97,
 				label = "Print Stats",
 				click_callback = function() self:PrintRanklist() end
 			},
 			reset_game = {
-				width = 100,
+				width = 97,
 				label = "Reset",
 				click_callback = function() self:ResetGame() end
 			},
 			enter_for_me = {
-				width = 100,
+				width = 97,
 				label = "Enter Me",
 				click_callback = function() self:EnterForMe() end
 			},			
 			roll_for_me = {
-				width = 100,
+				width = 97,
 				label = "Roll!",
 				click_callback = function() self:RollForMe() end
 			},
 			start_gambling = {
-				width = 100,
+				width = 97,
 				label = "Start Rolls!",
 				click_callback = function() self:StartRolls() end
 			},
 			last_call = {
-				width = 100,
+				width = 97,
 				label = "Last Call!",
 				click_callback = function() self:LastCall() end
 			},
 			new_game = {
-				width = 100,
+				width = 97,
 				label = "New Game",
 				click_callback = function() self:StartGame() end
 			}
@@ -904,7 +904,7 @@ function CalmDownandGamble:ConstructUI()
 	-- Set up edit box for gold -- 
 	self.ui.gold_amount_entry = AceGUI:Create("EditBox")
 	self.ui.gold_amount_entry:SetLabel("Gold Amount")
-	self.ui.gold_amount_entry:SetWidth(100)
+	self.ui.gold_amount_entry:SetWidth(97)
 	self.ui.CDG_Frame:AddChild(self.ui.gold_amount_entry)
 	
 	-- Set up Buttons Above Text Box-- 
