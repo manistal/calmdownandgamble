@@ -846,12 +846,12 @@ function CalmDownandGamble:ConstructUI()
 			},
 			print_ban_list = {
 				width = 97,
-				label = "Print Bans",
+				label = "Print bans",
 				click_callback = function() self:PrintBanlist() end
 			},
 			print_stats_table = {
 				width = 97,
-				label = "Print Stats",
+				label = "Print stats",
 				click_callback = function() self:PrintRanklist() end
 			},
 			reset_game = {
@@ -861,7 +861,7 @@ function CalmDownandGamble:ConstructUI()
 			},
 			enter_for_me = {
 				width = 97,
-				label = "Enter Me",
+				label = "Enter me",
 				click_callback = function() self:EnterForMe() end
 			},			
 			roll_for_me = {
@@ -871,17 +871,17 @@ function CalmDownandGamble:ConstructUI()
 			},
 			start_gambling = {
 				width = 97,
-				label = "Start Rolls!",
+				label = "Start roll",
 				click_callback = function() self:StartRolls() end
 			},
 			last_call = {
 				width = 97,
-				label = "Last Call!",
+				label = "Last call!",
 				click_callback = function() self:LastCall() end
 			},
 			new_game = {
 				width = 97,
-				label = "New Game",
+				label = "New game",
 				click_callback = function() self:StartGame() end
 			}
 		}
