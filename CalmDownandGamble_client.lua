@@ -203,7 +203,6 @@ end
 
 function CDGClient:OpenTradeWinner()
 	self:RegisterEvent("TRADE_SHOW", function() self:TradeOpen() end)
-
     if (self.current_game.trade_open) then
         local copper = self.current_game.cash_winnings * 100 * 100 
         SetTradeMoney(copper)
