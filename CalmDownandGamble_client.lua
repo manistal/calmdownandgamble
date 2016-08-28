@@ -51,7 +51,7 @@ end
 -- =========================================================
 function CDGClient:RegisterCallbacks()
 	-- Register Some Slash Commands
-	self:RegisterChatCommand("cdgc", "ShowUI")
+	self:RegisterChatCommand("cdg", "ShowUI")
 	self:RegisterChatCommand("cdgchide", "HideUI")
 	self:RegisterChatCommand("cdgcdebug", "SetDebug")
 	self:RegisterChatCommand("cdgcdisable", "DisablePop")

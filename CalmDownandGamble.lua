@@ -112,7 +112,7 @@ end
 -- =========================================================
 function CalmDownandGamble:RegisterCallbacks()
 	-- Register Some Slash Commands
-	self:RegisterChatCommand("cdg", "ShowUI")
+	self:RegisterChatCommand("cdgm", "ShowUI")
 	self:RegisterChatCommand("cdghide", "HideUI")
 	self:RegisterChatCommand("cdgreset", "ResetStats")
 	self:RegisterChatCommand("cdgdebug", "SetDebug")
@@ -825,17 +825,17 @@ function CalmDownandGamble:ConstructUI()
 	local cdg_ui_elements = {
 		-- Main Box Frame -- 
 		main_frame = {
-			width = 440,
-			height = 150	
+			width = 443,
+			height = 145	
 		},
 		
 		-- Order in which the buttons are layed out -- 
 		button_index = {
 			"game_stage",
-			"game_mode",
-			"chat_channel",
 			"enter_for_me",
 			"roll_for_me",
+			"chat_channel",
+			"game_mode",
 			"print_stats_table",
 			"reset_game"
 			--"print_ban_list",
@@ -890,7 +890,7 @@ function CalmDownandGamble:ConstructUI()
 			},
 			game_stage = {
 				width = 100,
-				label = "New Game",
+				label = "New game",
 				click_callback = function() self:ButtonGameStage() end
 
 			}
@@ -914,7 +914,7 @@ function CalmDownandGamble:ConstructUI()
 	-- Set up edit box for gold -- 
 	self.ui.gold_amount_entry = AceGUI:Create("EditBox")
 	self.ui.gold_amount_entry:SetLabel("Gold Amount")
-	self.ui.gold_amount_entry:SetWidth(97)
+	self.ui.gold_amount_entry:SetWidth(100)
 	self.ui.CDG_Frame:AddChild(self.ui.gold_amount_entry)
 	
 	-- Set up Buttons Above Text Box-- 
