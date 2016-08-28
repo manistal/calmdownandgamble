@@ -110,7 +110,8 @@ function CDGClient:RollCallback(...)
         -- BRODACAST TO MASTER -- 
         -- Example AceComm call to send rolls to master so we can do this in guild
         -- Master needs to register for CDG_ROLL_DICE event
-        self:SendCommMessage("CDG_ROLL_DICE", roll_text, self.current_game.addon_const)
+		-- TODO: Gate this call on channel, group channels will see roll twice. 
+        -- self:SendCommMessage("CDG_ROLL_DICE", roll_text, self.current_game.addon_const)
 		local roll_msg = "Rolled: "..roll.." "..self.current_game.roll_range.."  Cash: "..self.current_game.cash_winnings
 		--self.ui.CDG_Frame:SetStatusText(roll_msg)
 		if DEBUG then self:Print(roll_text) end

@@ -214,7 +214,7 @@ function CalmDownandGamble:StartGame()
 	self.game.options[self.db.global.game_mode_index].init()
 	
 	-- Register game callbacks
-	self:RegisterComm("CDG_ROLL_DICE", "RollCallback")
+	-- TODO: Only in non-group channels self:RegisterComm("CDG_ROLL_DICE", "RollCallback")
 	self:RegisterEvent("CHAT_MSG_SYSTEM", function(...) self:RollCallback(...) end)
 	self:RegisterEvent(self.chat.channel_callback, function(...) self:ChatChannelCallback(...) end)
 	if (self.chat.channel_callback_leader) then
@@ -687,7 +687,7 @@ function CalmDownandGamble:RollCallback(...)
 	if valid_roll then 
 		if (self.current_game.player_rolls[player] == -1) then
 			if DEBUG then self:Print("Player: "..player.." Roll: "..roll.." RollRange: "..roll_range) end
-			if channel == "CDG_ROLL_DICE" then SendSystemMessage(roll_text) end
+			-- TODO: Only in NONGROUP channels if channel == "CDG_ROLL_DICE" then SendSystemMessage(roll_text) end
 			self.current_game.player_rolls[player] = tonumber(roll)
 			self:CheckRollsComplete(false)
 		end
