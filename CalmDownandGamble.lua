@@ -101,6 +101,7 @@ function CalmDownandGamble:SetGameStage()
 			{ label = "New Game",  callback = function() self:StartGame() end }, -- Index 1
 			{ label = "Last Call!",   callback = function() self:LastCall() end }, -- Index 2
 			{ label = "Start Rolls!", callback = function() self:StartRolls() end }, -- Index 3
+			{ label = "Roll Status", callback = function() self:RollStatus() end }, -- Index 4
 	}	
 	
 	if DEBUG then self:Print(self.game.stages[self.db.global.game_stage_index].label) end
@@ -297,6 +298,7 @@ function CalmDownandGamble:EndGame()
 	end
 	
 	-- Init our game
+	self:ResetGameStage()
 	self.current_game = nil
 end
 
@@ -767,17 +769,18 @@ end
 
 function CalmDownandGamble:TimedStart() 
 	if not self.current_game.accepting_rolls then 
+		self:ButtonGameStage()
 		self:StartRolls()
 	end
 end
 
 function CalmDownandGamble:LastCall()
-	if (self.current_game.accepting_rolls) then
-		self:CheckRollsComplete(true)
-	elseif (self.current_game.accepting_players) then
-		SendChatMessage("Last call! 10 seconds left!", self.chat.channel_const)
-		self:ScheduleTimer("TimedStart", 10)
-	end
+	SendChatMessage("Last call! 10 seconds left!", self.chat.channel_const)
+	self:ScheduleTimer("TimedStart", 10)
+end
+
+function CalmDownandGamble:RollStatus()
+	self:CheckRollsComplete(true)
 end
 
 function CalmDownandGamble:ResetGame()
@@ -809,12 +812,10 @@ end
 
 function CalmDownandGamble:ButtonGameStage()
 	self.game.stages[self.db.global.game_stage_index].callback()
-	
-	self.db.global.game_stage_index = self.db.global.game_stage_index + 1
-	if self.db.global.game_stage_index > table.getn(self.game.stages) then self.db.global.game_stage_index = 1 end
-	self:SetGameStage()
-	
-	self:Print(self.db.global.game_stage_index)
+	if self.db.global.game_stage_index < table.getn(self.game.stages) then 
+		self.db.global.game_stage_index = self.db.global.game_stage_index + 1 
+		self:SetGameStage()
+	end
 end
 
 
