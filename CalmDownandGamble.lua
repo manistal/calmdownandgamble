@@ -567,7 +567,7 @@ function CalmDownandGamble:Inverse()
 end
 
 
--- Game mode: Yahtze 
+-- Game mode: Yahtzee
 -- =================================================
 function format_yahtzee_roll(roll)
 	local ret_string = ""
@@ -678,6 +678,7 @@ function CalmDownandGamble:RollCallback(...)
 	local player, roll, roll_range = message[1], message[3], message[4]
 	
 	if DEBUG then self:Print("CHECK VALID ROLL "..self.current_game.roll_range) end
+	if DEBUG then self:Print("Player: "..player.." Roll: "..roll) end
 	-- Check that the roll is valid ( also that the message is for us)
 	local valid_roll = (self.current_game.roll_range == roll_range) and self.current_game.accepting_rolls
 
@@ -697,7 +698,7 @@ function CalmDownandGamble:ChatChannelCallback(...)
 	local sender = select(3, ...)
 	
 	message = message:gsub("%s+", "") -- trim whitespace
-	sender = Ambiguate(sender, "none")
+	sender = Ambiguate(sender, "short")
 
 
 	local player_join = (
