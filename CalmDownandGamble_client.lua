@@ -169,6 +169,8 @@ function CDGClient:NewRollsCallback(...)
 end
 
 function CDGClient:GameResultsCallback(...)
+	if (self.current_game == nil) then return end
+
 	self.current_game.accepting_rolls = false
 	local callback = select(1, ...)
 	local message = select(2, ...)

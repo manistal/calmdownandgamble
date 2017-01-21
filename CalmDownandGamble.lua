@@ -768,10 +768,12 @@ function CalmDownandGamble:EnterForMe()
 end
 
 function CalmDownandGamble:TimedStart() 
-	if not self.current_game.accepting_rolls then 
-		self.db.global.game_stage_index = 4 -- 4 is the final stage
-		self:SetGameStage()
-		self:StartRolls()
+	if (self.current_game ~= nil) then
+		if not self.current_game.accepting_rolls then 
+			self.db.global.game_stage_index = 4 -- 4 is the final stage
+			self:SetGameStage()
+			self:StartRolls()
+		end
 	end
 end
 
