@@ -51,7 +51,7 @@ end
 -- =========================================================
 function CDGClient:RegisterCallbacks()
 	-- Register Some Slash Commands
-	self:RegisterChatCommand("cdgcshow", "ShowUI")
+	self:RegisterChatCommand("cdg", "ShowUI")
 	self:RegisterChatCommand("cdgchide", "HideUI")
 	self:RegisterChatCommand("cdgcdebug", "SetDebug")
 	self:RegisterChatCommand("cdgcdisable", "DisablePop")
@@ -110,7 +110,8 @@ function CDGClient:RollCallback(...)
         -- BRODACAST TO MASTER -- 
         -- Example AceComm call to send rolls to master so we can do this in guild
         -- Master needs to register for CDG_ROLL_DICE event
-        self:SendCommMessage("CDG_ROLL_DICE", roll_text, self.current_game.addon_const)
+		-- TODO: Gate this call on channel, group channels will see roll twice. 
+        -- self:SendCommMessage("CDG_ROLL_DICE", roll_text, self.current_game.addon_const)
 		local roll_msg = "Rolled: "..roll.." "..self.current_game.roll_range.."  Cash: "..self.current_game.cash_winnings
 		--self.ui.CDG_Frame:SetStatusText(roll_msg)
 		if DEBUG then self:Print(roll_text) end
@@ -168,13 +169,16 @@ function CDGClient:NewRollsCallback(...)
 end
 
 function CDGClient:GameResultsCallback(...)
+	if (self.current_game == nil) then return end
+
 	self.current_game.accepting_rolls = false
 	local callback = select(1, ...)
 	local message = select(2, ...)
 	local chat = select(3, ...)
 	local sender = select(4, ...)
-	message = self:SplitString(message, "%S+")
-     
+
+	message = self:SplitString(message, "%S+")	
+	
     self.current_game.winner = message[1]
 	self.current_game.loser = message[2]
     self.current_game.cash_winnings = message[3]
@@ -202,10 +206,10 @@ end
 
 function CDGClient:OpenTradeWinner()
 	self:RegisterEvent("TRADE_SHOW", function() self:TradeOpen() end)
-
     if (self.current_game.trade_open) then
         local copper = self.current_game.cash_winnings * 100 * 100 
         SetTradeMoney(copper)
+		MoneyInputFrame_SetCopper(TradePlayerInputMoneyFrame, copper)
 
         local sys_msg = "You added "..self.current_game.cash_winnings.." gold to the trade window."
         SendSystemMessage(sys_msg)
@@ -213,6 +217,8 @@ function CDGClient:OpenTradeWinner()
         self.current_game.trade_open = false
 		if DEBUG then self:Print(copper) end
     else
+		local sys_msg = "Press the 'Payout' button again to add the gold to the trade window."
+        SendSystemMessage(sys_msg)
         InitiateTrade(self.current_game.winner)
         
     end
@@ -226,8 +232,8 @@ function CDGClient:ConstructUI()
 	local cdg_ui_elements = {
 		-- Main Box Frame -- 
 		main_frame = {
-			width = 350,
-			height = 100
+			width = 335,
+			height = 95
 		},
 		
 		-- Order in which the buttons are layed out -- 
@@ -240,18 +246,18 @@ function CDGClient:ConstructUI()
 		-- Button Definitions -- 
 		buttons = {
 			roll_for_me = {
-				width = 100,
+				width = 97,
 				label = "Roll",
 				click_callback = function() self:RollForMe() end
 			},
 			enter_for_me = {
-				width = 100,
+				width = 97,
 				label = "Enter",
 				click_callback = function() self:EnterForMe() end
 			},
 			open_trade = {
-				width = 100,
-				label = "TradeGold",
+				width = 97,
+				label = "Payout",
 				click_callback = function() self:OpenTradeWinner() end
 			}
 		}

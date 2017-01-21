@@ -21,6 +21,7 @@ function CalmDownandGamble:OnInitialize()
 			ban_list = { },
 			chat_index = 1,
 			game_mode_index = 1, 
+			game_stage_index = 1,
 			window_shown = false
 		}
 	}
@@ -50,6 +51,7 @@ function CalmDownandGamble:InitState()
 	self.game = {}
 	self:SetChannelSettings()
 	self:SetGameMode()
+	self:ResetGameStage()
 	
 end
 
@@ -88,11 +90,30 @@ function CalmDownandGamble:SetGameMode()
 
 end
 
+function CalmDownandGamble:ResetGameStage() 
+	self.db.global.game_stage_index = 1
+	self:SetGameStage()
+end
+
+function CalmDownandGamble:SetGameStage() 
+
+	self.game.stages = {
+			{ label = "New Game",  callback = function() self:StartGame() end }, -- Index 1
+			{ label = "Last Call!",   callback = function() self:LastCall() end }, -- Index 2
+			{ label = "Start Rolls!", callback = function() self:StartRolls() end }, -- Index 3
+			{ label = "Roll Status", callback = function() self:RollStatus() end }, -- Index 4
+	}	
+	
+	if DEBUG then self:Print(self.game.stages[self.db.global.game_stage_index].label) end
+	self.ui.game_stage:SetText(self.game.stages[self.db.global.game_stage_index].label)
+
+end
+
 -- Slash Command Setup and Calls
 -- =========================================================
 function CalmDownandGamble:RegisterCallbacks()
 	-- Register Some Slash Commands
-	self:RegisterChatCommand("cdgshow", "ShowUI")
+	self:RegisterChatCommand("cdgm", "ShowUI")
 	self:RegisterChatCommand("cdghide", "HideUI")
 	self:RegisterChatCommand("cdgreset", "ResetStats")
 	self:RegisterChatCommand("cdgdebug", "SetDebug")
@@ -193,7 +214,7 @@ function CalmDownandGamble:StartGame()
 	self.game.options[self.db.global.game_mode_index].init()
 	
 	-- Register game callbacks
-	self:RegisterComm("CDG_ROLL_DICE", "RollCallback")
+	-- TODO: Only in non-group channels self:RegisterComm("CDG_ROLL_DICE", "RollCallback")
 	self:RegisterEvent("CHAT_MSG_SYSTEM", function(...) self:RollCallback(...) end)
 	self:RegisterEvent(self.chat.channel_callback, function(...) self:ChatChannelCallback(...) end)
 	if (self.chat.channel_callback_leader) then
@@ -268,8 +289,6 @@ function CalmDownandGamble:EndGame()
 	self:SendCommMessage("CDG_END_GAME", end_args, self.chat.addon_const)
 	self.ui.CDG_Frame:SetStatusText(self.current_game.cash_winnings.."g  "..self.current_game.loser.." => "..self.current_game.winner)
 
-	-- Init our game
-	self.current_game = nil
 	
 	-- Register game callbacks
 	self:UnregisterEvent("CHAT_MSG_SYSTEM")
@@ -277,6 +296,10 @@ function CalmDownandGamble:EndGame()
 	if (self.chat.channel_callback_leader) then
 		self:UnregisterEvent(self.chat.channel_callback_leader)
 	end
+	
+	-- Init our game
+	self:ResetGameStage()
+	self.current_game = nil
 end
 
 
@@ -546,7 +569,7 @@ function CalmDownandGamble:Inverse()
 end
 
 
--- Game mode: Yahtze 
+-- Game mode: Yahtzee
 -- =================================================
 function format_yahtzee_roll(roll)
 	local ret_string = ""
@@ -625,6 +648,10 @@ function CalmDownandGamble:Median()
 		player_index = player_index + 1
 	end
 
+	if median_player == "" then
+		SendChatMessage("You need at least 3 players!!", self.chat.channel_const)
+		median_player = high_player
+	end
 	self.current_game.winner = median_player
 	
 
@@ -645,19 +672,22 @@ end
 -- ChatFrame Interaction Callbacks (Entry and Rolls)
 -- ==================================================== 
 function CalmDownandGamble:RollCallback(...)
+
 	-- Parse the input Args 
 	local channel = select(1, ...)
 	local roll_text = select(2, ...)
 	local message = self:SplitString(roll_text, "%S+")
 	local player, roll, roll_range = message[1], message[3], message[4]
 	
+	if DEBUG then self:Print("CHECK VALID ROLL "..self.current_game.roll_range) end
+	if DEBUG then self:Print("Player: "..player.." Roll: "..roll) end
 	-- Check that the roll is valid ( also that the message is for us)
 	local valid_roll = (self.current_game.roll_range == roll_range) and self.current_game.accepting_rolls
 
 	if valid_roll then 
 		if (self.current_game.player_rolls[player] == -1) then
 			if DEBUG then self:Print("Player: "..player.." Roll: "..roll.." RollRange: "..roll_range) end
-			if channel == "CDG_ROLL_DICE" then SendSystemMessage(roll_text) end
+			-- TODO: Only in NONGROUP channels if channel == "CDG_ROLL_DICE" then SendSystemMessage(roll_text) end
 			self.current_game.player_rolls[player] = tonumber(roll)
 			self:CheckRollsComplete(false)
 		end
@@ -670,7 +700,7 @@ function CalmDownandGamble:ChatChannelCallback(...)
 	local sender = select(3, ...)
 	
 	message = message:gsub("%s+", "") -- trim whitespace
-	sender = Ambiguate(sender, "none")
+	sender = Ambiguate(sender, "short")
 
 
 	local player_join = (
@@ -726,6 +756,10 @@ function CalmDownandGamble:PrintRanklist()
 end
 
 function CalmDownandGamble:RollForMe()
+	if self.current_game == nil then 
+		SendSystemMessage("You need an active game for me to roll for you!")
+		return
+	end
 	RandomRoll(self.current_game.roll_lower, self.current_game.roll_upper)
 end
 
@@ -734,22 +768,34 @@ function CalmDownandGamble:EnterForMe()
 end
 
 function CalmDownandGamble:TimedStart() 
-	if not self.current_game.accepting_rolls then 
-		self:StartRolls()
+	if (self.current_game ~= nil) then
+		if not self.current_game.accepting_rolls then 
+			self.db.global.game_stage_index = 4 -- 4 is the final stage
+			self:SetGameStage()
+			self:StartRolls()
+		end
 	end
 end
 
 function CalmDownandGamble:LastCall()
-	if (self.current_game.accepting_rolls) then
-		self:CheckRollsComplete(true)
-	elseif (self.current_game.accepting_players) then
-		SendChatMessage("Last call! 10 seconds left!", self.chat.channel_const)
-		self:ScheduleTimer("TimedStart", 10)
-	end
+	SendChatMessage("Last call! 10 seconds left!", self.chat.channel_const)
+	self:ScheduleTimer("TimedStart", 10)
+end
+
+function CalmDownandGamble:RollStatus()
+	self:CheckRollsComplete(true)
 end
 
 function CalmDownandGamble:ResetGame()
+	-- Register game callbacks
+	self:UnregisterEvent("CHAT_MSG_SYSTEM")
+	self:UnregisterEvent(self.chat.channel_callback)
+	if (self.chat.channel_callback_leader) then
+		self:UnregisterEvent(self.chat.channel_callback_leader)
+	end
+	
 	self.current_game = nil
+	self:ResetGameStage()
 	SendChatMessage("Game has been reset.", self.chat.channel_const)
 end
 
@@ -767,6 +813,15 @@ function CalmDownandGamble:ButtonGameMode()
 	self:SetGameMode()
 end
 
+function CalmDownandGamble:ButtonGameStage()
+	self.game.stages[self.db.global.game_stage_index].callback()
+	if self.db.global.game_stage_index < table.getn(self.game.stages) then 
+		self.db.global.game_stage_index = self.db.global.game_stage_index + 1 
+		self:SetGameStage()
+	end
+end
+
+
 -- UI ELEMENTS 
 -- ======================================================
 function CalmDownandGamble:ConstructUI()
@@ -775,22 +830,20 @@ function CalmDownandGamble:ConstructUI()
 	local cdg_ui_elements = {
 		-- Main Box Frame -- 
 		main_frame = {
-			width = 440,
-			height = 170
+			width = 443,
+			height = 145	
 		},
 		
 		-- Order in which the buttons are layed out -- 
 		button_index = {
-			"new_game",
-			"last_call",
-			"start_gambling",
-			"roll_for_me",
+			"game_stage",
 			"enter_for_me",
-			"print_stats_table",
-			"print_ban_list",
+			"roll_for_me",
 			"chat_channel",
 			"game_mode",
+			"print_stats_table",
 			"reset_game"
+			--"print_ban_list",
 		},
 		
 		-- Button Definitions -- 
@@ -807,12 +860,12 @@ function CalmDownandGamble:ConstructUI()
 			},
 			print_ban_list = {
 				width = 100,
-				label = "Print Bans",
+				label = "Print bans",
 				click_callback = function() self:PrintBanlist() end
 			},
 			print_stats_table = {
 				width = 100,
-				label = "Print Stats",
+				label = "Print stats",
 				click_callback = function() self:PrintRanklist() end
 			},
 			reset_game = {
@@ -820,30 +873,31 @@ function CalmDownandGamble:ConstructUI()
 				label = "Reset",
 				click_callback = function() self:ResetGame() end
 			},
-			roll_for_me = {
-				width = 100,
-				label = "Roll For Me",
-				click_callback = function() self:RollForMe() end
-			},
 			enter_for_me = {
 				width = 100,
-				label = "Enter Me",
+				label = "Enter me",
 				click_callback = function() self:EnterForMe() end
+			},			
+			roll_for_me = {
+				width = 100,
+				label = "Roll!",
+				click_callback = function() self:RollForMe() end
 			},
 			start_gambling = {
 				width = 100,
-				label = "Start Rolls!",
+				label = "Start roll",
 				click_callback = function() self:StartRolls() end
 			},
 			last_call = {
 				width = 100,
-				label = "Last Call!",
+				label = "Last call!",
 				click_callback = function() self:LastCall() end
 			},
-			new_game = {
+			game_stage = {
 				width = 100,
-				label = "New Game",
-				click_callback = function() self:StartGame() end
+				label = "New game",
+				click_callback = function() self:ButtonGameStage() end
+
 			}
 		}
 		

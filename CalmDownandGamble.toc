@@ -1,5 +1,4 @@
-
-## Interface: 60200
+## Interface: 70000
 ## X-Min-Interface: 50000
 ## Title: CalmDownandGamble
 ## Author: Fuzz Magtheridon-US
