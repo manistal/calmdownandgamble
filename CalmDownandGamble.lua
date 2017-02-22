@@ -125,6 +125,7 @@ function CalmDownandGamble:RegisterCallbacks()
 	self:RegisterChatCommand("cdgTESTA", "TESTA")
 	self:RegisterChatCommand("cdgTESTB", "TESTB")
 	self:RegisterChatCommand("cdgTESTC", "TESTC")
+	self:RegisterChatCommand("cdgcleanrank", "CleanRankList")
 	-- self:RegisterComm("CDG_NEW_GAME", "NewGameCallback")
     -- self:RegisterComm("CDG_NEW_ROLL", "NewRollsCallback")
     -- self:RegisterComm("CDG_END_GAME", "GameResultsCallback")
@@ -271,7 +272,7 @@ function CalmDownandGamble:LogResults()
 	if (self.db.global.rankings[self.current_game.winner] ~= nil) then
 		self.db.global.rankings[self.current_game.winner] = self.db.global.rankings[self.current_game.winner] + self.current_game.cash_winnings
 	else
-		self.db.global.rankings[self.current_game.winner] = self.current_game.cash_winnings
+		self.db.global.rankings[self.current_game.winner] = (1*self.current_game.cash_winnings)
 	end
 	
 	if (self.db.global.rankings[self.current_game.loser] ~= nil) then
@@ -753,6 +754,17 @@ function CalmDownandGamble:PrintRanklist()
 		index = index + 1
 	end
 	
+end
+
+function CalmDownandGamble:CleanRankList()
+
+	local index = 1
+	local sort_descending = function(t,a,b) return t[b] < t[a] end
+	for player, gold in pairs(self.db.global.rankings) do
+		self:Print(player)
+		self.db.global.rankings[player] = tonumber(self.db.global.rankings[player])
+		self:Print(self.db.global.rankings[player])
+	end
 end
 
 function CalmDownandGamble:RollForMe()
