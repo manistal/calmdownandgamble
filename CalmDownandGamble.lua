@@ -163,7 +163,6 @@ function CalmDownandGamble:SetGameMode()
 	GAME_MODES = { CDG_HILO }
 	self.game.mode = GAME_MODES[self.game.mode_id]
 	self.game.num_modes = table.getn(GAME_MODES)
-	
 	self.ui.game_mode:SetText(self.game.mode.label)
 
 end
@@ -282,7 +281,7 @@ function CalmDownandGamble:CheckRollsComplete(print_players)
 
 	local rolls_complete = true
 	
-	if CDG_DEBUG then self:Print("CHECK ROLLS COMPLETE") end 
+	self:PrintDebug("CheckRollsComplete() Called")
 
 	for player, roll in pairs(self.game.data.player_rolls) do
 		if (roll == -1) then
@@ -374,7 +373,7 @@ function CalmDownandGamble:EvaluateScores()
 	for player, roll in self:sortedpairs(self.game.data.player_rolls, self.game.mode.sort_scores) do
 	
 		player_score = tonumber(roll)
-		if CDG_DEBUG then self:Print(player.." "..player_score) end
+		self:PrintDebug(player.." "..player_score)
 		
 		if (winning_roll == nil) then  -- haven't seen anything yet
 			winning_roll = player_score
@@ -426,7 +425,7 @@ function CalmDownandGamble:EvaluateScores()
 			self.game.data.player_rolls = self:CopyTable(high_roller_playoff)
 			self.game.data.high_tiebreaker = true
 			self:StartRolls()
-			if CDG_DEBUG then self:Print("HIGHTIE2") end
+			self:PrintDebug("High Tie Breaker #2")
 			return false
 		end
 	-- Low Tiebreaker -- 
@@ -448,13 +447,13 @@ function CalmDownandGamble:EvaluateScores()
 			self.game.data.player_rolls = self:CopyTable(high_roller_playoff)
 			self.game.data.low_tiebreaker = true
 			self:StartRolls()
-			if CDG_DEBUG then self:Print("LOWTIE4") end
+			self:PrintDebug("Low Tiebreaker #4")
 			return false
 		else
 			self.game.data.player_rolls = self:CopyTable(low_roller_playoff)
 			self.game.data.low_tiebreaker = true
 			self:StartRolls()
-			if CDG_DEBUG then self:Print("LOWTIE2") end
+			self:PrintDebug("Low Tiebreaker #2")
 			return false
 		end
 	-- No Tiebreaker -- 
@@ -481,20 +480,20 @@ function CalmDownandGamble:EvaluateScores()
 	
 	
 	if (self:TableLength(self.game.data.low_roller_playoff) > 1) then 
-		if CDG_DEBUG then self:Print("LOWTIE1") end
+		self:PrintDebug("Low Tiebreaker #1")
 		-- start low tiebreaker -- 
 		self.game.data.low_tiebreaker = true
 		self.game.data.player_rolls = self:CopyTable(self.game.data.low_roller_playoff)
 		self:StartRolls()
 		return false
 	elseif (self:TableLength(self.game.data.high_roller_playoff) > 1) then 
-		if CDG_DEBUG then self:Print("HIGHTIE1") end
+		self:PrintDebug("High Tiebreaker #1")
 		self.game.data.high_tiebreaker = true
 		self.game.data.player_rolls = self:CopyTable(self.game.data.high_roller_playoff)
 		self:StartRolls()
 		return false
 	elseif (self.game.data.loser == nil) and (not found_loser) then  -- special case, everyone was a high roller
-		if CDG_DEBUG then self:Print("LOWTIE3") end
+		self:PrintDebug("Low Tiebreaker #3")
 		self.game.data.low_tiebreaker = true
 		self.game.data.player_rolls = self:CopyTable(low_roller_playoff)
 		self:StartRolls()
@@ -509,155 +508,6 @@ function CalmDownandGamble:EvaluateScores()
 		
 end
 
--- GAME MODE INITS 
--- =========================
-
-
--- Yahtzee Init -- Yahtzee is different because fun. 
-function CalmDownandGamble:YahtzeeInit() 
-	self:SetGoldAmount()
-	self.game.data.roll_range = "(11111-99999)"
-	self.game.data.roll_upper = 99999
-	self.game.data.roll_lower = 11111
-end
-
--- Twos Init -- Yahtzee is different because fun. 
-function CalmDownandGamble:TwosInit() 
-	self:SetGoldAmount()
-	self.game.data.roll_range = "(1-2)"
-	self.game.data.roll_upper = 2
-	self.game.data.roll_lower = 1
-end
-
-
--- Game mode: Twos
--- =================================================
-function CalmDownandGamble:Twos()
-	if (CalmDownandGamble:EvaluateScores()) then
-		self.game.data.cash_winnings = self.game.data.gold_amount
-		self:MessageChat(self.game.data.loser.." owes "..self.game.data.winner.." "..self.game.data.cash_winnings.." gold!")
-	
-		-- Log Results -- All game modes must call these two explicitly
-		self:LogResults()
-		self:EndGame()
-	end
-end
-
-
--- Game mode: Inverse
--- =================================================
-function CalmDownandGamble:Inverse()
-	if (CalmDownandGamble:EvaluateScores()) then
-		
-		self.game.data.cash_winnings = self.game.data.winning_roll - self.game.data.losing_roll
-		self.game.data.winner, self.game.data.loser = self.game.data.loser, self.game.data.winner
-		self:MessageChat(self.game.data.loser.." owes "..self.game.data.winner.." "..self.game.data.cash_winnings.." gold!")
-	
-		-- Log Results -- All game modes must call these two explicitly
-		self:LogResults()
-		self:EndGame()
-	end
-end
-
-
--- Game mode: Yahtzee
--- =================================================
-function format_yahtzee_roll(roll)
-	local ret_string = ""
-	for digit in string.gmatch(roll, "%d") do
-		ret_string = ret_string..digit.."-"
-    end
-	ret_string = ret_string.."!!"
-	return string.gsub(ret_string, "-!!", "")
-end
-
-function CalmDownandGamble:ScoreYahtzee(roll)
-
-	local score = 0
-	for digit in string.gmatch(roll, "%d") do
-		local _, count = string.gsub(roll, digit, "")
-		if CDG_DEBUG then self:Print(digit.." #"..count) end
-		score = score + (count * digit)
-    end
-	
-	return score
-end
-
-function CalmDownandGamble:Yahtzee()
-
-	local player_scores = {}
-	for player, roll in pairs(self.game.data.player_rolls) do
-		local score = self:ScoreYahtzee(roll)
-		player_scores[player] = score
-	end
-	
-	local sort_by_score = function(t,a,b) return t[b] < t[a] end
-	for player, score in self:sortedpairs(player_scores, sort_by_score) do
-		self:MessageChat(player.." Roll: "..format_yahtzee_roll(self.game.data.player_rolls[player]).." Score: "..score)
-	end
-
-	self.game.data.player_rolls = {}
-	self.game.data.player_rolls = self:CopyTable(player_scores)
-	
-	if (self:EvaluateScores()) then 
-		self.game.data.cash_winnings = self.game.data.gold_amount
-		self:MessageChat(self.game.data.loser.." owes "..self.game.data.winner.." "..self.game.data.cash_winnings.." gold!")
-	
-		-- Log Results -- All game modes must call these two explicitly
-		self:LogResults()
-		self:EndGame()
-	end
-	
-end
-
--- Game mode: MiddleMan
--- =================================================
-function CalmDownandGamble:Median()
-	
-	local sort_by_score = function(t,a,b) return t[b] < t[a] end
-	local high_player, median_player, low_player = "", "", ""
-	local high_score, median_score, low_score = 0, 0, 0
-	
-	local total_players = self:TableLength(self.game.data.player_rolls)
-	local last_number = total_players
-	local median_number = math.floor((total_players + 1) / 2)
-
-	local player_index = 1
-	for player, roll in self:sortedpairs(self.game.data.player_rolls, sort_by_score) do
-		if CDG_DEBUG then self:Print(player.." "..roll) end
-		if player_index == 1 then 
-			high_player = player
-			high_score = roll
-		elseif player_index == median_number then
-			median_player = player
-			median_score = roll
-		elseif player_index == last_number then
-			low_player = player
-			low_score = roll
-		else 
-		end
-		player_index = player_index + 1
-	end
-
-	if median_player == "" then
-		self:MessageChat("You need at least 3 players!!")
-		median_player = high_player
-	end
-	self.game.data.winner = median_player
-	
-
-	self.game.data.loser = high_player
-	self.game.data.cash_winnings = math.abs(median_score - high_score)
-	self:MessageChat(self.game.data.loser.." owes "..self.game.data.winner.." "..self.game.data.cash_winnings.." gold!")
-	self:LogResults()
-	
-	self.game.data.loser = low_player
-	self.game.data.cash_winnings = math.abs(median_score - low_score)
-	self:MessageChat(self.game.data.loser.." owes "..self.game.data.winner.." "..self.game.data.cash_winnings.." gold!")
-	self:LogResults()
-	
-	self:EndGame()
-end
 
 
 -- ChatFrame Interaction Callbacks (Entry and Rolls)
@@ -670,14 +520,14 @@ function CalmDownandGamble:RollCallback(...)
 	local message = self:SplitString(roll_text, "%S+")
 	local player, roll, roll_range = message[1], message[3], message[4]
 	
-	if CDG_DEBUG then self:Print("CHECK VALID ROLL "..self.game.data.roll_range) end
-	if CDG_DEBUG then self:Print("Player: "..player.." Roll: "..roll) end
+	self:PrintDebug("Checking Roll for Range: "..self.game.data.roll_range)
+	self:PrintDebug("Player: "..player.." Roll: "..roll)
 	-- Check that the roll is valid ( also that the message is for us)
 	local valid_roll = (self.game.data.roll_range == roll_range) and self.game.data.accepting_rolls
 
 	if valid_roll then 
 		if (self.game.data.player_rolls[player] == -1) then
-			if CDG_DEBUG then self:Print("Player: "..player.." Roll: "..roll.." RollRange: "..roll_range) end
+			self:PrintDebug("Player: "..player.." Roll: "..roll.." RollRange: "..roll_range)
 			-- TODO: Only in NONGROUP channels if channel == "CDG_ROLL_DICE" then SendSystemMessage(roll_text) end
 			self.game.data.player_rolls[player] = tonumber(roll)
 			self:CheckRollsComplete(false)
@@ -693,7 +543,6 @@ function CalmDownandGamble:ChatChannelCallback(...)
 	message = message:gsub("%s+", "") -- trim whitespace
 	sender = Ambiguate(sender, "short")
 
-
 	local player_join = (
 		(self.game.data.player_rolls[sender] == nil) 
 		and (self.game.data.accepting_players) 
@@ -703,7 +552,7 @@ function CalmDownandGamble:ChatChannelCallback(...)
 	
 	if (player_join) then
 		self.game.data.player_rolls[sender] = -1
-		if CDG_DEBUG then self:Print("JOINED "..sender) end
+		self:PrintDebug(sender.." joined the game")
 	end
 
 end
@@ -897,62 +746,3 @@ function CalmDownandGamble:ConstructUI()
 	end
 	
 end
-
-
--- Util Functions -- Lua doesnt provide alot of basic functionality
--- =======================================================================
-function CalmDownandGamble:SplitString(str, pattern)
-	local ret_list = {}
-	local index = 1
-	for token in string.gmatch(str, pattern) do
-		ret_list[index] = token
-		index = index + 1
-	end
-	return ret_list
-end
-
-function CalmDownandGamble:CopyTable(T)
-  local u = { }
-  for k, v in pairs(T) do u[k] = v end
-  return setmetatable(u, getmetatable(T))
-end
-
-function CalmDownandGamble:TableLength(T)
-  if (T == nil) then return 0 end
-  local count = 0
-  for _ in pairs(T) do count = count + 1 end
-  return count
-end
-
-function CalmDownandGamble:PrintTable(T)
-	for k, v in pairs(T) do
-		CalmDownandGamble:Print(k.."  "..v)
-	end
-end
-
-function CalmDownandGamble:sortedpairs(t, order)
-    -- collect the keys
-    local keys = {}
-    for k in pairs(t) do keys[#keys+1] = k end
-
-    -- if order function given, sort by it by passing the table and keys a, b,
-    -- otherwise just sort the keys 
-    if order then
-        table.sort(keys, function(a,b) return order(t, a, b) end)
-    else
-        table.sort(keys)
-    end
-    -- return the iterator function
-    local i = 0
-    return function()
-        i = i + 1
-        if keys[i] then
-            return keys[i], t[keys[i]]
-        end
-    end
-end
-
-
-
-
-

@@ -27,8 +27,10 @@ Libs\LibDialog-1.0\lib.xml
 Libs\LibBase64-1.0\lib.xml
 
 embeds.xml
-CDGHiLo.lua
 CalmDownandGamble.lua
-CalmDownandGamble_client.lua
+CDGUtils.lua
+CDGGameModes.lua
+CDGClient.lua
+
 
 
