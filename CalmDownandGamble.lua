@@ -111,6 +111,7 @@ function CalmDownandGamble:SetChatChannel()
 	self.chat.num_channels = table.getn(CHANNEL_CONSTS)
 	self.ui.chat_channel:SetText(self.chat.channel.label)
 	
+	self:PrintDebug(self.chat.label)
 end
 
 function CalmDownandGamble:ChatChannelToggle()
@@ -186,6 +187,8 @@ function CalmDownandGamble:SetGameStage()
 	self.game.stage = GAME_STAGES[self.game.stage_id]
 	self.game.num_stages = table.getn(GAME_STAGES)
 	self.ui.game_stage:SetText(self.game.stage.label)
+	
+	self:PrintDebug(self.game.stage.label)
 end
 
 function CalmDownandGamble:ResetGameStage()
