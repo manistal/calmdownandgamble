@@ -151,16 +151,9 @@ end
 -- ================
 function CalmDownandGamble:SetGameMode() 
 
-	self.game.options = {
-			{ label = "High-Low",  evaluate = function() self:HighLow() end, init = function() self:DefaultGameInit() end }, -- Index 1
-			{ label = "Inverse",   evaluate = function() self:Inverse() end, init = function() self:DefaultGameInit() end }, -- Index 2
-			{ label = "MiddleMan", evaluate = function() self:Median() end,  init = function() self:DefaultGameInit() end }, -- Index 3
-			{ label = "Yahtzee",   evaluate = function() self:Yahtzee() end, init = function() self:YahtzeeInit() end },     -- Index 4
-			{ label = "BigTWOS",   evaluate = function() self:Twos() end, init = function() self:TwosInit() end },     -- Index 5
-	}	
 	
 	-- Loaded from external File
-	GAME_MODES = { CDG_HILO }
+	GAME_MODES = { CDG_HILO, CDG_INVERSE, CDG_BIGTWOS, CDG_YAHTZEE }
 	self.game.mode = GAME_MODES[self.game.mode_id]
 	self.game.num_modes = table.getn(GAME_MODES)
 	self.ui.game_mode:SetText(self.game.mode.label)
@@ -370,7 +363,7 @@ function CalmDownandGamble:EvaluateScores()
     -- Loop over the players and look for highest/lowest/etc
 	-- TODO -- Sort from high to low
 	-- local sort_descending = function(t,a,b) return t[b] < t[a] end
-	for player, roll in self:sortedpairs(self.game.data.player_rolls, self.game.mode.sort_scores) do
+	for player, roll in self:sortedpairs(self.game.data.player_rolls, self.game.mode.sort_rolls) do
 	
 		player_score = tonumber(roll)
 		self:PrintDebug(player.." "..player_score)
