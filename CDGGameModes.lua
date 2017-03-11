@@ -106,7 +106,11 @@ local function ScoreYahtzee(roll)
 	-- Get the total of this dice, common score
 	total = 0
 	for digit in string.gmatch(roll, "%d") do
-		total = total + tonumber(digit)
+		if (tonumber(digit) == 0) then
+			total = total + 1 -- Adjust for 0
+		else
+			total = total + tonumber(digit)
+		end
 	end
 	
 	hand, score, highroll = "", 0, 0
