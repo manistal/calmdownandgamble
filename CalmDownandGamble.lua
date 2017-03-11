@@ -24,7 +24,7 @@ function CalmDownandGamble:OnInitialize()
 			chat_index = 1,
 			game_mode_index = 1, 
 			game_stage_index = 1,
-			window_shown = false
+			window_shown = false,
 		}
 	}
     self.db = LibStub("AceDB-3.0"):New("CalmDownandGambleDB", defaults)
@@ -96,6 +96,15 @@ function CalmDownandGamble:ResetStats()
 	self.db.global.rankings = {}
 end
 
+function CalmDownandGamble:CleanRankList()
+	local index = 1
+	local sort_descending = function(t,a,b) return t[b] < t[a] end
+	for player, gold in pairs(self.db.global.rankings) do
+		self:Print(player)
+		self.db.global.rankings[player] = tonumber(self.db.global.rankings[player])
+		self:Print(self.db.global.rankings[player])
+	end
+end
 
 -- Chat Channels
 -- =================
@@ -579,16 +588,7 @@ function CalmDownandGamble:PrintRanklist()
 	
 end
 
-function CalmDownandGamble:CleanRankList()
 
-	local index = 1
-	local sort_descending = function(t,a,b) return t[b] < t[a] end
-	for player, gold in pairs(self.db.global.rankings) do
-		self:Print(player)
-		self.db.global.rankings[player] = tonumber(self.db.global.rankings[player])
-		self:Print(self.db.global.rankings[player])
-	end
-end
 
 function CalmDownandGamble:RollForMe()
 	if self.game.data == nil then 
