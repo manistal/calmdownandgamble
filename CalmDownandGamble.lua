@@ -117,6 +117,7 @@ end
 function CalmDownandGamble:ChatChannelToggle()
 	self.chat.channel_id = self.chat.channel_id + 1
 	if self.chat.channel_id > self.chat.num_channels then self.chat.channel_id = 1 end
+	self.db.global.chat_index = self.chat.channel_id
 	self:SetChatChannel()
 end
 
@@ -158,18 +159,20 @@ function CalmDownandGamble:SetGameMode()
 			{ label = "BigTWOS",   evaluate = function() self:Twos() end, init = function() self:TwosInit() end },     -- Index 5
 	}	
 	
-	self.game.modes = {
-		CDG_HILO
-	}
+	-- Loaded from external File
+	GAME_MODES = { CDG_HILO }
+	self.game.mode = GAME_MODES[self.game.mode_id]
+	self.game.num_modes = table.getn(GAME_MODES)
 	
-	self.ui.game_mode:SetText(self.game.options[self.db.global.game_mode_index].label)
+	self.ui.game_mode:SetText(self.game.mode.label)
 
 end
 
 
 function CalmDownandGamble:ToggleGameMode()
-	self.db.global.game_mode_index = self.db.global.game_mode_index + 1
-	if self.db.global.game_mode_index > table.getn(self.game.options) then self.db.global.game_mode_index = 1 end
+	self.game.mode_id = self.game.mode_id + 1
+	if self.game.mode_id > self.game.num_modes then self.game.mode_id = 1 end
+	self.db.global.game_mode_index = self.game.mode_id
 	self:SetGameMode()
 end
 
@@ -192,7 +195,7 @@ function CalmDownandGamble:SetGameStage()
 end
 
 function CalmDownandGamble:ResetGameStage()
-	self.game.stag_id = 1
+	self.game.stage_id = 1
 	self:SetGameStage()
 end
 
@@ -222,12 +225,13 @@ function CalmDownandGamble:StartGame()
 		low_roller_playoff = {},
 		player_rolls = {}
 	}
-	self.game.options[self.db.global.game_mode_index].init()
+	self:SetGoldAmount()
 	self:RegisterChatEvents()
+	self.game.mode.init_game(self.game)
 	self:PrintDebug("Initialized Current GAME")
 	
 	-- Welcome Message!
-	local welcome_msg = "CDG is now in session! Mode: "..self.game.options[self.db.global.game_mode_index].label..", Bet: "..self.game.data.gold_amount.." gold"
+	local welcome_msg = "CDG is now in session! Mode: "..self.game.mode.label..", Bet: "..self.game.data.gold_amount.." gold"
 	self:MessageChat(welcome_msg)
 	self:MessageChat("Press 1 to Join!")
 	
@@ -291,12 +295,21 @@ function CalmDownandGamble:CheckRollsComplete(print_players)
 	
 	if (rolls_complete) then
 		self.game.accepting_rolls = false
-		self.game.options[self.db.global.game_mode_index].evaluate()
+		self:GameLoop()
 	end
 	
 end
 
--- 
+function CalmDownandGamble:GameLoop() 
+	if (CalmDownandGamble:EvaluateScores()) then
+		self.game.mode.payout(self.game)
+		self:MessageChat(self.game.data.loser.." owes "..self.game.data.winner.." "..self.game.data.cash_winnings.." gold!")
+		self:LogResults()
+		self:EndGame()
+	end
+end
+
+
 function CalmDownandGamble:EndGame()
 	local end_args = self.game.data.winner.." "..self.game.data.loser.." "..self.game.data.cash_winnings
 	self:MessageAddon("CDG_END_GAME", end_args)
@@ -350,20 +363,15 @@ end
 -- SCORING FUNCTION
 -- ===================
 function CalmDownandGamble:EvaluateScores()
+	self:PrintDebug("Evaluating Scores")
 	
-	if CDG_DEBUG then self:Print("Evaluating Scores") end
-	
-	
-	-- UNDER CONSTRUCTION
-	-- TODO 
-	-- AHHHh
 	local winning_roll, losing_roll, high_roller_playoff, low_roller_playoff = nil, nil, {}, {}
 	local winner, loser = nil, nil
 	
     -- Loop over the players and look for highest/lowest/etc
 	-- TODO -- Sort from high to low
-	local sort_descending = function(t,a,b) return t[b] < t[a] end
-	for player, roll in self:sortedpairs(self.game.data.player_rolls, sort_descending) do
+	-- local sort_descending = function(t,a,b) return t[b] < t[a] end
+	for player, roll in self:sortedpairs(self.game.data.player_rolls, self.game.mode.sort_scores) do
 	
 		player_score = tonumber(roll)
 		if CDG_DEBUG then self:Print(player.." "..player_score) end
@@ -504,13 +512,6 @@ end
 -- GAME MODE INITS 
 -- =========================
 
--- DEFAULT INIT -- Used by almost everything
-function CalmDownandGamble:DefaultGameInit() 
-	self:SetGoldAmount()
-	self.game.data.roll_upper = self.game.data.gold_amount
-	self.game.data.roll_lower = 1
-	self.game.data.roll_range = "(1-"..self.game.data.gold_amount..")"
-end
 
 -- Yahtzee Init -- Yahtzee is different because fun. 
 function CalmDownandGamble:YahtzeeInit() 
@@ -528,18 +529,6 @@ function CalmDownandGamble:TwosInit()
 	self.game.data.roll_lower = 1
 end
 
--- Game mode: High Low
--- =================================================
-function CalmDownandGamble:HighLow()
-	if (CalmDownandGamble:EvaluateScores()) then
-		self.game.data.cash_winnings = self.game.data.winning_roll - self.game.data.losing_roll
-		self:MessageChat(self.game.data.loser.." owes "..self.game.data.winner.." "..self.game.data.cash_winnings.." gold!")
-		
-		-- Log Results -- All game modes must call these two explicitly
-		self:LogResults()
-		self:EndGame()
-	end
-end
 
 -- Game mode: Twos
 -- =================================================
@@ -783,19 +772,12 @@ end
 function CalmDownandGamble:TimedStart() 
 	if (self.game.data ~= nil) then
 		if not self.game.data.accepting_rolls then 
-			self.db.global.game_stage_index = 4 -- 4 is the final stage
+			self.game.stage_id = 4 -- 4 is the final stage
 			self:SetGameStage()
 			self:StartRolls()
 		end
 	end
 end
-
-
-
-
-
-
-
 
 
 -- UI ELEMENTS 
