@@ -5,7 +5,7 @@ local AceGUI = LibStub("AceGUI-3.0")
 
 
 -- Debug Setup
-local CDG_DEBUG = true
+local CDG_DEBUG = false
 function CalmDownandGamble:PrintDebug(msg)
 	if CDG_DEBUG then self:Print("[CDG_DEBUG] "..msg) end
 end
@@ -461,12 +461,13 @@ function CalmDownandGamble:EvaluateScores()
 			self.game.data.winning_roll = winning_roll
 			self.game.data.high_tiebreaker = false
 			self.game.data.high_roller_playoff = {}
-		elseif ((self.game.data.loser == nil) and (not self.game.data.low_tiebreaker) and found_loser) then
+		-- TODO handle the case where we pick off losers
+		--elseif ((self.game.data.loser == nil) and (not self.game.data.low_tiebreaker) and found_loser) then
 			-- Handle the case where the first loser in high tiebreaker is the actual loser
-			self.game.data.loser = loser
-			self.game.data.losing_roll = losing_roll
-			self.game.data.low_tiebreaker = false
-			self.game.data.low_roller_playoff = {}
+			--self.game.data.loser = loser
+			--self.game.data.losing_roll = losing_roll
+			--self.game.data.low_tiebreaker = false
+			--self.game.data.low_roller_playoff = {}
 		else
 			self.game.data.player_rolls = self:CopyTable(high_roller_playoff)
 			self.game.data.high_tiebreaker = true
