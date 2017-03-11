@@ -44,7 +44,7 @@ function CalmDownandGamble:OnInitialize()
 	-- Clean from 7.0 Bug
 	self:RegisterChatCommand("cdgcleanrank", "CleanRankList")
 	
-	-- Chat Context -- 
+	-- Set up Internals 
 	self.chat = {
 		channel_id = self.db.global.chat_index,
 		channel = {}
