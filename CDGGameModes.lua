@@ -68,14 +68,68 @@ CDG_INVERSE = {
 -- Yahtzee
 -- ============
 local function ScoreYahtzee(roll)
-
-	local score = 0
+	-- Get the total of this dice, common score
+	total = 0
 	for digit in string.gmatch(roll, "%d") do
-		local _, count = string.gsub(roll, digit, "")
-		score = score + (count * digit)
-    end
+		total = total + digit
+	end
 	
-	return score
+	hand, score, highroll = "", 0, 0
+	
+	-- Evaluate best possible hand
+	for digit in string.gmatch(roll, "%d") do
+	
+		-- If you hit these your other numbers wont be better
+		local _, count = string.gsub(roll, digit, "")
+		if (count == 5) then
+			return "YAHTZEE!", 50
+		end
+		
+		if (count == 4) then
+			return "Four of a Kind!", total
+		end
+		
+		if (count == 3) then
+			-- Check for Full House
+			for digit in string.gmatch(roll, "%d") do
+				local _, other_count = string.gsub(roll, digit, "")
+				if (other_count == 2) then
+					return "Full House!", 25
+				end
+			end
+			
+			return "Three of a Kind!", total
+		end
+		
+		
+		-- Doubles, could get better
+		if (count == 2) then
+			-- Check for full house
+			for digit in string.gmatch(roll, "%d") do
+				local _, other_count = string.gsub(roll, digit, "")
+				if (other_count == 2) then
+					return "Full House!", 25
+				end
+			end
+			
+			hand, score = "Doubles!",  digit*2
+		end
+		
+		-- Singles UGH
+		if (count == 1) then
+			if (digit > highroll) then
+				highroll = digit
+			end
+		end
+		
+	end	
+	
+	-- Singles Bummer
+	if (score == 0) then
+		hand, score = "OUCH - Single Roll", highroll
+	end
+
+	return hand, score
 end
 
 local function FormatYahtzee(roll)
@@ -87,6 +141,7 @@ local function FormatYahtzee(roll)
 	return string.gsub(ret_string, "-!!", "")
 end
 
+
 CDG_YAHTZEE = {
 	label = "Yahtzee",
 	
@@ -97,13 +152,16 @@ CDG_YAHTZEE = {
 	end,
 	
 	sort_rolls = function(scores, playera, playerb) 
+		local _, scoreA = ScoreYahtzee(scores[playera])
+		local _, scoreB = ScoreYahtzee(scores[playerb])
 		-- Sort from Highest to Lowest
-		return ScoreYahtzee(scores[playerb]) < ScoreYahtzee(scores[playera])
+		return scoreB < scoreA
 	end,
 	
 	payout = function(game)
 		for player, roll in CalmDownandGamble:sortedpairs(player_scores, game.mode.sort_rolls) do
-			CalmDownandGamble:MessageChat(player.." Roll: "..FormatYahtzee(roll).." Score: "..ScoreYahtzee(roll))
+			local hand, score = ScoreYahtzee(roll)
+			CalmDownandGamble:MessageChat(player.." Roll: "..FormatYahtzee(roll).." Score: "..score.." "..hand)
 		end
 		game.data.cash_winnings = game.data.gold_amount
 	end,

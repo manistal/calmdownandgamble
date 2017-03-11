@@ -150,8 +150,6 @@ end
 -- Game Modes
 -- ================
 function CalmDownandGamble:SetGameMode() 
-
-	
 	-- Loaded from external File
 	GAME_MODES = { CDG_HILO, CDG_INVERSE, CDG_BIGTWOS, CDG_YAHTZEE }
 	self.game.mode = GAME_MODES[self.game.mode_id]
@@ -344,13 +342,6 @@ function CalmDownandGamble:SetGoldAmount()
 	end
 
 end
-
-
-
--- Game Modes -- Each Game Mode must define an init (or use default) and an
--- evaluate function, init sets roll_range and gold value, eval sets 
--- cashwinnings winner and loser
--- ============================================================================
 
 -- SCORING FUNCTION
 -- ===================
