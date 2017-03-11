@@ -21,8 +21,7 @@ function CDGClient:OnInitialize()
 			game_mode_index = 1, 
 			window_shown = false,
 			auto_pop = true,
-			ui = {},
-			FIRE = false
+			ui = {}
 		}
 	}
 
@@ -33,7 +32,7 @@ function CDGClient:OnInitialize()
 	
 	-- Register for UI Events
 	self:RegisterEvent("PLAYER_LEAVING_WORLD", function(...) self:OnDisable(...) end)
-	-- self:RegisterEvent("PLAYER_ENTERING_WORLD", function(...) self:OnDisable(...) end)
+	self:RegisterEvent("PLAYER_ENTERING_WORLD", function(...) self:OnDisable(...) end)
 	
 
 	if DEBUG then self:Print("Load Complete!!") end
@@ -45,13 +44,11 @@ end
 
 -- DESTRUCTOR  
 function CDGClient:OnDisable()
-	self.db.global.FIRE = true
 	local point_idx, num_points = 1, self.ui.CDG_Frame:GetNumPoints()
 	while (point_idx <= num_points) do
 		self.db.global.ui[point_idx] = self.ui.CDG_Frame:GetPoint(point_idx)
 		point_idx = point_idx + 1
 	end
-	self.db.global.window_shown = self.ui.window_shown
 end
 
 
@@ -87,12 +84,12 @@ end
 
 function CDGClient:ShowUI()
 	self.ui.CDG_Frame:Show()
-	self.ui.window_shown = true
+	self.db.global.window_shown = true
 end
 
 function CDGClient:HideUI()
 	self.ui.CDG_Frame:Hide()
-	self.ui.window_shown = false
+	self.db.global.window_shown = false
 end
 
 function CDGClient:DisablePop()
@@ -288,8 +285,7 @@ function CDGClient:ConstructUI()
 	self.ui.CDG_Frame:SetStatusTable(cdg_ui_elements.main_frame)
 	self.ui.CDG_Frame:EnableResize(false)
 	self.ui.CDG_Frame:SetCallback("OnClose", function() self:HideUI() end)
-	-- self.ui.CDG_Frame:DisableResize()
-	-- self.ui.CDG_Frame:SetUserPlaced()
+
 	
 	-- Set up Buttons Above Text Box-- 
 	for _, button_name in pairs(cdg_ui_elements.button_index) do

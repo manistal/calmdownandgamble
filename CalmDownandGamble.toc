@@ -6,7 +6,7 @@
 ## Notes: CALM DOWN AND GAMBLE!
 ## DefaultState: Enabled
 ## LoadOnDemand: 0
-## SavedVariables: CalmDownandGambleDB
+## SavedVariables: CalmDownandGambleDB, CDGClientDB
 
 Libs\LibStub\LibStub.lua
 Libs\CallbackHandler-1.0\CallbackHandler-1.0.xml

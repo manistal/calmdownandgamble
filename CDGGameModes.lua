@@ -18,6 +18,8 @@ CDG_HILO = {
 	roll_to_score = function(roll)
 		return tonumber(roll)
 	end,
+	
+	fmt_score = function(roll) return roll end,
 
 	sort_rolls = CDG_SORT_DESCENDING,
 	
@@ -41,6 +43,8 @@ CDG_BIGTWOS = {
 		return tonumber(roll)
 	end,
 	
+	fmt_score = function(roll) return roll end,
+	
 	sort_rolls = CDG_SORT_DESCENDING,
 	
 	payout = function(game)
@@ -63,6 +67,8 @@ CDG_INVERSE = {
 	roll_to_score = function(roll)
 		return tonumber(roll)
 	end,
+	
+	fmt_score = function(roll) return roll end,
 	
 	sort_rolls = CDG_SORT_ASCENDING,
 	
@@ -90,6 +96,8 @@ CDG_ROULETTE= {
 			return 1
 		end
 	end,
+	
+	fmt_score = function(roll) return roll end,
 	
 	sort_rolls = CDG_SORT_DESCENDING,
 	
@@ -207,6 +215,11 @@ CDG_YAHTZEE = {
 	roll_to_score = function(roll)
 		hand, score = ScoreYahtzee(roll)
 		return score
+	end,
+	
+	fmt_score = function(roll)
+		hand, score = ScoreYahtzee(roll)
+		return " "..score.." - "..hand
 	end,
 	
 	sort_rolls =  function(scores, playera, playerb) 

@@ -176,7 +176,7 @@ end
 -- ================
 function CalmDownandGamble:SetGameMode() 
 	-- Loaded from external File
-	GAME_MODES = { CDG_HILO, CDG_INVERSE, CDG_BIGTWOS, CDG_YAHTZEE, CDG_ROULETTE }
+	GAME_MODES = { CDG_HILO, CDG_INVERSE, CDG_BIGTWOS, CDG_YAHTZEE }
 	self.game.mode = GAME_MODES[self.game.mode_id]
 	self.game.num_modes = table.getn(GAME_MODES)
 	self.ui.game_mode:SetText(self.game.mode.label)
@@ -269,23 +269,21 @@ function CalmDownandGamble:StartRolls()
 	
 	local roll_msg = ""
 	if self.game.data.high_tiebreaker then 
-		roll_msg = "High Tiebreaker!! "..format_player_names(self.game.data.player_rolls)
+		self:MessageChat("The Winners Bracket!")
+		self:PrintTieBreakerPlayers(self.game.data.player_rolls)
 	elseif self.game.data.low_tiebreaker then 
-		roll_msg = "Low Tiebreaker!! "..format_player_names(self.game.data.player_rolls)
+		self:MessageChat("The Losers Last Chance!")
+		self:PrintTieBreakerPlayers(self.game.data.player_rolls)
 	else
 		roll_msg = "Time to roll! Good Luck! Command:   /roll "..self.game.data.roll_range
 	end
 	self:MessageChat(roll_msg)
 end
 
--- String Formatter for StartRolls
-function format_player_names(players)
-	local return_str = ""
-	for player, _ in pairs(players) do
-		return_str = return_str..player.." vs "
+function CalmDownandGamble:PrintTieBreakerPlayers(players)
+	for player, roll in pairs(players) do
+		self:MessageChat(" "..player.." "..self.game.mode.fmt_score(roll))
 	end
-	return_str = return_str.."!!"
-	return string.gsub(return_str, " vs !", "")
 end
 
 -- (stage_id =4) Poll for Roll Status
