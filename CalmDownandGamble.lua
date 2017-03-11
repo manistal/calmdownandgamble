@@ -40,6 +40,7 @@ function CalmDownandGamble:OnInitialize()
 	self:RegisterChatCommand("cdgban", "BanPlayer")
 	self:RegisterChatCommand("cdgunban", "UnbanPlayer")
 	self:RegisterChatCommand("cdgbanreset", "ResetBans")
+	self:RegisterComm("CDG_END_GAME", "GameResultsCallback")
 	
 	-- Clean from 7.0 Bug
 	self:RegisterChatCommand("cdgcleanrank", "CleanRankList")
@@ -139,6 +140,7 @@ function CalmDownandGamble:MessageAddon(event, msg)
 end
 
 function CalmDownandGamble:RegisterChatEvents()
+
 	self:RegisterEvent("CHAT_MSG_SYSTEM", function(...) self:RollCallback(...) end)
 	self:RegisterEvent(self.chat.channel.callback, function(...) self:ChatChannelCallback(...) end)
 	if (self.chat.channel.callback_leader) then
@@ -326,6 +328,39 @@ end
 
 -- Utils
 -- ========
+
+function CDGClient:GameResultsCallback(...)
+	local callback = select(1, ...)
+	local message = select(2, ...)
+	local chat = select(3, ...)
+	local sender = select(4, ...)
+
+	-- Parse the message
+	message = self:SplitString(message, "%S+")	
+    winner = message[1]
+	loser = message[2]
+    cash_winnings = message[3]
+	
+	-- Don't record what we're sending out
+	local name, realm = UnitName("player")
+	if (sender == name) then
+		return
+	end
+	
+	-- Log results
+	if (self.db.global.rankings[winner] ~= nil) then
+		self.db.global.rankings[winner] = self.db.global.rankings[winner] + cash_winnings
+	else
+		self.db.global.rankings[winner] = (1*cash_winnings)
+	end
+	
+	if (self.db.global.rankings[loser] ~= nil) then
+		self.db.global.rankings[loser] = self.db.global.rankings[loser] - cash_winnings
+	else
+		self.db.global.rankings[loser] = (-1*cash_winnings)
+	end
+end
+
 function CalmDownandGamble:LogResults() 
 	if (self.db.global.rankings[self.game.data.winner] ~= nil) then
 		self.db.global.rankings[self.game.data.winner] = self.db.global.rankings[self.game.data.winner] + self.game.data.cash_winnings

@@ -67,14 +67,6 @@ CDG_INVERSE = {
 
 -- Russian Roullette
 -- ===================
-local function ScoreRoulette(roll)
-	if (roll == 1) then
-		return 0
-	else
-		return 1
-	end
-end
-
 CDG_ROULETTE= {
 	label = "Roullette",
 	
