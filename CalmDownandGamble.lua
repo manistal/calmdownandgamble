@@ -366,6 +366,10 @@ function CalmDownandGamble:GameResultsCallback(...)
 end
 
 function CalmDownandGamble:LogResults() 
+	self:PrintDebug("Winner: "..self.game.data.winner)
+	self:PrintDebug("Loser: "..self.game.data.loser)
+	self:PrintDebug("CASH: "..self.game.data.cash_winnings)
+	
 	if (self.db.global.rankings[self.game.data.winner] ~= nil) then
 		self.db.global.rankings[self.game.data.winner] = self.db.global.rankings[self.game.data.winner] + self.game.data.cash_winnings
 	else
@@ -457,6 +461,12 @@ function CalmDownandGamble:EvaluateScores()
 			self.game.data.winning_roll = winning_roll
 			self.game.data.high_tiebreaker = false
 			self.game.data.high_roller_playoff = {}
+		elseif ((self.game.data.loser == nil) and (not self.game.data.low_tiebreaker) and found_loser) then
+			-- Handle the case where the first loser in high tiebreaker is the actual loser
+			self.game.data.loser = loser
+			self.game.data.losing_roll = losing_roll
+			self.game.data.low_tiebreaker = false
+			self.game.data.low_roller_playoff = {}
 		else
 			self.game.data.player_rolls = self:CopyTable(high_roller_playoff)
 			self.game.data.high_tiebreaker = true

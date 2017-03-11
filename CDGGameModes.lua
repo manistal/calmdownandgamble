@@ -121,11 +121,11 @@ local function ScoreYahtzee(roll)
 		-- If you hit these your other numbers wont be better
 		local _, count = string.gsub(roll, digit, "")
 		if (count == 5) then
-			return "YAHTZEE!", 50
+			return "YAHTZEE!", 50 + total
 		end
 		
 		if (count == 4) then
-			return "Four of a Kind!", total
+			return "Four of a Kind!", 40 + total
 		end
 		
 		if (count == 3) then
@@ -133,11 +133,11 @@ local function ScoreYahtzee(roll)
 			for digit in string.gmatch(roll, "%d") do
 				local _, other_count = string.gsub(roll, digit, "")
 				if (other_count == 2) then
-					return "Full House!", 25
+					return "Full House!", 35 + total
 				end
 			end
 			
-			return "Three of a Kind!", total
+			return "Three of a Kind!", 30 + total
 		end
 		
 		
@@ -147,19 +147,20 @@ local function ScoreYahtzee(roll)
 			for digit in string.gmatch(roll, "%d") do
 				local _, other_count = string.gsub(roll, digit, "")
 				if (other_count == 3) then
-					return "Full House!", 25
+					return "Full House!", 35 + total
 				end
 			end
 			
 			-- Doubles are the dice added together, 0->1 
-			hand, new_score = "Doubles!",  tonumber(digit)*2
+			new_score = tonumber(digit)*2 + total
 			if (tonumber(digit) == 0) then
-				hand, new_score = "Doubles!", 2
+				new_score = 2 + total
 			end
 			
 			-- Evaluate the best doubles
 			if (new_score > score) then
-				score = new_score
+				score = new_score 
+				hand = "Double "..digit.."s!"
 			end
 		end
 		
@@ -174,9 +175,10 @@ local function ScoreYahtzee(roll)
 	
 	-- Singles Bummer
 	if (score == 0) then
-		hand, score = "Singles", highroll
+		score = highroll
+		hand = "Singles, "..highroll.." High"
 		if (highroll == 0) then
-			hand, score = "Singles", 1
+			score = 1
 		end
 	end
 
@@ -217,7 +219,7 @@ CDG_YAHTZEE = {
 	payout = function(game)
 		for player, roll in CalmDownandGamble:sortedpairs(game.data.player_rolls, game.mode.sort_rolls) do
 			local hand, score = ScoreYahtzee(roll)
-			CalmDownandGamble:MessageChat(player.." Roll: "..FormatYahtzee(roll).." Score: "..score.." "..hand)
+			CalmDownandGamble:MessageChat(player.." Roll: "..FormatYahtzee(roll).." Score: "..score.." - "..hand)
 		end
 		game.data.cash_winnings = game.data.gold_amount
 	end,
