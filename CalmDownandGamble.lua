@@ -160,7 +160,7 @@ end
 -- ================
 function CalmDownandGamble:SetGameMode() 
 	-- Loaded from external File
-	GAME_MODES = { CDG_HILO, CDG_INVERSE, CDG_BIGTWOS, CDG_YAHTZEE }
+	GAME_MODES = { CDG_HILO, CDG_INVERSE, CDG_BIGTWOS, CDG_YAHTZEE, CDG_ROULETTE }
 	self.game.mode = GAME_MODES[self.game.mode_id]
 	self.game.num_modes = table.getn(GAME_MODES)
 	self.ui.game_mode:SetText(self.game.mode.label)
@@ -361,12 +361,11 @@ function CalmDownandGamble:EvaluateScores()
 	local winner, loser = nil, nil
 	
     -- Loop over the players and look for highest/lowest/etc
-	-- TODO -- Sort from high to low
-	-- local sort_descending = function(t,a,b) return t[b] < t[a] end
-	for player, roll in self:sortedpairs(self.game.data.player_rolls, self.game.mode.sort_rolls) do
+	-- for player, roll in self:sortedpairs(self.game.data.player_rolls, self.game.mode.sort_rolls) do
+	for player, roll in self.game.mode.sort_rolls(self.game.data.player_rolls) do
 	
 		player_score = tonumber(roll)
-		self:PrintDebug(player.." "..player_score)
+		self:PrintDebug("    "..player.." "..player_score)
 		
 		if (winning_roll == nil) then  -- haven't seen anything yet
 			winning_roll = player_score

@@ -10,10 +10,10 @@ CDG_HILO = {
 		game.data.roll_upper = game.data.gold_amount
 		game.data.roll_range = "(1-"..game.data.gold_amount..")"
 	end,
-	
-	sort_rolls = function(scores, playera, playerb) 
-		-- Sort from Highest to Lowest
-		return scores[playerb] < scores[playera]
+
+	sort_rolls = function(rolls)
+		high_to_low = function(scores, playera, playerb) return scores[playerb] < scores[playera] end
+		return CalmDownandGamble:sortedpairs(rolls, high_to_low)
 	end,
 	
 	payout = function(game)
@@ -32,9 +32,9 @@ CDG_BIGTWOS = {
 		game.data.roll_range = "(1-2)"
 	end,
 	
-	sort_rolls = function(scores, playera, playerb) 
-		-- Sort from Highest to Lowest
-		return scores[playerb] < scores[playera]
+	sort_rolls = function(rolls)
+		high_to_low = function(scores, playera, playerb) return scores[playerb] < scores[playera] end
+		return CalmDownandGamble:sortedpairs(rolls, high_to_low)
 	end,
 	
 	payout = function(game)
@@ -54,9 +54,9 @@ CDG_INVERSE = {
 		game.data.roll_range = "(1-"..game.data.gold_amount..")"
 	end,
 	
-	sort_rolls = function(scores, playera, playerb) 
-		-- Sort from Lowest to Highest
-		return scores[playerb] < scores[playera]
+	sort_rolls = function(rolls)
+		low_to_high = function(scores, playera, playerb) return scores[playerb] > scores[playera] end
+		return CalmDownandGamble:sortedpairs(rolls, low_to_high)
 	end,
 	
 	payout = function(game)
@@ -64,6 +64,47 @@ CDG_INVERSE = {
 	end,
 
 }
+
+-- Russian Roullette
+-- ===================
+local function ScoreRoulette(roll)
+	if (roll == 1) then
+		return 0
+	else
+		return 1
+	end
+end
+
+CDG_ROULETTE= {
+	label = "Roullette",
+	
+	init_game = function(game)
+		game.data.roll_lower = 1
+		game.data.roll_upper = 6
+		game.data.roll_range = "(1-6)"
+	end,
+	
+	sort_rolls = function(rolls)
+		high_to_low = function(scores, playera, playerb) return scores[playerb] < scores[playera] end
+		
+		-- Adjust the scores for roulette, you roll 1 you lose. 
+		for player, roll in CalmDownandGamble:sortedpairs(rolls, high_to_low) do
+			if (tonumber(roll) == 1) then
+				rolls[player] = 0 -- They LOSE
+			else
+				rolls[player] = 1
+			end
+		end
+		
+		return CalmDownandGamble:sortedpairs(rolls, high_to_low)
+	end,
+	
+	payout = function(game)
+		game.data.cash_winnings = game.data.gold_amount
+	end,
+
+}
+
 
 -- Yahtzee
 -- ============
@@ -157,6 +198,18 @@ CDG_YAHTZEE = {
 		-- Sort from Highest to Lowest
 		return scoreB < scoreA
 	end,
+	
+	sort_rolls = function(rolls)
+		yahtzee_high_to_low = function(scores, playera, playerb) 
+			local _, scoreA = ScoreYahtzee(scores[playera])
+			local _, scoreB = ScoreYahtzee(scores[playerb])
+			-- Sort from Highest to Lowest
+			return scoreB < scoreA
+		end
+		
+		return CalmDownandGamble:sortedpairs(rolls, yahtzee_high_to_low)
+	end,
+	
 	
 	payout = function(game)
 		for player, roll in CalmDownandGamble:sortedpairs(player_scores, game.mode.sort_rolls) do
