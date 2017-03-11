@@ -1,20 +1,22 @@
 
-
--- Declare the new addon and load the libraries we want to use 
 CalmDownandGamble = LibStub("AceAddon-3.0"):NewAddon("CalmDownandGamble", "AceConsole-3.0", "AceComm-3.0", "AceEvent-3.0", "AceTimer-3.0", "AceHook-3.0", "AceSerializer-3.0")
 local CalmDownandGamble	= LibStub("AceAddon-3.0"):GetAddon("CalmDownandGamble")
 local AceGUI = LibStub("AceGUI-3.0")
 
-local DEBUG = false
 
--- Basic Adddon Initialization stuff, virtually inherited functions 
--- ================================================================ 
+-- Debug Setup
+local CDG_DEBUG = true
+function CalmDownandGamble:PrintDebug(msg)
+	if CDG_DEBUG then self:Print("[CDG_DEBUG] "..msg) end
+end
 
--- CONSTRUCTOR 
+
+-- Initializer 
+-- =============
 function CalmDownandGamble:OnInitialize()
-	if DEBUG then self:Print("Load Begin") end
+	self:PrintDebug("On Initialize")
 
-	-- Set up Infrastructure
+	-- Set up DB
 	local defaults = {
 	    global = {
 			rankings = { },
@@ -25,144 +27,47 @@ function CalmDownandGamble:OnInitialize()
 			window_shown = false
 		}
 	}
-
     self.db = LibStub("AceDB-3.0"):New("CalmDownandGambleDB", defaults)
+	
+	-- AceGUI Table Constructor
 	self:ConstructUI()
-	self:RegisterCallbacks()
-	self:InitState()
 
-	if DEBUG then self:Print("Load Complete!!") end
-end
-
--- INIT FOR ENABLE  
-function CalmDownandGamble:OnEnable()
-end
-
--- DESTRUCTOR  
-function CalmDownandGamble:OnDisable()
-end
-
-
--- Initialization Helper Functions
--- ===========================================
-function CalmDownandGamble:InitState()
-	-- Chat Context -- 
-	self.chat = {}
-	self.game = {}
-	self:SetChannelSettings()
-	self:SetGameMode()
-	self:ResetGameStage()
-	
-end
-
-function CalmDownandGamble:SetChannelSettings() 
-
-	self.chat.options = {
-			{ label = "Raid"  , const = "RAID"  , addon_const = "RAID", callback = "CHAT_MSG_RAID"  , callback_leader = "CHAT_MSG_RAID_LEADER"  }, -- Index 1
-			{ label = "Party" , const = "PARTY" , addon_const = "PARTY", callback = "CHAT_MSG_PARTY" , callback_leader = "CHAT_MSG_PARTY_LEADER" }, -- Index 2
-			{ label = "Guild" , const = "GUILD" , addon_const = "GUILD", callback = "CHAT_MSG_GUILD" , callback_leader = nil },                     -- Index 3
-			{ label = "Say"   , const = "SAY"   , addon_const = "GUILD", callback = "CHAT_MSG_SAY"   , callback_leader = nil },                     -- Index 4
-	}	
-	self.chat.channel_const = "RAID"   -- What the WoW API is looking for, CHANNEL for numeric channels
-	
-	if DEBUG then self:Print(self.chat.options[self.db.global.chat_index].label) end
-	
-	self.chat.channel_const = self.chat.options[self.db.global.chat_index].const
-	self.chat.addon_const = self.chat.options[self.db.global.chat_index].addon_const
-	self.ui.chat_channel:SetText(self.chat.options[self.db.global.chat_index].label)
-	self.chat.channel_callback = self.chat.options[self.db.global.chat_index].callback
-	self.chat.channel_callback_leader = self.chat.options[self.db.global.chat_index].callback_leader
-
-end
-
-function CalmDownandGamble:SetGameMode() 
-
-	self.game.options = {
-			{ label = "High-Low",  evaluate = function() self:HighLow() end, init = function() self:DefaultGameInit() end }, -- Index 1
-			{ label = "Inverse",   evaluate = function() self:Inverse() end, init = function() self:DefaultGameInit() end }, -- Index 2
-			{ label = "MiddleMan", evaluate = function() self:Median() end,  init = function() self:DefaultGameInit() end }, -- Index 3
-			{ label = "Yahtzee",   evaluate = function() self:Yahtzee() end, init = function() self:YahtzeeInit() end },     -- Index 4
-			{ label = "BigTWOS",   evaluate = function() self:Twos() end, init = function() self:TwosInit() end },     -- Index 5
-	}	
-	
-	if DEBUG then self:Print(self.game.options[self.db.global.game_mode_index].label) end
-	self.ui.game_mode:SetText(self.game.options[self.db.global.game_mode_index].label)
-
-end
-
-function CalmDownandGamble:ResetGameStage() 
-	self.db.global.game_stage_index = 1
-	self:SetGameStage()
-end
-
-function CalmDownandGamble:SetGameStage() 
-
-	self.game.stages = {
-			{ label = "New Game",  callback = function() self:StartGame() end }, -- Index 1
-			{ label = "Last Call!",   callback = function() self:LastCall() end }, -- Index 2
-			{ label = "Start Rolls!", callback = function() self:StartRolls() end }, -- Index 3
-			{ label = "Roll Status", callback = function() self:RollStatus() end }, -- Index 4
-	}	
-	
-	if DEBUG then self:Print(self.game.stages[self.db.global.game_stage_index].label) end
-	self.ui.game_stage:SetText(self.game.stages[self.db.global.game_stage_index].label)
-
-end
-
--- Slash Command Setup and Calls
--- =========================================================
-function CalmDownandGamble:RegisterCallbacks()
 	-- Register Some Slash Commands
 	self:RegisterChatCommand("cdgm", "ShowUI")
 	self:RegisterChatCommand("cdghide", "HideUI")
 	self:RegisterChatCommand("cdgreset", "ResetStats")
-	self:RegisterChatCommand("cdgdebug", "SetDebug")
+	self:RegisterChatCommand("cdgCDG_DEBUG", "SetCDG_DEBUG")
 	self:RegisterChatCommand("cdgban", "BanPlayer")
 	self:RegisterChatCommand("cdgunban", "UnbanPlayer")
 	self:RegisterChatCommand("cdgbanreset", "ResetBans")
 	
-	-- UNIT TESTING -- 
-	self:RegisterChatCommand("cdgTESTA", "TESTA")
-	self:RegisterChatCommand("cdgTESTB", "TESTB")
-	self:RegisterChatCommand("cdgTESTC", "TESTC")
+	-- Clean from 7.0 Bug
 	self:RegisterChatCommand("cdgcleanrank", "CleanRankList")
-	-- self:RegisterComm("CDG_NEW_GAME", "NewGameCallback")
-    -- self:RegisterComm("CDG_NEW_ROLL", "NewRollsCallback")
-    -- self:RegisterComm("CDG_END_GAME", "GameResultsCallback")
-end
-
-
-function CalmDownandGamble:TESTA()
 	
-	self.current_game.player_rolls.Metafuzz = 2
-	self.current_game.player_rolls.PlayerA = 1
-	self.current_game.player_rolls.PlayerB = 1
-	self.current_game.player_rolls.PlayerC = 1
-	self:CheckRollsComplete()
-
-end
-
-function CalmDownandGamble:TESTB()
-
-	self.current_game.player_rolls.PlayerA = 1
-	self.current_game.player_rolls.PlayerB = 1
-	self.current_game.player_rolls.PlayerC = 1
-	self:CheckRollsComplete()
-
-end
-
-function CalmDownandGamble:TESTC()
+	-- Chat Context -- 
+	self.chat = {
+		channel_id = self.db.global.chat_index,
+		channel = {}
+	}
+	self.game = {
+		mode_id = self.db.global.chat_index,
+		mode = {}, 
+		stage_id = 1, 
+		stage = {}
+	}
 	
-	self.current_game.player_rolls.PlayerA = 2
-	self.current_game.player_rolls.PlayerB = 2
-	self.current_game.player_rolls.PlayerC = 1
-	self:CheckRollsComplete()
-
+	self:SetChatChannel()
+	self:SetGameMode()
+	self:SetGameStage()
+	
+	
+	self:PrintDebug("Load Complete!")
 end
 
-
-function CalmDownandGamble:SetDebug()
-	DEBUG = not DEBUG
+-- Slash Cmds
+-- ===============
+function CalmDownandGamble:SetCDG_DEBUG()
+	CDG_DEBUG = not CDG_DEBUG
 end
 
 function CalmDownandGamble:BanPlayer(player, editbox)
@@ -192,12 +97,115 @@ function CalmDownandGamble:ResetStats()
 end
 
 
--- Game State Machine 
--- ================================================
+-- Chat Channels
+-- =================
+function CalmDownandGamble:SetChatChannel() 
 
--- (1) Game will always start here in start game
+	CHANNEL_CONSTS = {
+			{ label = "Raid"  , const = "RAID"  , addon_const = "RAID", callback = "CHAT_MSG_RAID"  , callback_leader = "CHAT_MSG_RAID_LEADER"  }, -- Index 1
+			{ label = "Party" , const = "PARTY" , addon_const = "PARTY", callback = "CHAT_MSG_PARTY" , callback_leader = "CHAT_MSG_PARTY_LEADER" }, -- Index 2
+			{ label = "Guild" , const = "GUILD" , addon_const = "GUILD", callback = "CHAT_MSG_GUILD" , callback_leader = nil },                     -- Index 3
+			{ label = "Say"   , const = "SAY"   , addon_const = "GUILD", callback = "CHAT_MSG_SAY"   , callback_leader = nil },                     -- Index 4
+	}	
+	self.chat.channel = CHANNEL_CONSTS[self.chat.channel_id]
+	self.chat.num_channels = table.getn(CHANNEL_CONSTS)
+	self.ui.chat_channel:SetText(self.chat.channel.label)
+	
+end
+
+function CalmDownandGamble:ChatChannelToggle()
+	self.chat.channel_id = self.chat.channel_id + 1
+	if self.chat.channel_id > self.chat.num_channels then self.chat.channel_id = 1 end
+	self:SetChatChannel()
+end
+
+function CalmDownandGamble:MessageChat(msg)
+	SendChatMessage(msg, self.chat.channel.const)
+end
+
+function CalmDownandGamble:MessageAddon(event, msg)
+	self:SendCommMessage(event, msg, self.chat.channel.addon_const)
+end
+
+function CalmDownandGamble:RegisterChatEvents()
+	self:RegisterEvent("CHAT_MSG_SYSTEM", function(...) self:RollCallback(...) end)
+	self:RegisterEvent(self.chat.channel.callback, function(...) self:ChatChannelCallback(...) end)
+	if (self.chat.channel.callback_leader) then
+		self:RegisterEvent(self.chat.channel.callback_leader, function(...) self:ChatChannelCallback(...) end)
+	end
+end
+
+function CalmDownandGamble:UnregisterChatEvents()
+	self:UnregisterEvent("CHAT_MSG_SYSTEM")
+	self:UnregisterEvent(self.chat.channel.callback)
+	if (self.chat.channel.callback_leader) then
+		self:UnregisterEvent(self.chat.channel.callback_leader)
+	end
+end
+
+
+
+-- Game Modes
+-- ================
+function CalmDownandGamble:SetGameMode() 
+
+	self.game.options = {
+			{ label = "High-Low",  evaluate = function() self:HighLow() end, init = function() self:DefaultGameInit() end }, -- Index 1
+			{ label = "Inverse",   evaluate = function() self:Inverse() end, init = function() self:DefaultGameInit() end }, -- Index 2
+			{ label = "MiddleMan", evaluate = function() self:Median() end,  init = function() self:DefaultGameInit() end }, -- Index 3
+			{ label = "Yahtzee",   evaluate = function() self:Yahtzee() end, init = function() self:YahtzeeInit() end },     -- Index 4
+			{ label = "BigTWOS",   evaluate = function() self:Twos() end, init = function() self:TwosInit() end },     -- Index 5
+	}	
+	
+	self.game.modes = {
+		CDG_HILO
+	}
+	
+	self.ui.game_mode:SetText(self.game.options[self.db.global.game_mode_index].label)
+
+end
+
+
+function CalmDownandGamble:ToggleGameMode()
+	self.db.global.game_mode_index = self.db.global.game_mode_index + 1
+	if self.db.global.game_mode_index > table.getn(self.game.options) then self.db.global.game_mode_index = 1 end
+	self:SetGameMode()
+end
+
+
+-- Game Stages
+-- =====================
+function CalmDownandGamble:SetGameStage() 
+	GAME_STAGES = {
+			{ label = "New Game",  callback = function() self:StartGame() end }, -- Index 1
+			{ label = "Last Call!",   callback = function() self:LastCall() end }, -- Index 2
+			{ label = "Start Rolls!", callback = function() self:StartRolls() end }, -- Index 3
+			{ label = "Roll Status", callback = function() self:RollStatus() end }, -- Index 4
+	}	
+	
+	self.game.stage = GAME_STAGES[self.game.stage_id]
+	self.game.num_stages = table.getn(GAME_STAGES)
+	self.ui.game_stage:SetText(self.game.stage.label)
+end
+
+function CalmDownandGamble:ResetGameStage()
+	self.game.stag_id = 1
+	self:SetGameStage()
+end
+
+
+function CalmDownandGamble:ToggleGameStage()
+	self.game.stage.callback()
+	if self.game.stage_id < self.game.num_stages then 
+		self.game.stage_id = self.game.stage_id + 1 
+		self:SetGameStage()
+	end
+end
+
+-- Stage Callbacks
+-- (stage_id = 1) Game will always start here in start game
 function CalmDownandGamble:StartGame()
-	-- Init our game
+	-- Reset & Init Current GAME
 	self.current_game = {
 		accepting_players = true,
 		accepting_rolls = false,
@@ -211,36 +219,28 @@ function CalmDownandGamble:StartGame()
 		low_roller_playoff = {},
 		player_rolls = {}
 	}
-	
 	self.game.options[self.db.global.game_mode_index].init()
+	self:RegisterChatEvents()
+	self:PrintDebug("Initialized Current GAME")
 	
-	-- Register game callbacks
-	-- TODO: Only in non-group channels self:RegisterComm("CDG_ROLL_DICE", "RollCallback")
-	self:RegisterEvent("CHAT_MSG_SYSTEM", function(...) self:RollCallback(...) end)
-	self:RegisterEvent(self.chat.channel_callback, function(...) self:ChatChannelCallback(...) end)
-	if (self.chat.channel_callback_leader) then
-		self:RegisterEvent(self.chat.channel_callback_leader, function(...) self:ChatChannelCallback(...) end)
-	end
-	
-	if DEBUG then self:Print("Init'd game state and registered callbacks") end
-	
-	local player_name, realm_name = UnitName("player")
+	-- Welcome Message!
 	local welcome_msg = "CDG is now in session! Mode: "..self.game.options[self.db.global.game_mode_index].label..", Bet: "..self.current_game.gold_amount.." gold"
-
-	-- Secret meepz mode
-	if (player_name == "Meepz") then 
-		welcome_msg = "Welcome to Meepz's Gambling Intervention! Help Me!  "..self.game.options[self.db.global.game_mode_index].label.." - "..self.current_game.gold_amount.." gold"
-	end
+	self:MessageChat(welcome_msg)
+	self:MessageChat("Press 1 to Join!")
 	
-	SendChatMessage(welcome_msg, self.chat.channel_const)
-	SendChatMessage("Press 1 to Join!", self.chat.channel_const)
-	
-	local start_args = self.current_game.roll_lower.." "..self.current_game.roll_upper.." "..self.current_game.gold_amount.." "..self.chat.channel_const
-	self:SendCommMessage("CDG_NEW_GAME", start_args, self.chat.addon_const)
-	if DEBUG then self:Print(start_args) end
+	-- Notify Clients of New GAME
+	local start_args = self.current_game.roll_lower.." "..self.current_game.roll_upper.." "..self.current_game.gold_amount.." "..self.chat.channel.const
+	self:MessageAddon("CDG_NEW_GAME", start_args)
+	self:PrintDebug(start_args)
 end
 
--- (2) After accepting entries via chat callbacks, start the rolls
+-- (stage_id = 2) Count Down to Game Start
+function CalmDownandGamble:LastCall()
+	self:MessageChat("Last call! 10 seconds left!")
+	self:ScheduleTimer("TimedStart", 10)
+end
+
+-- (stage_id = 3) After accepting entries via chat callbacks, start the rolls
 function CalmDownandGamble:StartRolls()
 	self.current_game.accepting_rolls = true
 	self.current_game.accepting_players = false
@@ -253,10 +253,10 @@ function CalmDownandGamble:StartRolls()
 	else
 		roll_msg = "Time to roll! Good Luck! Command:   /roll "..self.current_game.roll_range
 	end
-	SendChatMessage(roll_msg, self.chat.channel_const)
+	self:MessageChat(roll_msg)
 end
 
-    -- Helper func for StartRolls
+-- String Formatter for StartRolls
 function format_player_names(players)
 	local return_str = ""
 	for player, _ in pairs(players) do
@@ -266,8 +266,51 @@ function format_player_names(players)
 	return string.gsub(return_str, " vs !", "")
 end
 
--- (3) Called from game mode evaluate function, will log values of
--- current_winner/current_loser - can be called twice like in middleman
+-- (stage_id =4) Poll for Roll Status
+function CalmDownandGamble:RollStatus()
+	self:CheckRollsComplete(true)
+end
+
+function CalmDownandGamble:CheckRollsComplete(print_players)
+
+	local rolls_complete = true
+	
+	if CDG_DEBUG then self:Print("CHECK ROLLS COMPLETE") end 
+
+	for player, roll in pairs(self.current_game.player_rolls) do
+		if (roll == -1) then
+			rolls_complete = false
+			if print_players then
+				self:MessageChat("Player: "..player.." still needs to roll") 
+			end
+		end
+	end
+	
+	if (rolls_complete) then
+		self.game.accepting_rolls = false
+		self.game.options[self.db.global.game_mode_index].evaluate()
+	end
+	
+end
+
+-- 
+function CalmDownandGamble:EndGame()
+	local end_args = self.current_game.winner.." "..self.current_game.loser.." "..self.current_game.cash_winnings
+	self:MessageAddon("CDG_END_GAME", end_args)
+	self.ui.CDG_Frame:SetStatusText(self.current_game.cash_winnings.."g  "..self.current_game.loser.." => "..self.current_game.winner)
+	self:ResetGameStage()
+	self.current_game = nil
+end
+
+function CalmDownandGamble:ResetGame()
+	self:UnregisterChatEvents()
+	self.current_game = nil
+	self:ResetGameStage()
+	self:MessageChat("Game has been reset.")
+end
+
+-- Utils
+-- ========
 function CalmDownandGamble:LogResults() 
 	if (self.db.global.rankings[self.current_game.winner] ~= nil) then
 		self.db.global.rankings[self.current_game.winner] = self.db.global.rankings[self.current_game.winner] + self.current_game.cash_winnings
@@ -282,30 +325,6 @@ function CalmDownandGamble:LogResults()
 	end
 end
 
--- (4) Resets the game state machine, called from game mode evaluate after game
--- is done and all tiebreakers have been resolved
-function CalmDownandGamble:EndGame()
-	-- Show me the results
-	local end_args = self.current_game.winner.." "..self.current_game.loser.." "..self.current_game.cash_winnings
-	self:SendCommMessage("CDG_END_GAME", end_args, self.chat.addon_const)
-	self.ui.CDG_Frame:SetStatusText(self.current_game.cash_winnings.."g  "..self.current_game.loser.." => "..self.current_game.winner)
-
-	
-	-- Register game callbacks
-	self:UnregisterEvent("CHAT_MSG_SYSTEM")
-	self:UnregisterEvent(self.chat.channel_callback)
-	if (self.chat.channel_callback_leader) then
-		self:UnregisterEvent(self.chat.channel_callback_leader)
-	end
-	
-	-- Init our game
-	self:ResetGameStage()
-	self.current_game = nil
-end
-
-
--- Game Utililties -- Needed by game for basic common actions
--- =============================================================
 function CalmDownandGamble:SetGoldAmount() 
 
 	local text_box = self.ui.gold_amount_entry:GetText()
@@ -318,27 +337,6 @@ function CalmDownandGamble:SetGoldAmount()
 
 end
 
-function CalmDownandGamble:CheckRollsComplete(print_players)
-
-	local rolls_complete = true
-	
-	if DEBUG then self:Print("CHECK ROLLS COMPLETE") end 
-
-	for player, roll in pairs(self.current_game.player_rolls) do
-		if (roll == -1) then
-			rolls_complete = false
-			if print_players then
-				SendChatMessage("Player: "..player.." still needs to roll", self.chat.channel_const) 
-			end
-		end
-	end
-	
-	if (rolls_complete) then
-		self.game.accepting_rolls = false
-		self.game.options[self.db.global.game_mode_index].evaluate()
-	end
-	
-end
 
 
 -- Game Modes -- Each Game Mode must define an init (or use default) and an
@@ -350,7 +348,7 @@ end
 -- ===================
 function CalmDownandGamble:EvaluateScores()
 	
-	if DEBUG then self:Print("Evaluating Scores") end
+	if CDG_DEBUG then self:Print("Evaluating Scores") end
 	
 	
 	-- UNDER CONSTRUCTION
@@ -365,7 +363,7 @@ function CalmDownandGamble:EvaluateScores()
 	for player, roll in self:sortedpairs(self.current_game.player_rolls, sort_descending) do
 	
 		player_score = tonumber(roll)
-		if DEBUG then self:Print(player.." "..player_score) end
+		if CDG_DEBUG then self:Print(player.." "..player_score) end
 		
 		if (winning_roll == nil) then  -- haven't seen anything yet
 			winning_roll = player_score
@@ -417,7 +415,7 @@ function CalmDownandGamble:EvaluateScores()
 			self.current_game.player_rolls = self:CopyTable(high_roller_playoff)
 			self.current_game.high_tiebreaker = true
 			self:StartRolls()
-			if DEBUG then self:Print("HIGHTIE2") end
+			if CDG_DEBUG then self:Print("HIGHTIE2") end
 			return false
 		end
 	-- Low Tiebreaker -- 
@@ -439,13 +437,13 @@ function CalmDownandGamble:EvaluateScores()
 			self.current_game.player_rolls = self:CopyTable(high_roller_playoff)
 			self.current_game.low_tiebreaker = true
 			self:StartRolls()
-			if DEBUG then self:Print("LOWTIE4") end
+			if CDG_DEBUG then self:Print("LOWTIE4") end
 			return false
 		else
 			self.current_game.player_rolls = self:CopyTable(low_roller_playoff)
 			self.current_game.low_tiebreaker = true
 			self:StartRolls()
-			if DEBUG then self:Print("LOWTIE2") end
+			if CDG_DEBUG then self:Print("LOWTIE2") end
 			return false
 		end
 	-- No Tiebreaker -- 
@@ -472,20 +470,20 @@ function CalmDownandGamble:EvaluateScores()
 	
 	
 	if (self:TableLength(self.current_game.low_roller_playoff) > 1) then 
-		if DEBUG then self:Print("LOWTIE1") end
+		if CDG_DEBUG then self:Print("LOWTIE1") end
 		-- start low tiebreaker -- 
 		self.current_game.low_tiebreaker = true
 		self.current_game.player_rolls = self:CopyTable(self.current_game.low_roller_playoff)
 		self:StartRolls()
 		return false
 	elseif (self:TableLength(self.current_game.high_roller_playoff) > 1) then 
-		if DEBUG then self:Print("HIGHTIE1") end
+		if CDG_DEBUG then self:Print("HIGHTIE1") end
 		self.current_game.high_tiebreaker = true
 		self.current_game.player_rolls = self:CopyTable(self.current_game.high_roller_playoff)
 		self:StartRolls()
 		return false
 	elseif (self.current_game.loser == nil) and (not found_loser) then  -- special case, everyone was a high roller
-		if DEBUG then self:Print("LOWTIE3") end
+		if CDG_DEBUG then self:Print("LOWTIE3") end
 		self.current_game.low_tiebreaker = true
 		self.current_game.player_rolls = self:CopyTable(low_roller_playoff)
 		self:StartRolls()
@@ -532,7 +530,7 @@ end
 function CalmDownandGamble:HighLow()
 	if (CalmDownandGamble:EvaluateScores()) then
 		self.current_game.cash_winnings = self.current_game.winning_roll - self.current_game.losing_roll
-		SendChatMessage(self.current_game.loser.." owes "..self.current_game.winner.." "..self.current_game.cash_winnings.." gold!", self.chat.channel_const)
+		self:MessageChat(self.current_game.loser.." owes "..self.current_game.winner.." "..self.current_game.cash_winnings.." gold!")
 		
 		-- Log Results -- All game modes must call these two explicitly
 		self:LogResults()
@@ -545,7 +543,7 @@ end
 function CalmDownandGamble:Twos()
 	if (CalmDownandGamble:EvaluateScores()) then
 		self.current_game.cash_winnings = self.current_game.gold_amount
-		SendChatMessage(self.current_game.loser.." owes "..self.current_game.winner.." "..self.current_game.cash_winnings.." gold!", self.chat.channel_const)
+		self:MessageChat(self.current_game.loser.." owes "..self.current_game.winner.." "..self.current_game.cash_winnings.." gold!")
 	
 		-- Log Results -- All game modes must call these two explicitly
 		self:LogResults()
@@ -561,7 +559,7 @@ function CalmDownandGamble:Inverse()
 		
 		self.current_game.cash_winnings = self.current_game.winning_roll - self.current_game.losing_roll
 		self.current_game.winner, self.current_game.loser = self.current_game.loser, self.current_game.winner
-		SendChatMessage(self.current_game.loser.." owes "..self.current_game.winner.." "..self.current_game.cash_winnings.." gold!", self.chat.channel_const)
+		self:MessageChat(self.current_game.loser.." owes "..self.current_game.winner.." "..self.current_game.cash_winnings.." gold!")
 	
 		-- Log Results -- All game modes must call these two explicitly
 		self:LogResults()
@@ -586,7 +584,7 @@ function CalmDownandGamble:ScoreYahtzee(roll)
 	local score = 0
 	for digit in string.gmatch(roll, "%d") do
 		local _, count = string.gsub(roll, digit, "")
-		if DEBUG then self:Print(digit.." #"..count) end
+		if CDG_DEBUG then self:Print(digit.." #"..count) end
 		score = score + (count * digit)
     end
 	
@@ -603,7 +601,7 @@ function CalmDownandGamble:Yahtzee()
 	
 	local sort_by_score = function(t,a,b) return t[b] < t[a] end
 	for player, score in self:sortedpairs(player_scores, sort_by_score) do
-		SendChatMessage(player.." Roll: "..format_yahtzee_roll(self.current_game.player_rolls[player]).." Score: "..score, self.chat.channel_const)
+		self:MessageChat(player.." Roll: "..format_yahtzee_roll(self.current_game.player_rolls[player]).." Score: "..score)
 	end
 
 	self.current_game.player_rolls = {}
@@ -611,7 +609,7 @@ function CalmDownandGamble:Yahtzee()
 	
 	if (self:EvaluateScores()) then 
 		self.current_game.cash_winnings = self.current_game.gold_amount
-		SendChatMessage(self.current_game.loser.." owes "..self.current_game.winner.." "..self.current_game.cash_winnings.." gold!", self.chat.channel_const)
+		self:MessageChat(self.current_game.loser.." owes "..self.current_game.winner.." "..self.current_game.cash_winnings.." gold!")
 	
 		-- Log Results -- All game modes must call these two explicitly
 		self:LogResults()
@@ -634,7 +632,7 @@ function CalmDownandGamble:Median()
 
 	local player_index = 1
 	for player, roll in self:sortedpairs(self.current_game.player_rolls, sort_by_score) do
-		if DEBUG then self:Print(player.." "..roll) end
+		if CDG_DEBUG then self:Print(player.." "..roll) end
 		if player_index == 1 then 
 			high_player = player
 			high_score = roll
@@ -650,7 +648,7 @@ function CalmDownandGamble:Median()
 	end
 
 	if median_player == "" then
-		SendChatMessage("You need at least 3 players!!", self.chat.channel_const)
+		self:MessageChat("You need at least 3 players!!")
 		median_player = high_player
 	end
 	self.current_game.winner = median_player
@@ -658,12 +656,12 @@ function CalmDownandGamble:Median()
 
 	self.current_game.loser = high_player
 	self.current_game.cash_winnings = math.abs(median_score - high_score)
-	SendChatMessage(self.current_game.loser.." owes "..self.current_game.winner.." "..self.current_game.cash_winnings.." gold!", self.chat.channel_const)
+	self:MessageChat(self.current_game.loser.." owes "..self.current_game.winner.." "..self.current_game.cash_winnings.." gold!")
 	self:LogResults()
 	
 	self.current_game.loser = low_player
 	self.current_game.cash_winnings = math.abs(median_score - low_score)
-	SendChatMessage(self.current_game.loser.." owes "..self.current_game.winner.." "..self.current_game.cash_winnings.." gold!", self.chat.channel_const)
+	self:MessageChat(self.current_game.loser.." owes "..self.current_game.winner.." "..self.current_game.cash_winnings.." gold!")
 	self:LogResults()
 	
 	self:EndGame()
@@ -680,14 +678,14 @@ function CalmDownandGamble:RollCallback(...)
 	local message = self:SplitString(roll_text, "%S+")
 	local player, roll, roll_range = message[1], message[3], message[4]
 	
-	if DEBUG then self:Print("CHECK VALID ROLL "..self.current_game.roll_range) end
-	if DEBUG then self:Print("Player: "..player.." Roll: "..roll) end
+	if CDG_DEBUG then self:Print("CHECK VALID ROLL "..self.current_game.roll_range) end
+	if CDG_DEBUG then self:Print("Player: "..player.." Roll: "..roll) end
 	-- Check that the roll is valid ( also that the message is for us)
 	local valid_roll = (self.current_game.roll_range == roll_range) and self.current_game.accepting_rolls
 
 	if valid_roll then 
 		if (self.current_game.player_rolls[player] == -1) then
-			if DEBUG then self:Print("Player: "..player.." Roll: "..roll.." RollRange: "..roll_range) end
+			if CDG_DEBUG then self:Print("Player: "..player.." Roll: "..roll.." RollRange: "..roll_range) end
 			-- TODO: Only in NONGROUP channels if channel == "CDG_ROLL_DICE" then SendSystemMessage(roll_text) end
 			self.current_game.player_rolls[player] = tonumber(roll)
 			self:CheckRollsComplete(false)
@@ -713,7 +711,7 @@ function CalmDownandGamble:ChatChannelCallback(...)
 	
 	if (player_join) then
 		self.current_game.player_rolls[sender] = -1
-		if DEBUG then self:Print("JOINED "..sender) end
+		if CDG_DEBUG then self:Print("JOINED "..sender) end
 	end
 
 end
@@ -722,35 +720,35 @@ end
 -- Button Interaction Callbacks (State and Settings)
 -- ==================================================== 
 function CalmDownandGamble:PrintBanlist()
-	SendChatMessage("Hall of GTFO:", self.chat.channel_const)
+	self:MessageChat("Hall of GTFO:")
 	for player, _ in pairs(self.db.global.ban_list) do
-		SendChatMessage(player, self.chat.channel_const)
+		self:MessageChat(player)
     end
 end
 
 function CalmDownandGamble:PrintRanklist()
 
-	SendChatMessage("Hall of Fame: ", self.chat.channel_const)
+	self:MessageChat("Hall of Fame: ")
 	local index = 1
 	local sort_descending = function(t,a,b) return t[b] < t[a] end
 	for player, gold in self:sortedpairs(self.db.global.rankings, sort_descending) do
 		if gold <= 0 then break end
 		
 		local msg = string.format("%d. %s won %d gold.", index, player, gold)
-		SendChatMessage(msg, self.chat.channel_const)
+		self:MessageChat(msg)
 		index = index + 1
 	end
 	
-	SendChatMessage("~~~~~~", self.chat.channel_const)
+	self:MessageChat("~~~~~~")
 	
-	SendChatMessage("Hall of Shame: ", self.chat.channel_const)
+	self:MessageChat("Hall of Shame: ")
 	index = 1
 	local sort_ascending = function(t,a,b) return t[b] > t[a] end
 	for player, gold in self:sortedpairs(self.db.global.rankings, sort_ascending) do
 		if gold >= 0 then break end
 	
 		local msg = string.format("%d. %s lost %d gold.", index, player, math.abs(gold))
-		SendChatMessage(msg, self.chat.channel_const)
+		self:MessageChat(msg)
 		index = index + 1
 	end
 	
@@ -776,7 +774,7 @@ function CalmDownandGamble:RollForMe()
 end
 
 function CalmDownandGamble:EnterForMe()
-	SendChatMessage("1", self.chat.channel_const)
+	self:MessageChat("1")
 end
 
 function CalmDownandGamble:TimedStart() 
@@ -789,49 +787,12 @@ function CalmDownandGamble:TimedStart()
 	end
 end
 
-function CalmDownandGamble:LastCall()
-	SendChatMessage("Last call! 10 seconds left!", self.chat.channel_const)
-	self:ScheduleTimer("TimedStart", 10)
-end
 
-function CalmDownandGamble:RollStatus()
-	self:CheckRollsComplete(true)
-end
 
-function CalmDownandGamble:ResetGame()
-	-- Register game callbacks
-	self:UnregisterEvent("CHAT_MSG_SYSTEM")
-	self:UnregisterEvent(self.chat.channel_callback)
-	if (self.chat.channel_callback_leader) then
-		self:UnregisterEvent(self.chat.channel_callback_leader)
-	end
-	
-	self.current_game = nil
-	self:ResetGameStage()
-	SendChatMessage("Game has been reset.", self.chat.channel_const)
-end
 
-function CalmDownandGamble:ChatChannelToggle()
-	self.db.global.chat_index = self.db.global.chat_index + 1
-	if self.db.global.chat_index > table.getn(self.chat.options) then self.db.global.chat_index = 1 end
 
-	self:SetChannelSettings()
-end
 
-function CalmDownandGamble:ButtonGameMode()
-	self.db.global.game_mode_index = self.db.global.game_mode_index + 1
-	if self.db.global.game_mode_index > table.getn(self.game.options) then self.db.global.game_mode_index = 1 end
 
-	self:SetGameMode()
-end
-
-function CalmDownandGamble:ButtonGameStage()
-	self.game.stages[self.db.global.game_stage_index].callback()
-	if self.db.global.game_stage_index < table.getn(self.game.stages) then 
-		self.db.global.game_stage_index = self.db.global.game_stage_index + 1 
-		self:SetGameStage()
-	end
-end
 
 
 -- UI ELEMENTS 
@@ -868,7 +829,7 @@ function CalmDownandGamble:ConstructUI()
 			game_mode = {
 				width = 100,
 				label = "(Classic)",
-				click_callback = function() self:ButtonGameMode() end
+				click_callback = function() self:ToggleGameMode() end
 			},
 			print_ban_list = {
 				width = 100,
@@ -908,7 +869,7 @@ function CalmDownandGamble:ConstructUI()
 			game_stage = {
 				width = 100,
 				label = "New game",
-				click_callback = function() self:ButtonGameStage() end
+				click_callback = function() self:ToggleGameStage() end
 
 			}
 		}

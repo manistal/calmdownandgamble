@@ -1,9 +1,9 @@
-## Interface: 70000
-## X-Min-Interface: 50000
+## Interface: 70100
+## X-Min-Interface: 70000
 ## Title: CalmDownandGamble
 ## Author: Fuzz Magtheridon-US
-## Version: 0.6.64
-## Notes: CALM DOWN AND GAMBLE
+## Version: 1.0
+## Notes: CALM DOWN AND GAMBLE!
 ## DefaultState: Enabled
 ## LoadOnDemand: 0
 ## SavedVariables: CalmDownandGambleDB
@@ -27,6 +27,7 @@ Libs\LibDialog-1.0\lib.xml
 Libs\LibBase64-1.0\lib.xml
 
 embeds.xml
+CDGHiLo.lua
 CalmDownandGamble.lua
 CalmDownandGamble_client.lua
 
