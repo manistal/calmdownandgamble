@@ -1,4 +1,8 @@
 
+-- Consts for Sorting, shortcuts for common cases
+local CDG_SORT_DESCENDING = function(scores, playera, playerb) return scores[playerb] < scores[playera] end
+local CDG_SORT_ASCENDING  = function(scores, playera, playerb) return scores[playerb] > scores[playera] end
+
 -- High/Low 
 -- ==================
 CDG_HILO = {
@@ -15,10 +19,7 @@ CDG_HILO = {
 		return tonumber(roll)
 	end,
 
-	sort_rolls = function(rolls)
-		high_to_low = function(scores, playera, playerb) return scores[playerb] < scores[playera] end
-		return CalmDownandGamble:sortedpairs(rolls, high_to_low)
-	end,
+	sort_rolls = CDG_SORT_DESCENDING,
 	
 	payout = function(game)
 		game.data.cash_winnings = game.data.winning_roll - game.data.losing_roll
@@ -40,10 +41,7 @@ CDG_BIGTWOS = {
 		return tonumber(roll)
 	end,
 	
-	sort_rolls = function(rolls)
-		high_to_low = function(scores, playera, playerb) return scores[playerb] < scores[playera] end
-		return CalmDownandGamble:sortedpairs(rolls, high_to_low)
-	end,
+	sort_rolls = CDG_SORT_DESCENDING,
 	
 	payout = function(game)
 		game.data.cash_winnings = game.data.gold_amount
@@ -66,10 +64,7 @@ CDG_INVERSE = {
 		return tonumber(roll)
 	end,
 	
-	sort_rolls = function(rolls)
-		low_to_high = function(scores, playera, playerb) return scores[playerb] > scores[playera] end
-		return CalmDownandGamble:sortedpairs(rolls, low_to_high)
-	end,
+	sort_rolls = CDG_SORT_ASCENDING,
 	
 	payout = function(game)
 		game.data.cash_winnings = game.data.losing_roll - game.data.winning_roll
@@ -96,10 +91,7 @@ CDG_ROULETTE= {
 		end
 	end,
 	
-	sort_rolls = function(rolls)
-		high_to_low = function(scores, playera, playerb) return scores[playerb] < scores[playera] end
-		return CalmDownandGamble:sortedpairs(rolls, high_to_low)
-	end,
+	sort_rolls = CDG_SORT_DESCENDING,
 	
 	payout = function(game)
 		game.data.cash_winnings = game.data.gold_amount
@@ -211,17 +203,12 @@ CDG_YAHTZEE = {
 		return score
 	end,
 	
-	sort_rolls = function(rolls)
-		yahtzee_high_to_low = function(scores, playera, playerb) 
-			local _, scoreA = ScoreYahtzee(scores[playera])
-			local _, scoreB = ScoreYahtzee(scores[playerb])
-			-- Sort from Highest to Lowest
-			return scoreB < scoreA
-		end
-	
-		return CalmDownandGamble:sortedpairs(rolls, yahtzee_high_to_low)
+	sort_rolls =  function(scores, playera, playerb) 
+		local _, scoreA = ScoreYahtzee(scores[playera])
+		local _, scoreB = ScoreYahtzee(scores[playerb])
+		-- Sort from Highest to Lowest
+		return scoreB < scoreA
 	end,
-	
 	
 	payout = function(game)
 		for player, roll in CalmDownandGamble:sortedpairs(game.data.player_rolls, game.mode.sort_rolls) do

@@ -404,7 +404,7 @@ function CalmDownandGamble:EvaluateScores()
 	
     -- Loop over the players and look for highest/lowest/etc
 	local roll_index, total_rolls = 0, table.getn(self.game.data.player_rolls)
-	for player, roll in self.game.mode.sort_rolls(self.game.data.player_rolls) do
+	for player, roll in self:sortedpairs(self.game.data.player_rolls, self.game.mode.sort_rolls) do
 		
 		-- Loop Incrementer
 		roll_index = roll_index + 1
