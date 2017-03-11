@@ -50,7 +50,7 @@ function CalmDownandGamble:OnInitialize()
 		channel = {}
 	}
 	self.game = {
-		mode_id = self.db.global.chat_index,
+		mode_id = self.db.global.game_mode_index,
 		mode = {}, 
 		stage_id = 1, 
 		stage = {}
@@ -111,7 +111,7 @@ function CalmDownandGamble:SetChatChannel()
 	self.chat.num_channels = table.getn(CHANNEL_CONSTS)
 	self.ui.chat_channel:SetText(self.chat.channel.label)
 	
-	self:PrintDebug(self.chat.label)
+	self:PrintDebug(self.chat.channel.label)
 end
 
 function CalmDownandGamble:ChatChannelToggle()
@@ -209,7 +209,7 @@ end
 -- (stage_id = 1) Game will always start here in start game
 function CalmDownandGamble:StartGame()
 	-- Reset & Init Current GAME
-	self.current_game = {
+	self.game.data = {
 		accepting_players = true,
 		accepting_rolls = false,
 		high_tiebreaker = false,
@@ -227,12 +227,12 @@ function CalmDownandGamble:StartGame()
 	self:PrintDebug("Initialized Current GAME")
 	
 	-- Welcome Message!
-	local welcome_msg = "CDG is now in session! Mode: "..self.game.options[self.db.global.game_mode_index].label..", Bet: "..self.current_game.gold_amount.." gold"
+	local welcome_msg = "CDG is now in session! Mode: "..self.game.options[self.db.global.game_mode_index].label..", Bet: "..self.game.data.gold_amount.." gold"
 	self:MessageChat(welcome_msg)
 	self:MessageChat("Press 1 to Join!")
 	
 	-- Notify Clients of New GAME
-	local start_args = self.current_game.roll_lower.." "..self.current_game.roll_upper.." "..self.current_game.gold_amount.." "..self.chat.channel.const
+	local start_args = self.game.data.roll_lower.." "..self.game.data.roll_upper.." "..self.game.data.gold_amount.." "..self.chat.channel.const
 	self:MessageAddon("CDG_NEW_GAME", start_args)
 	self:PrintDebug(start_args)
 end
@@ -245,16 +245,16 @@ end
 
 -- (stage_id = 3) After accepting entries via chat callbacks, start the rolls
 function CalmDownandGamble:StartRolls()
-	self.current_game.accepting_rolls = true
-	self.current_game.accepting_players = false
+	self.game.data.accepting_rolls = true
+	self.game.data.accepting_players = false
 	
 	local roll_msg = ""
-	if self.current_game.high_tiebreaker then 
-		roll_msg = "High Tiebreaker!! "..format_player_names(self.current_game.player_rolls)
-	elseif self.current_game.low_tiebreaker then 
-		roll_msg = "Low Tiebreaker!! "..format_player_names(self.current_game.player_rolls)
+	if self.game.data.high_tiebreaker then 
+		roll_msg = "High Tiebreaker!! "..format_player_names(self.game.data.player_rolls)
+	elseif self.game.data.low_tiebreaker then 
+		roll_msg = "Low Tiebreaker!! "..format_player_names(self.game.data.player_rolls)
 	else
-		roll_msg = "Time to roll! Good Luck! Command:   /roll "..self.current_game.roll_range
+		roll_msg = "Time to roll! Good Luck! Command:   /roll "..self.game.data.roll_range
 	end
 	self:MessageChat(roll_msg)
 end
@@ -280,7 +280,7 @@ function CalmDownandGamble:CheckRollsComplete(print_players)
 	
 	if CDG_DEBUG then self:Print("CHECK ROLLS COMPLETE") end 
 
-	for player, roll in pairs(self.current_game.player_rolls) do
+	for player, roll in pairs(self.game.data.player_rolls) do
 		if (roll == -1) then
 			rolls_complete = false
 			if print_players then
@@ -298,16 +298,16 @@ end
 
 -- 
 function CalmDownandGamble:EndGame()
-	local end_args = self.current_game.winner.." "..self.current_game.loser.." "..self.current_game.cash_winnings
+	local end_args = self.game.data.winner.." "..self.game.data.loser.." "..self.game.data.cash_winnings
 	self:MessageAddon("CDG_END_GAME", end_args)
-	self.ui.CDG_Frame:SetStatusText(self.current_game.cash_winnings.."g  "..self.current_game.loser.." => "..self.current_game.winner)
+	self.ui.CDG_Frame:SetStatusText(self.game.data.cash_winnings.."g  "..self.game.data.loser.." => "..self.game.data.winner)
 	self:ResetGameStage()
-	self.current_game = nil
+	self.game.data = nil
 end
 
 function CalmDownandGamble:ResetGame()
 	self:UnregisterChatEvents()
-	self.current_game = nil
+	self.game.data = nil
 	self:ResetGameStage()
 	self:MessageChat("Game has been reset.")
 end
@@ -315,16 +315,16 @@ end
 -- Utils
 -- ========
 function CalmDownandGamble:LogResults() 
-	if (self.db.global.rankings[self.current_game.winner] ~= nil) then
-		self.db.global.rankings[self.current_game.winner] = self.db.global.rankings[self.current_game.winner] + self.current_game.cash_winnings
+	if (self.db.global.rankings[self.game.data.winner] ~= nil) then
+		self.db.global.rankings[self.game.data.winner] = self.db.global.rankings[self.game.data.winner] + self.game.data.cash_winnings
 	else
-		self.db.global.rankings[self.current_game.winner] = (1*self.current_game.cash_winnings)
+		self.db.global.rankings[self.game.data.winner] = (1*self.game.data.cash_winnings)
 	end
 	
-	if (self.db.global.rankings[self.current_game.loser] ~= nil) then
-		self.db.global.rankings[self.current_game.loser] = self.db.global.rankings[self.current_game.loser] - self.current_game.cash_winnings
+	if (self.db.global.rankings[self.game.data.loser] ~= nil) then
+		self.db.global.rankings[self.game.data.loser] = self.db.global.rankings[self.game.data.loser] - self.game.data.cash_winnings
 	else
-		self.db.global.rankings[self.current_game.loser] = (-1*self.current_game.cash_winnings)
+		self.db.global.rankings[self.game.data.loser] = (-1*self.game.data.cash_winnings)
 	end
 end
 
@@ -333,9 +333,9 @@ function CalmDownandGamble:SetGoldAmount()
 	local text_box = self.ui.gold_amount_entry:GetText()
 	local text_box_valid = (not string.match(text_box, "[^%d]")) and (text_box ~= '')
 	if ( text_box_valid ) then
-		self.current_game.gold_amount = text_box
+		self.game.data.gold_amount = text_box
 	else
-		self.current_game.gold_amount = 100
+		self.game.data.gold_amount = 100
 	end
 
 end
@@ -363,7 +363,7 @@ function CalmDownandGamble:EvaluateScores()
     -- Loop over the players and look for highest/lowest/etc
 	-- TODO -- Sort from high to low
 	local sort_descending = function(t,a,b) return t[b] < t[a] end
-	for player, roll in self:sortedpairs(self.current_game.player_rolls, sort_descending) do
+	for player, roll in self:sortedpairs(self.game.data.player_rolls, sort_descending) do
 	
 		player_score = tonumber(roll)
 		if CDG_DEBUG then self:Print(player.." "..player_score) end
@@ -408,43 +408,43 @@ function CalmDownandGamble:EvaluateScores()
 	local found_loser = (low_roller_count == 1) 
 	
 	-- High Tiebreaker -- 
-	if self.current_game.high_tiebreaker then 
+	if self.game.data.high_tiebreaker then 
 		if found_winner then 
-			self.current_game.winner = winner
-			self.current_game.winning_roll = winning_roll
-			self.current_game.high_tiebreaker = false
-			self.current_game.high_roller_playoff = {}
+			self.game.data.winner = winner
+			self.game.data.winning_roll = winning_roll
+			self.game.data.high_tiebreaker = false
+			self.game.data.high_roller_playoff = {}
 		else
-			self.current_game.player_rolls = self:CopyTable(high_roller_playoff)
-			self.current_game.high_tiebreaker = true
+			self.game.data.player_rolls = self:CopyTable(high_roller_playoff)
+			self.game.data.high_tiebreaker = true
 			self:StartRolls()
 			if CDG_DEBUG then self:Print("HIGHTIE2") end
 			return false
 		end
 	-- Low Tiebreaker -- 
-	elseif self.current_game.low_tiebreaker then 
+	elseif self.game.data.low_tiebreaker then 
 
 		
 		-- if total_players == high_rollers
-		if (high_roller_count == self:TableLength(self.current_game.player_rolls)) then
+		if (high_roller_count == self:TableLength(self.game.data.player_rolls)) then
 			
 		end
 	
 		if found_loser then 
-			self.current_game.loser = loser
-			self.current_game.losing_roll = losing_roll
-			self.current_game.low_tiebreaker = false
-			self.current_game.low_roller_playoff = {}
-		elseif (high_roller_count == self:TableLength(self.current_game.player_rolls)) then
+			self.game.data.loser = loser
+			self.game.data.losing_roll = losing_roll
+			self.game.data.low_tiebreaker = false
+			self.game.data.low_roller_playoff = {}
+		elseif (high_roller_count == self:TableLength(self.game.data.player_rolls)) then
 		-- all low tied again? will show up in "high_roller_playoff"
-			self.current_game.player_rolls = self:CopyTable(high_roller_playoff)
-			self.current_game.low_tiebreaker = true
+			self.game.data.player_rolls = self:CopyTable(high_roller_playoff)
+			self.game.data.low_tiebreaker = true
 			self:StartRolls()
 			if CDG_DEBUG then self:Print("LOWTIE4") end
 			return false
 		else
-			self.current_game.player_rolls = self:CopyTable(low_roller_playoff)
-			self.current_game.low_tiebreaker = true
+			self.game.data.player_rolls = self:CopyTable(low_roller_playoff)
+			self.game.data.low_tiebreaker = true
 			self:StartRolls()
 			if CDG_DEBUG then self:Print("LOWTIE2") end
 			return false
@@ -452,48 +452,48 @@ function CalmDownandGamble:EvaluateScores()
 	-- No Tiebreaker -- 
 	else
 		if found_winner then 
-			self.current_game.winner = winner
-			self.current_game.winning_roll = winning_roll
-			self.current_game.high_tiebreaker = false
-			self.current_game.high_roller_playoff = {}
+			self.game.data.winner = winner
+			self.game.data.winning_roll = winning_roll
+			self.game.data.high_tiebreaker = false
+			self.game.data.high_roller_playoff = {}
 		else 
-			self.current_game.high_roller_playoff = self:CopyTable(high_roller_playoff)
+			self.game.data.high_roller_playoff = self:CopyTable(high_roller_playoff)
 		end
 		
 		if found_loser then 
-			self.current_game.loser = loser
-			self.current_game.losing_roll = losing_roll
-			self.current_game.low_tiebreaker = false
-			self.current_game.low_roller_playoff = {}
+			self.game.data.loser = loser
+			self.game.data.losing_roll = losing_roll
+			self.game.data.low_tiebreaker = false
+			self.game.data.low_roller_playoff = {}
 		else
-			self.current_game.low_roller_playoff = self:CopyTable(low_roller_playoff)
+			self.game.data.low_roller_playoff = self:CopyTable(low_roller_playoff)
 		end
 
 	end
 	
 	
-	if (self:TableLength(self.current_game.low_roller_playoff) > 1) then 
+	if (self:TableLength(self.game.data.low_roller_playoff) > 1) then 
 		if CDG_DEBUG then self:Print("LOWTIE1") end
 		-- start low tiebreaker -- 
-		self.current_game.low_tiebreaker = true
-		self.current_game.player_rolls = self:CopyTable(self.current_game.low_roller_playoff)
+		self.game.data.low_tiebreaker = true
+		self.game.data.player_rolls = self:CopyTable(self.game.data.low_roller_playoff)
 		self:StartRolls()
 		return false
-	elseif (self:TableLength(self.current_game.high_roller_playoff) > 1) then 
+	elseif (self:TableLength(self.game.data.high_roller_playoff) > 1) then 
 		if CDG_DEBUG then self:Print("HIGHTIE1") end
-		self.current_game.high_tiebreaker = true
-		self.current_game.player_rolls = self:CopyTable(self.current_game.high_roller_playoff)
+		self.game.data.high_tiebreaker = true
+		self.game.data.player_rolls = self:CopyTable(self.game.data.high_roller_playoff)
 		self:StartRolls()
 		return false
-	elseif (self.current_game.loser == nil) and (not found_loser) then  -- special case, everyone was a high roller
+	elseif (self.game.data.loser == nil) and (not found_loser) then  -- special case, everyone was a high roller
 		if CDG_DEBUG then self:Print("LOWTIE3") end
-		self.current_game.low_tiebreaker = true
-		self.current_game.player_rolls = self:CopyTable(low_roller_playoff)
+		self.game.data.low_tiebreaker = true
+		self.game.data.player_rolls = self:CopyTable(low_roller_playoff)
 		self:StartRolls()
 		return false
-	elseif (self.current_game.loser == nil) and found_loser then  -- special case, everyone was a high roller, 1v1
-		self.current_game.loser = loser
-		self.current_game.losing_roll = losing_roll
+	elseif (self.game.data.loser == nil) and found_loser then  -- special case, everyone was a high roller, 1v1
+		self.game.data.loser = loser
+		self.game.data.losing_roll = losing_roll
 		return true
 	else
 		return true
@@ -507,33 +507,33 @@ end
 -- DEFAULT INIT -- Used by almost everything
 function CalmDownandGamble:DefaultGameInit() 
 	self:SetGoldAmount()
-	self.current_game.roll_upper = self.current_game.gold_amount
-	self.current_game.roll_lower = 1
-	self.current_game.roll_range = "(1-"..self.current_game.gold_amount..")"
+	self.game.data.roll_upper = self.game.data.gold_amount
+	self.game.data.roll_lower = 1
+	self.game.data.roll_range = "(1-"..self.game.data.gold_amount..")"
 end
 
 -- Yahtzee Init -- Yahtzee is different because fun. 
 function CalmDownandGamble:YahtzeeInit() 
 	self:SetGoldAmount()
-	self.current_game.roll_range = "(11111-99999)"
-	self.current_game.roll_upper = 99999
-	self.current_game.roll_lower = 11111
+	self.game.data.roll_range = "(11111-99999)"
+	self.game.data.roll_upper = 99999
+	self.game.data.roll_lower = 11111
 end
 
 -- Twos Init -- Yahtzee is different because fun. 
 function CalmDownandGamble:TwosInit() 
 	self:SetGoldAmount()
-	self.current_game.roll_range = "(1-2)"
-	self.current_game.roll_upper = 2
-	self.current_game.roll_lower = 1
+	self.game.data.roll_range = "(1-2)"
+	self.game.data.roll_upper = 2
+	self.game.data.roll_lower = 1
 end
 
 -- Game mode: High Low
 -- =================================================
 function CalmDownandGamble:HighLow()
 	if (CalmDownandGamble:EvaluateScores()) then
-		self.current_game.cash_winnings = self.current_game.winning_roll - self.current_game.losing_roll
-		self:MessageChat(self.current_game.loser.." owes "..self.current_game.winner.." "..self.current_game.cash_winnings.." gold!")
+		self.game.data.cash_winnings = self.game.data.winning_roll - self.game.data.losing_roll
+		self:MessageChat(self.game.data.loser.." owes "..self.game.data.winner.." "..self.game.data.cash_winnings.." gold!")
 		
 		-- Log Results -- All game modes must call these two explicitly
 		self:LogResults()
@@ -545,8 +545,8 @@ end
 -- =================================================
 function CalmDownandGamble:Twos()
 	if (CalmDownandGamble:EvaluateScores()) then
-		self.current_game.cash_winnings = self.current_game.gold_amount
-		self:MessageChat(self.current_game.loser.." owes "..self.current_game.winner.." "..self.current_game.cash_winnings.." gold!")
+		self.game.data.cash_winnings = self.game.data.gold_amount
+		self:MessageChat(self.game.data.loser.." owes "..self.game.data.winner.." "..self.game.data.cash_winnings.." gold!")
 	
 		-- Log Results -- All game modes must call these two explicitly
 		self:LogResults()
@@ -560,9 +560,9 @@ end
 function CalmDownandGamble:Inverse()
 	if (CalmDownandGamble:EvaluateScores()) then
 		
-		self.current_game.cash_winnings = self.current_game.winning_roll - self.current_game.losing_roll
-		self.current_game.winner, self.current_game.loser = self.current_game.loser, self.current_game.winner
-		self:MessageChat(self.current_game.loser.." owes "..self.current_game.winner.." "..self.current_game.cash_winnings.." gold!")
+		self.game.data.cash_winnings = self.game.data.winning_roll - self.game.data.losing_roll
+		self.game.data.winner, self.game.data.loser = self.game.data.loser, self.game.data.winner
+		self:MessageChat(self.game.data.loser.." owes "..self.game.data.winner.." "..self.game.data.cash_winnings.." gold!")
 	
 		-- Log Results -- All game modes must call these two explicitly
 		self:LogResults()
@@ -597,22 +597,22 @@ end
 function CalmDownandGamble:Yahtzee()
 
 	local player_scores = {}
-	for player, roll in pairs(self.current_game.player_rolls) do
+	for player, roll in pairs(self.game.data.player_rolls) do
 		local score = self:ScoreYahtzee(roll)
 		player_scores[player] = score
 	end
 	
 	local sort_by_score = function(t,a,b) return t[b] < t[a] end
 	for player, score in self:sortedpairs(player_scores, sort_by_score) do
-		self:MessageChat(player.." Roll: "..format_yahtzee_roll(self.current_game.player_rolls[player]).." Score: "..score)
+		self:MessageChat(player.." Roll: "..format_yahtzee_roll(self.game.data.player_rolls[player]).." Score: "..score)
 	end
 
-	self.current_game.player_rolls = {}
-	self.current_game.player_rolls = self:CopyTable(player_scores)
+	self.game.data.player_rolls = {}
+	self.game.data.player_rolls = self:CopyTable(player_scores)
 	
 	if (self:EvaluateScores()) then 
-		self.current_game.cash_winnings = self.current_game.gold_amount
-		self:MessageChat(self.current_game.loser.." owes "..self.current_game.winner.." "..self.current_game.cash_winnings.." gold!")
+		self.game.data.cash_winnings = self.game.data.gold_amount
+		self:MessageChat(self.game.data.loser.." owes "..self.game.data.winner.." "..self.game.data.cash_winnings.." gold!")
 	
 		-- Log Results -- All game modes must call these two explicitly
 		self:LogResults()
@@ -629,12 +629,12 @@ function CalmDownandGamble:Median()
 	local high_player, median_player, low_player = "", "", ""
 	local high_score, median_score, low_score = 0, 0, 0
 	
-	local total_players = self:TableLength(self.current_game.player_rolls)
+	local total_players = self:TableLength(self.game.data.player_rolls)
 	local last_number = total_players
 	local median_number = math.floor((total_players + 1) / 2)
 
 	local player_index = 1
-	for player, roll in self:sortedpairs(self.current_game.player_rolls, sort_by_score) do
+	for player, roll in self:sortedpairs(self.game.data.player_rolls, sort_by_score) do
 		if CDG_DEBUG then self:Print(player.." "..roll) end
 		if player_index == 1 then 
 			high_player = player
@@ -654,17 +654,17 @@ function CalmDownandGamble:Median()
 		self:MessageChat("You need at least 3 players!!")
 		median_player = high_player
 	end
-	self.current_game.winner = median_player
+	self.game.data.winner = median_player
 	
 
-	self.current_game.loser = high_player
-	self.current_game.cash_winnings = math.abs(median_score - high_score)
-	self:MessageChat(self.current_game.loser.." owes "..self.current_game.winner.." "..self.current_game.cash_winnings.." gold!")
+	self.game.data.loser = high_player
+	self.game.data.cash_winnings = math.abs(median_score - high_score)
+	self:MessageChat(self.game.data.loser.." owes "..self.game.data.winner.." "..self.game.data.cash_winnings.." gold!")
 	self:LogResults()
 	
-	self.current_game.loser = low_player
-	self.current_game.cash_winnings = math.abs(median_score - low_score)
-	self:MessageChat(self.current_game.loser.." owes "..self.current_game.winner.." "..self.current_game.cash_winnings.." gold!")
+	self.game.data.loser = low_player
+	self.game.data.cash_winnings = math.abs(median_score - low_score)
+	self:MessageChat(self.game.data.loser.." owes "..self.game.data.winner.." "..self.game.data.cash_winnings.." gold!")
 	self:LogResults()
 	
 	self:EndGame()
@@ -681,16 +681,16 @@ function CalmDownandGamble:RollCallback(...)
 	local message = self:SplitString(roll_text, "%S+")
 	local player, roll, roll_range = message[1], message[3], message[4]
 	
-	if CDG_DEBUG then self:Print("CHECK VALID ROLL "..self.current_game.roll_range) end
+	if CDG_DEBUG then self:Print("CHECK VALID ROLL "..self.game.data.roll_range) end
 	if CDG_DEBUG then self:Print("Player: "..player.." Roll: "..roll) end
 	-- Check that the roll is valid ( also that the message is for us)
-	local valid_roll = (self.current_game.roll_range == roll_range) and self.current_game.accepting_rolls
+	local valid_roll = (self.game.data.roll_range == roll_range) and self.game.data.accepting_rolls
 
 	if valid_roll then 
-		if (self.current_game.player_rolls[player] == -1) then
+		if (self.game.data.player_rolls[player] == -1) then
 			if CDG_DEBUG then self:Print("Player: "..player.." Roll: "..roll.." RollRange: "..roll_range) end
 			-- TODO: Only in NONGROUP channels if channel == "CDG_ROLL_DICE" then SendSystemMessage(roll_text) end
-			self.current_game.player_rolls[player] = tonumber(roll)
+			self.game.data.player_rolls[player] = tonumber(roll)
 			self:CheckRollsComplete(false)
 		end
 	end
@@ -706,14 +706,14 @@ function CalmDownandGamble:ChatChannelCallback(...)
 
 
 	local player_join = (
-		(self.current_game.player_rolls[sender] == nil) 
-		and (self.current_game.accepting_players) 
+		(self.game.data.player_rolls[sender] == nil) 
+		and (self.game.data.accepting_players) 
 		and (message == "1")
         and (not self.db.global.ban_list[sender])
 	)
 	
 	if (player_join) then
-		self.current_game.player_rolls[sender] = -1
+		self.game.data.player_rolls[sender] = -1
 		if CDG_DEBUG then self:Print("JOINED "..sender) end
 	end
 
@@ -769,11 +769,11 @@ function CalmDownandGamble:CleanRankList()
 end
 
 function CalmDownandGamble:RollForMe()
-	if self.current_game == nil then 
+	if self.game.data == nil then 
 		SendSystemMessage("You need an active game for me to roll for you!")
 		return
 	end
-	RandomRoll(self.current_game.roll_lower, self.current_game.roll_upper)
+	RandomRoll(self.game.data.roll_lower, self.game.data.roll_upper)
 end
 
 function CalmDownandGamble:EnterForMe()
@@ -781,8 +781,8 @@ function CalmDownandGamble:EnterForMe()
 end
 
 function CalmDownandGamble:TimedStart() 
-	if (self.current_game ~= nil) then
-		if not self.current_game.accepting_rolls then 
+	if (self.game.data ~= nil) then
+		if not self.game.data.accepting_rolls then 
 			self.db.global.game_stage_index = 4 -- 4 is the final stage
 			self:SetGameStage()
 			self:StartRolls()
