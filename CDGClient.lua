@@ -20,7 +20,9 @@ function CDGClient:OnInitialize()
 			rankings = { },
 			game_mode_index = 1, 
 			window_shown = false,
-			auto_pop = true
+			auto_pop = true,
+			ui = {},
+			FIRE = false
 		}
 	}
 
@@ -28,6 +30,11 @@ function CDGClient:OnInitialize()
 	self:ConstructUI()
 	self:RegisterCallbacks()
 	self:InitState()
+	
+	-- Register for UI Events
+	self:RegisterEvent("PLAYER_LEAVING_WORLD", function(...) self:OnDisable(...) end)
+	-- self:RegisterEvent("PLAYER_ENTERING_WORLD", function(...) self:OnDisable(...) end)
+	
 
 	if DEBUG then self:Print("Load Complete!!") end
 end
@@ -38,6 +45,13 @@ end
 
 -- DESTRUCTOR  
 function CDGClient:OnDisable()
+	self.db.global.FIRE = true
+	local point_idx, num_points = 1, self.ui.CDG_Frame:GetNumPoints()
+	while (point_idx <= num_points) do
+		self.db.global.ui[point_idx] = self.ui.CDG_Frame:GetPoint(point_idx)
+		point_idx = point_idx + 1
+	end
+	self.db.global.window_shown = self.ui.window_shown
 end
 
 
@@ -73,12 +87,12 @@ end
 
 function CDGClient:ShowUI()
 	self.ui.CDG_Frame:Show()
-	self.db.global.window_shown = true
+	self.ui.window_shown = true
 end
 
 function CDGClient:HideUI()
 	self.ui.CDG_Frame:Hide()
-	self.db.global.window_shown = false
+	self.ui.window_shown = false
 end
 
 function CDGClient:DisablePop()
@@ -291,6 +305,13 @@ function CDGClient:ConstructUI()
 	
 	if not self.db.global.window_shown then
 		self.ui.CDG_Frame:Hide()
+	end
+	
+	-- Reload our last saved location
+	local point_idx, num_points = 1, table.getn(self.db.global.ui)
+	while (point_idx <= num_points) do
+		self.ui.CDG_Frame:SetPoint(self.db.global.ui[point_idx])
+		point_idx = point_idx + 1
 	end
 	
 end

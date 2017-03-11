@@ -25,6 +25,7 @@ function CalmDownandGamble:OnInitialize()
 			game_mode_index = 1, 
 			game_stage_index = 1,
 			window_shown = false,
+			ui = {}
 		}
 	}
     self.db = LibStub("AceDB-3.0"):New("CalmDownandGambleDB", defaults)
@@ -41,6 +42,10 @@ function CalmDownandGamble:OnInitialize()
 	self:RegisterChatCommand("cdgunban", "UnbanPlayer")
 	self:RegisterChatCommand("cdgbanreset", "ResetBans")
 	self:RegisterComm("CDG_END_GAME", "GameResultsCallback")
+	
+	-- Register for UI Events
+	self:RegisterEvent("PLAYER_LEAVING_WORLD", function(...) self:OnDisable(...) end)
+	self:RegisterEvent("PLAYER_ENTERING_WORLD", function(...) self:OnDisable(...) end)
 	
 	-- Clean from 7.0 Bug
 	self:RegisterChatCommand("cdgcleanrank", "CleanRankList")
@@ -63,6 +68,15 @@ function CalmDownandGamble:OnInitialize()
 	
 	
 	self:PrintDebug("Load Complete!")
+end
+
+-- DESTRUCTOR  
+function CalmDownandGamble:OnDisable()
+	local point_idx, num_points = 1, self.ui.CDG_Frame:GetNumPoints()
+	while (point_idx <= num_points) do
+		self.db.global.ui[point_idx] = self.ui.CDG_Frame:GetPoint(point_idx)
+		point_idx = point_idx + 1
+	end
 end
 
 -- Slash Cmds
@@ -784,6 +798,12 @@ function CalmDownandGamble:ConstructUI()
 	
 	if not self.db.global.window_shown then
 		self.ui.CDG_Frame:Hide()
+	end
+	
+	local point_idx, num_points = 1, table.getn(self.db.global.ui)
+	while (point_idx <= num_points) do
+		self.ui.CDG_Frame:SetPoint(self.db.global.ui[point_idx])
+		point_idx = point_idx + 1
 	end
 	
 end
