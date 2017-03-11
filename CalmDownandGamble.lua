@@ -312,9 +312,13 @@ end
 
 
 function CalmDownandGamble:EndGame()
+	-- Tell  the clients and UI were done
 	local end_args = self.game.data.winner.." "..self.game.data.loser.." "..self.game.data.cash_winnings
 	self:MessageAddon("CDG_END_GAME", end_args)
 	self.ui.CDG_Frame:SetStatusText(self.game.data.cash_winnings.."g  "..self.game.data.loser.." => "..self.game.data.winner)
+	
+	-- Reset Game Hooks and Data
+	self:UnregisterChatEvents()
 	self:ResetGameStage()
 	self.game.data = nil
 end
@@ -329,7 +333,7 @@ end
 -- Utils
 -- ========
 
-function CDGClient:GameResultsCallback(...)
+function CalmDownandGamble:GameResultsCallback(...)
 	local callback = select(1, ...)
 	local message = select(2, ...)
 	local chat = select(3, ...)
@@ -389,6 +393,9 @@ end
 
 -- SCORING FUNCTION
 -- ===================
+-- Sorts the rolls base on the game mode sorting function
+-- The game mode sorting fucntion accepts rolls and returns a sorted table
+-- based on scores where the winner is always first, and the loser last
 function CalmDownandGamble:EvaluateScores()
 	self:PrintDebug("Evaluating Scores")
 	
@@ -396,43 +403,45 @@ function CalmDownandGamble:EvaluateScores()
 	local winner, loser = nil, nil
 	
     -- Loop over the players and look for highest/lowest/etc
-	-- for player, roll in self:sortedpairs(self.game.data.player_rolls, self.game.mode.sort_rolls) do
+	local roll_index, total_rolls = 0, table.getn(self.game.data.player_rolls)
 	for player, roll in self.game.mode.sort_rolls(self.game.data.player_rolls) do
-	
-		player_score = tonumber(roll)
+		
+		-- Loop Incrementer
+		roll_index = roll_index + 1
+		player_score = self.game.mode.roll_to_score(roll)
 		self:PrintDebug("    "..player.." "..player_score)
 		
-		if (winning_roll == nil) then  -- haven't seen anything yet
+		-- Roll Index == 1 -> Winner 
+		if (roll_index == 1) then 
 			winning_roll = player_score
 			high_roller_playoff[player] = -1
 			winner = player
-			
-		elseif (player_score > winning_roll) then  -- saw something better, reset 
-			high_roller_playoff = {}
-			winning_roll = player_score
-			high_roller_playoff[player] = -1
-			winner = player
-			
-		elseif (player_score == winning_roll) then -- can add them in 
+		
+		-- Score == Winner -> Tiebreaker
+		elseif (player_score == winning_roll) then
 			high_roller_playoff[player] = -1
 		
-		elseif (losing_roll == nil) then        --- haven't found a loser yet, doesnt qualify as a winner
+		-- Score != Winner -> First Loser
+		elseif (losing_roll == nil) then      
 			losing_roll = player_score
 			low_roller_playoff[player] = -1
 			loser = player
 			
-		elseif (player_score < losing_roll) then   -- MAYBE THIS IS THE WORST
+		-- Score != Loser and Index != End -> New Loser
+		elseif (player_score ~= losing_roll) then   
 			low_roller_playoff = {}
 			losing_roll = player_score
 			low_roller_playoff[player] = -1
 			loser = player
-			
+		
+		-- Score == Loser -> Tiebreaker
 		elseif (player_score == losing_roll)  then  -- also the worst
 			low_roller_playoff[player] = -1
-			
+		
 		else
 		end
-			
+		
+		
 	end
 	
 	local high_roller_count = self:TableLength(high_roller_playoff)
@@ -540,6 +549,7 @@ end
 -- ChatFrame Interaction Callbacks (Entry and Rolls)
 -- ==================================================== 
 function CalmDownandGamble:RollCallback(...)
+	if (self.game.data == nil) then return end
 
 	-- Parse the input Args 
 	local channel = select(1, ...)
@@ -564,6 +574,8 @@ function CalmDownandGamble:RollCallback(...)
 end
 
 function CalmDownandGamble:ChatChannelCallback(...)
+	if (self.game.data == nil) then return end
+
 	local message = select(2, ...)
 	local sender = select(3, ...)
 	
