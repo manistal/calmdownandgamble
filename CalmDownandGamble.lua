@@ -599,6 +599,7 @@ function CalmDownandGamble:RollCallback(...)
 	local roll_text = select(2, ...)
 	local message = self:SplitString(roll_text, "%S+")
 	local player, roll, roll_range = message[1], message[3], message[4]
+	if (roll_range == nil) then return end  -- If rollrange is nil its not a roll
 	
 	self:PrintDebug("Checking Roll for Range: "..self.game.data.roll_range)
 	self:PrintDebug("Player: "..player.." Roll: "..roll)
