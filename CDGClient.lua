@@ -21,7 +21,7 @@ function CDGClient:OnInitialize()
 			game_mode_index = 1, 
 			window_shown = false,
 			auto_pop = true,
-			ui = {}
+			ui = nil
 		}
 	}
 
@@ -54,6 +54,7 @@ function CDGClient:RegisterCallbacks()
 	self:RegisterChatCommand("cdgcdebug", "SetDebug")
 	self:RegisterChatCommand("cdgcdisable", "DisablePop")
 	self:RegisterChatCommand("cdgcenable", "EnablePop")
+	self:RegisterChatCommand("cdgclearui", "ClearUIState")
 
 	self:RegisterEvent("CHAT_MSG_SYSTEM", "RollCallback")
 	
@@ -68,6 +69,10 @@ end
 
 function CDGClient:SetDebug()
 	DEBUG = not DEBUG
+end
+
+function CDGClient:ClearUIState()
+	self.db.global.ui = nil
 end
 
 function CDGClient:ShowUI()
@@ -239,11 +244,7 @@ end
 
 -- Lock Position for UI  
 function CDGClient:SaveFrameState()
-	local point_idx, num_points = 1, self.ui.CDG_Frame:GetNumPoints()
-	while (point_idx <= num_points) do
-		self.db.global.ui[point_idx] = self.ui.CDG_Frame:GetPoint(point_idx)
-		point_idx = point_idx + 1
-	end
+	self.db.global.ui = CalmDownandGamble:CopyTable(self.ui.CDG_Frame.status)
 end
 
 -- UI ELEMENTS 
@@ -314,18 +315,13 @@ function CDGClient:ConstructUI()
 		self.ui.CDG_Frame:Hide()
 	end
 	
-	local point_idx, num_points = 1, CalmDownandGamble:TableLength(self.db.global.ui)
-	while (point_idx <= num_points) do
-		self.ui.CDG_Frame:SetPoint(self.db.global.ui[point_idx])
-		point_idx = point_idx + 1
+	if (self.db.global.ui ~= nil) then
+		self.ui.CDG_Frame:SetStatusTable(self.db.global.ui)
 	end
-	
+
 	-- Register for UI Events
 	self.ui.CDG_Frame:SetCallback("OnClose", function(...) self:SaveFrameState(...) end)
-	self.ui.CDG_Frame:SetCallback("OnMove", function(...) self:SaveFrameState(...) end)
 	self:RegisterEvent("PLAYER_LEAVING_WORLD", function(...) self:SaveFrameState(...) end)
-	self:RegisterEvent("PLAYER_ENTERING_WORLD", function(...) self:SaveFrameState(...) end)
-	
 	
 end
 

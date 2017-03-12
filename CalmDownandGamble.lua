@@ -25,7 +25,7 @@ function CalmDownandGamble:OnInitialize()
 			game_mode_index = 1, 
 			game_stage_index = 1,
 			window_shown = false,
-			ui = {}
+			ui = nil
 		}
 	}
     self.db = LibStub("AceDB-3.0"):New("CalmDownandGambleDB", defaults)
@@ -41,6 +41,7 @@ function CalmDownandGamble:OnInitialize()
 	self:RegisterChatCommand("cdgban", "BanPlayer")
 	self:RegisterChatCommand("cdgunban", "UnbanPlayer")
 	self:RegisterChatCommand("cdgbanreset", "ResetBans")
+	self:RegisterChatCommand("cdgmclearui", "ClearUIState")
 	self:RegisterComm("CDG_END_GAME", "GameResultsCallback")
 	
 
@@ -74,6 +75,10 @@ end
 -- ===============
 function CalmDownandGamble:SetCDG_DEBUG()
 	CDG_DEBUG = not CDG_DEBUG
+end
+
+function CalmDownandGamble:ClearUIState()
+	self.db.global.ui = nil
 end
 
 function CalmDownandGamble:BanPlayer(player, editbox)
@@ -697,12 +702,7 @@ end
 
 -- Lock Position for UI  
 function CalmDownandGamble:SaveFrameState()
-	local point_idx, num_points = 1, self.ui.CDG_Frame:GetNumPoints()
-	while (point_idx <= num_points) do
-		self.db.global.ui[point_idx] = self.ui.CDG_Frame:GetPoint(point_idx)
-		point_idx = point_idx + 1
-	end
-	SlashCmdList["DUMP"]("CalmDownandGamble.db.global.ui");
+	self.db.global.ui = self:CopyTable(self.ui.CDG_Frame.status)
 end
 
 
@@ -799,6 +799,7 @@ function CalmDownandGamble:ConstructUI()
 	self.ui.CDG_Frame:SetStatusTable(cdg_ui_elements.main_frame)
 	self.ui.CDG_Frame:EnableResize(false)
 	self.ui.CDG_Frame:SetCallback("OnClose", function() self:HideUI() end)
+	self.ui.CDG_Frame.frame:SetUserPlaced(true)
 	
 	-- Set up edit box for gold -- 
 	self.ui.gold_amount_entry = AceGUI:Create("EditBox")
@@ -822,22 +823,14 @@ function CalmDownandGamble:ConstructUI()
 		self.ui.CDG_Frame:Hide()
 	end
 	
-	self.ui.CDG_Frame:SetUserPlaced(true)
-	--self.db.global.ui = {}
-	--self.ui.CDG_Frame:SetStatusTable(self.db.global.ui)
-	
-	--local point_idx, num_points = 1, self:TableLength(self.db.global.ui)
-	--while (point_idx <= num_points) do
-	--	self.ui.CDG_Frame:SetPoint(self.db.global.ui[point_idx])
-	--	point_idx = point_idx + 1
-	--end
-	
+	-- Load from memory
+	--self.db.global.ui = nil
+	if (self.db.global.ui ~= nil) then
+		self.ui.CDG_Frame:SetStatusTable(self.db.global.ui)
+	end
 
 	-- Register for UI Events
-	--self.ui.CDG_Frame:SetCallback("OnClose", function(...) self:SaveFrameState(...) end)
-	--self.ui.CDG_Frame:SetCallback("OnMouseUp", function(...) self:SaveFrameState(...) end)
-
-	--self:RegisterEvent("PLAYER_LEAVING_WORLD", function(...) self:SaveFrameState(...) end)
-	--self:RegisterEvent("PLAYER_ENTERING_WORLD", function(...) self:SaveFrameState(...) end)
+	self.ui.CDG_Frame:SetCallback("OnClose", function(...) self:SaveFrameState(...) end)
+	self:RegisterEvent("PLAYER_LEAVING_WORLD", function(...) self:SaveFrameState(...) end)
 	
 end
