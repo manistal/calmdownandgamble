@@ -5,7 +5,7 @@ local AceGUI = LibStub("AceGUI-3.0")
 
 
 -- Debug Setup
-local CDG_DEBUG = false
+local CDG_DEBUG = true
 function CalmDownandGamble:PrintDebug(msg)
 	if CDG_DEBUG then self:Print("[CDG_DEBUG] "..msg) end
 end
@@ -163,6 +163,7 @@ function CalmDownandGamble:RegisterChatEvents()
 end
 
 function CalmDownandGamble:UnregisterChatEvents()
+	self:CancelAllTimers()
 	self:UnregisterEvent("CHAT_MSG_SYSTEM")
 	self:UnregisterEvent(self.chat.channel.callback)
 	if (self.chat.channel.callback_leader) then
@@ -264,6 +265,20 @@ end
 
 -- (stage_id = 3) After accepting entries via chat callbacks, start the rolls
 function CalmDownandGamble:StartRolls()
+	-- Cancel the countdown to start if its there
+	self:CancelAllTimers()
+	
+	
+	-- Make sure we have enough players
+	self:PrintDebug(table.getn(self.game.data.player_rolls))
+	self:PrintDebug(self:TableLength(self.game.data.player_rolls))
+	if (self:TableLength(self.game.data.player_rolls) <= 1) then
+		self:MessageChat("Can't start a game with less than 2 players")
+		self.game.stage_id = self.game.stage_id - 1
+		self:SetGameStage()
+		return 
+	end
+
 	self.game.data.accepting_rolls = true
 	self.game.data.accepting_players = false
 	
