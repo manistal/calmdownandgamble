@@ -29,26 +29,13 @@ function CDGClient:OnInitialize()
 	self:ConstructUI()
 	self:RegisterCallbacks()
 	self:InitState()
-	
-	-- Register for UI Events
-	self:RegisterEvent("PLAYER_LEAVING_WORLD", function(...) self:OnDisable(...) end)
-	self:RegisterEvent("PLAYER_ENTERING_WORLD", function(...) self:OnDisable(...) end)
-	
+
 
 	if DEBUG then self:Print("Load Complete!!") end
 end
 
 -- INIT FOR ENABLE  
 function CDGClient:OnEnable()
-end
-
--- DESTRUCTOR  
-function CDGClient:OnDisable()
-	local point_idx, num_points = 1, self.ui.CDG_Frame:GetNumPoints()
-	while (point_idx <= num_points) do
-		self.db.global.ui[point_idx] = self.ui.CDG_Frame:GetPoint(point_idx)
-		point_idx = point_idx + 1
-	end
 end
 
 
@@ -250,6 +237,15 @@ function CDGClient:OpenTradeWinner()
     end
 end
 
+-- Lock Position for UI  
+function CDGClient:SaveFrameState()
+	local point_idx, num_points = 1, self.ui.CDG_Frame:GetNumPoints()
+	while (point_idx <= num_points) do
+		self.db.global.ui[point_idx] = self.ui.CDG_Frame:GetPoint(point_idx)
+		point_idx = point_idx + 1
+	end
+end
+
 -- UI ELEMENTS 
 -- ======================================================
 function CDGClient:ConstructUI()
@@ -318,12 +314,18 @@ function CDGClient:ConstructUI()
 		self.ui.CDG_Frame:Hide()
 	end
 	
-	-- Reload our last saved location
-	local point_idx, num_points = 1, table.getn(self.db.global.ui)
+	local point_idx, num_points = 1, CalmDownandGamble:TableLength(self.db.global.ui)
 	while (point_idx <= num_points) do
 		self.ui.CDG_Frame:SetPoint(self.db.global.ui[point_idx])
 		point_idx = point_idx + 1
 	end
+	
+	-- Register for UI Events
+	self.ui.CDG_Frame:SetCallback("OnClose", function(...) self:SaveFrameState(...) end)
+	self.ui.CDG_Frame:SetCallback("OnMove", function(...) self:SaveFrameState(...) end)
+	self:RegisterEvent("PLAYER_LEAVING_WORLD", function(...) self:SaveFrameState(...) end)
+	self:RegisterEvent("PLAYER_ENTERING_WORLD", function(...) self:SaveFrameState(...) end)
+	
 	
 end
 

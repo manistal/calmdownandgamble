@@ -43,9 +43,7 @@ function CalmDownandGamble:OnInitialize()
 	self:RegisterChatCommand("cdgbanreset", "ResetBans")
 	self:RegisterComm("CDG_END_GAME", "GameResultsCallback")
 	
-	-- Register for UI Events
-	self:RegisterEvent("PLAYER_LEAVING_WORLD", function(...) self:OnDisable(...) end)
-	self:RegisterEvent("PLAYER_ENTERING_WORLD", function(...) self:OnDisable(...) end)
+
 	
 	-- Clean from 7.0 Bug
 	self:RegisterChatCommand("cdgcleanrank", "CleanRankList")
@@ -70,14 +68,7 @@ function CalmDownandGamble:OnInitialize()
 	self:PrintDebug("Load Complete!")
 end
 
--- DESTRUCTOR  
-function CalmDownandGamble:OnDisable()
-	local point_idx, num_points = 1, self.ui.CDG_Frame:GetNumPoints()
-	while (point_idx <= num_points) do
-		self.db.global.ui[point_idx] = self.ui.CDG_Frame:GetPoint(point_idx)
-		point_idx = point_idx + 1
-	end
-end
+
 
 -- Slash Cmds
 -- ===============
@@ -270,7 +261,6 @@ function CalmDownandGamble:StartRolls()
 	
 	
 	-- Make sure we have enough players
-	self:PrintDebug(table.getn(self.game.data.player_rolls))
 	self:PrintDebug(self:TableLength(self.game.data.player_rolls))
 	if (self:TableLength(self.game.data.player_rolls) <= 1) then
 		self:MessageChat("Can't start a game with less than 2 players")
@@ -705,6 +695,16 @@ function CalmDownandGamble:TimedStart()
 	end
 end
 
+-- Lock Position for UI  
+function CalmDownandGamble:SaveFrameState()
+	local point_idx, num_points = 1, self.ui.CDG_Frame:GetNumPoints()
+	while (point_idx <= num_points) do
+		self.db.global.ui[point_idx] = self.ui.CDG_Frame:GetPoint(point_idx)
+		point_idx = point_idx + 1
+	end
+	SlashCmdList["DUMP"]("CalmDownandGamble.db.global.ui");
+end
+
 
 -- UI ELEMENTS 
 -- ======================================================
@@ -822,10 +822,22 @@ function CalmDownandGamble:ConstructUI()
 		self.ui.CDG_Frame:Hide()
 	end
 	
-	local point_idx, num_points = 1, table.getn(self.db.global.ui)
-	while (point_idx <= num_points) do
-		self.ui.CDG_Frame:SetPoint(self.db.global.ui[point_idx])
-		point_idx = point_idx + 1
-	end
+	self.ui.CDG_Frame:SetUserPlaced(true)
+	--self.db.global.ui = {}
+	--self.ui.CDG_Frame:SetStatusTable(self.db.global.ui)
+	
+	--local point_idx, num_points = 1, self:TableLength(self.db.global.ui)
+	--while (point_idx <= num_points) do
+	--	self.ui.CDG_Frame:SetPoint(self.db.global.ui[point_idx])
+	--	point_idx = point_idx + 1
+	--end
+	
+
+	-- Register for UI Events
+	--self.ui.CDG_Frame:SetCallback("OnClose", function(...) self:SaveFrameState(...) end)
+	--self.ui.CDG_Frame:SetCallback("OnMouseUp", function(...) self:SaveFrameState(...) end)
+
+	--self:RegisterEvent("PLAYER_LEAVING_WORLD", function(...) self:SaveFrameState(...) end)
+	--self:RegisterEvent("PLAYER_ENTERING_WORLD", function(...) self:SaveFrameState(...) end)
 	
 end
