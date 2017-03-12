@@ -2,6 +2,7 @@
 -- Consts for Sorting, shortcuts for common cases
 local CDG_SORT_DESCENDING = function(scores, playera, playerb) return scores[playerb] < scores[playera] end
 local CDG_SORT_ASCENDING  = function(scores, playera, playerb) return scores[playerb] > scores[playera] end
+local CDG_MAX_ROLL = function(roll) return (tonumber(roll) > 1000000) and 1000000 or tonumber(roll) end
 
 -- High/Low 
 -- ==================
@@ -11,8 +12,8 @@ CDG_HILO = {
 	
 	init_game = function(game)
 		game.data.roll_lower = 1
-		game.data.roll_upper = game.data.gold_amount
-		game.data.roll_range = "(1-"..game.data.gold_amount..")"
+		game.data.roll_upper = CDG_MAX_ROLL(game.data.gold_amount)
+		game.data.roll_range = "(1-"..game.data.roll_upper..")"
 	end,
 	
 	roll_to_score = function(roll)
@@ -60,8 +61,8 @@ CDG_INVERSE = {
 	
 	init_game = function(game)
 		game.data.roll_lower = 1
-		game.data.roll_upper = game.data.gold_amount
-		game.data.roll_range = "(1-"..game.data.gold_amount..")"
+		game.data.roll_upper = CDG_MAX_ROLL(game.data.gold_amount)
+		game.data.roll_range = "(1-"..game.data.roll_upper..")"
 	end,
 	
 	roll_to_score = function(roll)
