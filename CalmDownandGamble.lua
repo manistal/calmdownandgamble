@@ -101,6 +101,7 @@ end
 function CalmDownandGamble:HideUI()
 	self.ui.CDG_Frame:Hide()
 	self.db.global.window_shown = false
+	self:SaveFrameState()
 end
 
 function CalmDownandGamble:ResetStats()
@@ -819,18 +820,15 @@ function CalmDownandGamble:ConstructUI()
 		self.ui.CDG_Frame:AddChild(self.ui[button_name])
 	end
 	
+	if (self.db.global.ui ~= nil) then
+		self.ui.CDG_Frame:SetStatusTable(self.db.global.ui)
+	end
+	
 	if not self.db.global.window_shown then
 		self.ui.CDG_Frame:Hide()
 	end
 	
-	-- Load from memory
-	--self.db.global.ui = nil
-	if (self.db.global.ui ~= nil) then
-		self.ui.CDG_Frame:SetStatusTable(self.db.global.ui)
-	end
-
 	-- Register for UI Events
-	self.ui.CDG_Frame:SetCallback("OnClose", function(...) self:SaveFrameState(...) end)
 	self:RegisterEvent("PLAYER_LEAVING_WORLD", function(...) self:SaveFrameState(...) end)
 	
 end
