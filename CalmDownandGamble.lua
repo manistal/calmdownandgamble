@@ -279,26 +279,35 @@ function CalmDownandGamble:StartRolls()
 		return 
 	end
 
+	-- Allow roll callbacks
 	self.game.data.accepting_rolls = true
 	self.game.data.accepting_players = false
 	
+	-- Tell Tiebreakers Who Has to Roll
 	local roll_msg = ""
 	if self.game.data.high_tiebreaker then 
-		self:MessageChat("The Winners Bracket!")
+		self:MessageChat("The Winners Bracket! High Tiebreaker:")
 		self:PrintTieBreakerPlayers(self.game.data.player_rolls)
 	elseif self.game.data.low_tiebreaker then 
-		self:MessageChat("The Losers Last Chance!")
+		self:MessageChat("The Losers! Low Tiebreaker:")
 		self:PrintTieBreakerPlayers(self.game.data.player_rolls)
-	else
-		roll_msg = "Time to roll! Good Luck! Command:   /roll "..self.game.data.roll_range
 	end
+	
+	-- Off to the races!
 	self:MessageChat(roll_msg)
+	self:MessageChat("Time to roll! Good Luck! Command:   /roll "..self.game.data.roll_range)
 end
 
 function CalmDownandGamble:PrintTieBreakerPlayers(players)
+
+
+	tiebreaker_list = ""
 	for player, roll in pairs(players) do
-		self:MessageChat(" "..player.." "..self.game.mode.fmt_score(roll))
+		-- TODO - Figure out how to use this for Yahtzee self.game.mode.fmt_score(roll)
+		tiebreaker_list = tiebreaker_list..player.." vs "
 	end
+	tiebreaker_list = tiebreaker_list:sub(1, -5)
+	self:MessageChat(tiebreaker_list)
 end
 
 -- (stage_id =4) Poll for Roll Status

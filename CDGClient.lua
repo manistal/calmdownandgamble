@@ -74,6 +74,7 @@ function CDGClient:RegisterCallbacks()
     self:RegisterComm("CDG_NEW_GAME", "NewGameCallback")
     self:RegisterComm("CDG_NEW_ROLL", "NewRollsCallback")
     self:RegisterComm("CDG_END_GAME", "GameResultsCallback")
+	self:RegisterComm("CDG_GUILD_ROLL", "GuildRollCallback")
 	
 	if DEBUG then self:Print("REGISTRATIONS COMPLETE") end
 end
@@ -106,6 +107,8 @@ end
 -- ChatFrame Interaction Callbacks (Entry and Rolls)
 -- ==================================================== 
 function CDGClient:RollCallback(...)
+	if (self.current_game == nil) then return end
+
 	-- Parse the input Args 
 	local roll_text = select(2, ...)
 	local message = self:SplitString(roll_text, "%S+")
@@ -115,19 +118,31 @@ function CDGClient:RollCallback(...)
 	local valid_roll = self.current_game and (self.current_game.roll_range == roll_range) 
 
 	local player, realm = UnitName("player")
-	local valid_source = (sender == player) 
+	local valid_source = (sender == player) and (self.current_game.addon_const == "GUILD")
 	
 	if valid_roll and valid_source then 
         -- BRODACAST TO MASTER -- 
-        -- Example AceComm call to send rolls to master so we can do this in guild
-        -- Master needs to register for CDG_ROLL_DICE event
-		-- TODO: Gate this call on channel, group channels will see roll twice. 
-        -- self:SendCommMessage("CDG_ROLL_DICE", roll_text, self.current_game.addon_const)
-		local roll_msg = "Rolled: "..roll.." "..self.current_game.roll_range.."  Cash: "..self.current_game.cash_winnings
-		--self.ui.CDG_Frame:SetStatusText(roll_msg)
-		if DEBUG then self:Print(roll_text) end
+        self:SendCommMessage("CDG_GUILD_ROLL", roll_text, self.current_game.addon_const)
 	end
 	
+end
+
+-- See guildies rolls
+function CDGClient:GuildRollCallback(...)
+	if (self.current_game == nil) then return end
+
+	-- Parse the input Args 
+	local roll_text = select(2, ...)
+	local message = self:SplitString(roll_text, "%S+")
+	self:Print(message)
+	local sender, roll, roll_range = message[1], message[3], message[4]
+	
+	-- Dont listen for your own rolls
+	local player, realm = UnitName("player")
+	if (sender ~= player) then
+		SendSystemMessage(roll_text)
+	end
+	self:Print(roll_text)
 end
 
 function CDGClient:ChatChannelCallback(...)
