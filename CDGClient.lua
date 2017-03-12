@@ -127,7 +127,6 @@ function CDGClient:GuildRollCallback(...)
 	-- Parse the input Args 
 	local roll_text = select(2, ...)
 	local message = self:SplitString(roll_text, "%S+")
-	self:Print(message)
 	local sender, roll, roll_range = message[1], message[3], message[4]
 	
 	-- Dont listen for your own rolls
@@ -135,7 +134,7 @@ function CDGClient:GuildRollCallback(...)
 	if (sender ~= player) then
 		SendSystemMessage(roll_text)
 	end
-	self:Print(roll_text)
+
 end
 
 function CDGClient:ChatChannelCallback(...)
