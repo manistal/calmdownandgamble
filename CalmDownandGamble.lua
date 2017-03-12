@@ -5,7 +5,7 @@ local AceGUI = LibStub("AceGUI-3.0")
 
 
 -- Debug Setup
-local CDG_DEBUG = true
+local CDG_DEBUG = false
 function CalmDownandGamble:PrintDebug(msg)
 	if CDG_DEBUG then self:Print("[CDG_DEBUG] "..msg) end
 end
