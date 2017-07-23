@@ -9,7 +9,9 @@
 ## SavedVariables: CalmDownandGambleDB, CDGClientDB
 
 Ace3\LibStub\LibStub.lua
+Ace3\LibDataBroker-1.1\LibDataBroker-1.1.lua
 Ace3\CallbackHandler-1.0\CallbackHandler-1.0.xml
+Ace3\LibDBIcon-1.0\lib\lib.xml
 Ace3\AceAddon-3.0\AceAddon-3.0.xml
 Ace3\AceEvent-3.0\AceEvent-3.0.xml
 Ace3\AceTimer-3.0\AceTimer-3.0.xml

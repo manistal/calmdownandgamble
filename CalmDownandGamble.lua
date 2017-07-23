@@ -3,13 +3,11 @@ CalmDownandGamble = LibStub("AceAddon-3.0"):NewAddon("CalmDownandGamble", "AceCo
 local CalmDownandGamble	= LibStub("AceAddon-3.0"):GetAddon("CalmDownandGamble")
 local AceGUI = LibStub("AceGUI-3.0")
 
-
 -- Debug Setup
 local CDG_DEBUG = false
 function CalmDownandGamble:PrintDebug(msg)
 	if CDG_DEBUG then self:Print("[CDG_DEBUG] "..msg) end
 end
-
 
 -- Initializer 
 -- =============
@@ -25,13 +23,19 @@ function CalmDownandGamble:OnInitialize()
 			game_mode_index = 1, 
 			game_stage_index = 1,
 			window_shown = false,
-			ui = nil
+			ui = nil, 
+			minimap = {
+				hide = false,
+			}
 		}
 	}
     self.db = LibStub("AceDB-3.0"):New("CalmDownandGambleDB", defaults)
 	
 	-- AceGUI Table Constructor
 	self:ConstructUI()
+
+	-- Register with the minimap icon frame
+	self:ConstructMiniMapIcon()
 
 	-- Register Some Slash Commands
 	self:RegisterChatCommand("cdgm", "ShowUI")
@@ -100,6 +104,14 @@ function CalmDownandGamble:HideUI()
 	self.ui.CDG_Frame:Hide()
 	self.db.global.window_shown = false
 	self:SaveFrameState()
+end
+
+function CalmDownandGamble:ToggleUI()
+	if (self.db.global.window_shown) then
+		self:HideUI()
+	else 
+		self:ShowUI()
+	end
 end
 
 function CalmDownandGamble:ResetStats()
@@ -830,4 +842,24 @@ function CalmDownandGamble:ConstructUI()
 	-- Register for UI Events
 	self:RegisterEvent("PLAYER_LEAVING_WORLD", function(...) self:SaveFrameState(...) end)
 	
+end
+
+-- MiniMap Icon Definition
+function CalmDownandGamble:ConstructMiniMapIcon() 
+	self.minimap = { }
+	self.minimap.icon_data = LibStub("LibDataBroker-1.1"):NewDataObject("CalmDownandGambleIcon", {
+		type = "data source",
+		text = "Calm Down and Gamble!",
+		icon = "Interface\\Icons\\INV_Misc_Coin_02",
+
+		OnClick = function() CalmDownandGamble:ToggleUI() end,
+
+		OnTooltipShow = function(tooltip)
+			tooltip:AddLine("Calm Down and Gamble!",1,1,1)
+			tooltip:Show()
+		end,
+	})
+
+	self.minimap.icon = LibStub("LibDBIcon-1.0")
+	self.minimap.icon:Register("CalmDownandGambleIcon", self.minimap.icon_data, self.db.global.minimap)
 end
