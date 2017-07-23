@@ -29,6 +29,31 @@ CDG_HILO = {
 	end,
 }
 
+-- Mystery
+-- ==============
+CDG_MYSTERY = {
+	-- String for game name
+	label = "HiLo",
+	
+	init_game = function(game)
+		game.data.roll_lower = 1
+		game.data.roll_upper = CDG_MAX_ROLL(game.data.gold_amount)
+		game.data.roll_range = "(1-"..game.data.roll_upper..")"
+	end,
+	
+	roll_to_score = function(roll)
+		return tonumber(roll)
+	end,
+	
+	fmt_score = function(roll) return roll end,
+
+	sort_rolls = CDG_SORT_DESCENDING,
+	
+	payout = function(game)
+		game.data.cash_winnings = game.data.winning_roll - game.data.losing_roll
+	end,
+}
+
 -- BigTwos 
 -- ==============
 CDG_BIGTWOS = {
@@ -130,11 +155,11 @@ local function ScoreYahtzee(roll)
 		-- If you hit these your other numbers wont be better
 		local _, count = string.gsub(roll, digit, "")
 		if (count == 5) then
-			return "YAHTZEE!", 50 + total
+			return "YAHTZEE!", 100 + total
 		end
 		
 		if (count == 4) then
-			return "Four of a Kind!", 40 + total
+			return "Four of a Kind!", 80
 		end
 		
 		if (count == 3) then
@@ -142,11 +167,11 @@ local function ScoreYahtzee(roll)
 			for digit in string.gmatch(roll, "%d") do
 				local _, other_count = string.gsub(roll, digit, "")
 				if (other_count == 2) then
-					return "Full House!", 35 + total
+					return "Full House!", 75
 				end
 			end
 			
-			return "Three of a Kind!", 30 + total
+			return "Three of a Kind!", 30
 		end
 		
 		
@@ -156,12 +181,12 @@ local function ScoreYahtzee(roll)
 			for digit in string.gmatch(roll, "%d") do
 				local _, other_count = string.gsub(roll, digit, "")
 				if (other_count == 3) then
-					return "Full House!", 35 + total
+					return "Full House!", 75
 				end
 			end
 			
 			-- Doubles are the dice added together, 0->1 
-			new_score = tonumber(digit)*2 + total
+			new_score = tonumber(digit)*2 
 			if (tonumber(digit) == 0) then
 				new_score = 2 + total
 			end

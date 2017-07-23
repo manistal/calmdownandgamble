@@ -44,8 +44,6 @@ function CalmDownandGamble:OnInitialize()
 	self:RegisterChatCommand("cdgmclearui", "ClearUIState")
 	self:RegisterComm("CDG_END_GAME", "GameResultsCallback")
 	
-
-	
 	-- Clean from 7.0 Bug
 	self:RegisterChatCommand("cdgcleanrank", "CleanRankList")
 	
