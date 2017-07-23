@@ -30,7 +30,6 @@ function CDGClient:OnInitialize()
 	self:RegisterCallbacks()
 	self:InitState()
 
-
 	if DEBUG then self:Print("Load Complete!!") end
 end
 
@@ -209,7 +208,9 @@ end
 -- Button Interaction Callbacks (State and Settings)
 -- ==================================================== 
 function CDGClient:RollForMe()
-	RandomRoll(self.current_game.roll_lower, self.current_game.roll_upper)
+	if self.current_game then
+		RandomRoll(self.current_game.roll_lower, self.current_game.roll_upper)
+	end
 end
 
 function CDGClient:EnterForMe()
@@ -218,28 +219,19 @@ function CDGClient:EnterForMe()
 	end
 end
 
-function CDGClient:TradeOpen()
-    self.current_game.trade_open = true
+function CDGClient:TradePayout()
+	local copper = self.current_game.cash_winnings * 100 * 100 
+	SetTradeMoney(copper)
+	MoneyInputFrame_SetCopper(TradePlayerInputMoneyFrame, copper)
+	SendSystemMessage("You added "..self.current_game.cash_winnings.." gold to the trade window.")
 end
 
 function CDGClient:OpenTradeWinner()
-	self:RegisterEvent("TRADE_SHOW", function() self:TradeOpen() end)
-    if (self.current_game.trade_open) then
-        local copper = self.current_game.cash_winnings * 100 * 100 
-        SetTradeMoney(copper)
-		MoneyInputFrame_SetCopper(TradePlayerInputMoneyFrame, copper)
-
-        local sys_msg = "You added "..self.current_game.cash_winnings.." gold to the trade window."
-        SendSystemMessage(sys_msg)
-
-        self.current_game.trade_open = false
-		if DEBUG then self:Print(copper) end
-    else
-		local sys_msg = "Press the 'Payout' button again to add the gold to the trade window."
-        SendSystemMessage(sys_msg)
-        InitiateTrade(self.current_game.winner)
-        
-    end
+	if self.current_game then
+		self:RegisterEvent("TRADE_SHOW", function() self:TradePayout() end)
+		InitiateTrade(self.current_game.winner)
+		self:TradePayout()
+	end
 end
 
 -- Lock Position for UI  
