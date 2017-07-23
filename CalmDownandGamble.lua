@@ -67,11 +67,8 @@ function CalmDownandGamble:OnInitialize()
 	self:SetGameMode()
 	self:SetGameStage()
 	
-	
 	self:PrintDebug("Load Complete!")
 end
-
-
 
 -- Slash Cmds
 -- ===============
@@ -106,13 +103,6 @@ function CalmDownandGamble:HideUI()
 	self:SaveFrameState()
 end
 
-function CalmDownandGamble:ToggleUI()
-	if (self.db.global.window_shown) then
-		self:HideUI()
-	else 
-		self:ShowUI()
-	end
-end
 
 function CalmDownandGamble:ResetStats()
 	self.db.global.rankings = {}
@@ -739,7 +729,6 @@ function CalmDownandGamble:ConstructUI()
 			"game_mode",
 			"print_stats_table",
 			"reset_game"
-			--"print_ban_list",
 		},
 		
 		-- Button Definitions -- 
@@ -852,7 +841,16 @@ function CalmDownandGamble:ConstructMiniMapIcon()
 		text = "Calm Down and Gamble!",
 		icon = "Interface\\Icons\\INV_Misc_Coin_02",
 
-		OnClick = function() CalmDownandGamble:ToggleUI() end,
+		OnClick = function() 
+			if (CalmDownandGamble.db.global.window_shown) then
+				CalmDownandGamble:HideUI()
+				CDGClient:ShowUI()
+			elseif (CDGClient.db.global.window_shown) then
+				CDGClient:HideUI()
+			else
+				CalmDownandGamble:ShowUI()
+			end
+		end,
 
 		OnTooltipShow = function(tooltip)
 			tooltip:AddLine("Calm Down and Gamble!",1,1,1)

@@ -219,18 +219,15 @@ function CDGClient:EnterForMe()
 	end
 end
 
-function CDGClient:TradePayout()
-	local copper = self.current_game.cash_winnings * 100 * 100 
-	SetTradeMoney(copper)
-	MoneyInputFrame_SetCopper(TradePlayerInputMoneyFrame, copper)
-	SendSystemMessage("You added "..self.current_game.cash_winnings.." gold to the trade window.")
-end
-
 function CDGClient:OpenTradeWinner()
 	if self.current_game then
-		self:RegisterEvent("TRADE_SHOW", function() self:TradePayout() end)
-		InitiateTrade(self.current_game.winner)
-		self:TradePayout()
+		if (TradeFrame:IsVisible()) then
+			local copper = self.current_game.cash_winnings * 100 * 100 
+			SetTradeMoney(copper)
+			MoneyInputFrame_SetCopper(TradePlayerInputMoneyFrame, copper)
+		else 
+			InitiateTrade(self.current_game.winner)
+		end
 	end
 end
 
