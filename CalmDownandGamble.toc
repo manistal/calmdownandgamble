@@ -33,6 +33,7 @@ CalmDownandGamble.lua
 CDGUtils.lua
 CDGGameModes.lua
 CDGClient.lua
+CDGCommon.lua
 
 
 

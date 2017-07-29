@@ -3,23 +3,19 @@ CalmDownandGamble = LibStub("AceAddon-3.0"):NewAddon("CalmDownandGamble", "AceCo
 local CalmDownandGamble	= LibStub("AceAddon-3.0"):GetAddon("CalmDownandGamble")
 local AceGUI = LibStub("AceGUI-3.0")
 
--- Debug Setup
-local CDG_DEBUG = false
-function CalmDownandGamble:PrintDebug(msg)
-	if CDG_DEBUG then self:Print("[CDG_DEBUG] "..msg) end
-end
 
 -- Initializer 
 -- =============
 function CalmDownandGamble:OnInitialize()
 	self:PrintDebug("On Initialize")
 
-	-- Set up DB
+	-- Member Initializers
 	local defaults = {
 	    global = {
 			rankings = { },
 			ban_list = { },
 			chat_index = 1,
+			custom_channel_index = nil,
 			game_mode_index = 1, 
 			game_stage_index = 1,
 			window_shown = false,
@@ -30,39 +26,37 @@ function CalmDownandGamble:OnInitialize()
 		}
 	}
     self.db = LibStub("AceDB-3.0"):New("CalmDownandGambleDB", defaults)
-	
-	-- AceGUI Table Constructor
-	self:ConstructUI()
 
-	-- Register with the minimap icon frame
-	self:ConstructMiniMapIcon()
-
-	-- Register Some Slash Commands
-	self:RegisterChatCommand("cdgm", "ShowUI")
-	self:RegisterChatCommand("cdghide", "HideUI")
-	self:RegisterChatCommand("cdgreset", "ResetStats")
-	self:RegisterChatCommand("cdgCDG_DEBUG", "SetCDG_DEBUG")
-	self:RegisterChatCommand("cdgban", "BanPlayer")
-	self:RegisterChatCommand("cdgunban", "UnbanPlayer")
-	self:RegisterChatCommand("cdgbanreset", "ResetBans")
-	self:RegisterChatCommand("cdgmclearui", "ClearUIState")
-	self:RegisterComm("CDG_END_GAME", "GameResultsCallback")
-	
-	-- Clean from 7.0 Bug
-	self:RegisterChatCommand("cdgcleanrank", "CleanRankList")
-	
-	-- Set up Internals 
-	self.chat = {
-		channel_id = self.db.global.chat_index,
-		channel = {}
-	}
 	self.game = {
 		mode_id = self.db.global.game_mode_index,
 		mode = {}, 
 		stage_id = 1, 
 		stage = {}
 	}
-	
+
+	-- If we're going to dynamically add private channels, we need to ensure we dont start with them
+	chat_index = (self.db.global.chat_index <= 4) and self.db.global.chat_index or 1
+	self.chat = {
+		channel_id = chat_index,
+		channel = {},
+		CHANNEL_CONSTS = {
+			{ label = "Raid"  , const = "RAID"  , addon_const = "RAID", callback = "CHAT_MSG_RAID"  , callback_leader = "CHAT_MSG_RAID_LEADER"  }, -- Index 1
+			{ label = "Party" , const = "PARTY" , addon_const = "PARTY", callback = "CHAT_MSG_PARTY" , callback_leader = "CHAT_MSG_PARTY_LEADER" }, -- Index 2
+			{ label = "Guild" , const = "GUILD" , addon_const = "GUILD", callback = "CHAT_MSG_GUILD" , callback_leader = nil },                     -- Index 3
+			{ label = "Say"   , const = "SAY"   , addon_const = "GUILD", callback = "CHAT_MSG_SAY"   , callback_leader = nil },                     -- Index 4
+		}
+	}	
+
+	-- AceGUI Table Constructor
+	self:ConstructUI()
+
+	-- Register with the minimap icon frame
+	self:ConstructMiniMapIcon()
+
+	-- Register the slash commands
+	self:RegisterSlashCommands()
+
+	-- Initialize Game States	
 	self:SetChatChannel()
 	self:SetGameMode()
 	self:SetGameStage()
@@ -70,66 +64,11 @@ function CalmDownandGamble:OnInitialize()
 	self:PrintDebug("Load Complete!")
 end
 
--- Slash Cmds
--- ===============
-function CalmDownandGamble:SetCDG_DEBUG()
-	CDG_DEBUG = not CDG_DEBUG
-end
-
-function CalmDownandGamble:ClearUIState()
-	self.db.global.ui = nil
-end
-
-function CalmDownandGamble:BanPlayer(player, editbox)
-	self.db.global.ban_list[player] = true
-end
-
-function CalmDownandGamble:UnbanPlayer(player, editbox)
-	self.db.global.ban_list[player] = nil
-end
-
-function CalmDownandGamble:ResetBans()
-	self.db.global.ban_list = {}
-end
-
-function CalmDownandGamble:ShowUI()
-	self.ui.CDG_Frame:Show()
-	self.db.global.window_shown = true
-end
-
-function CalmDownandGamble:HideUI()
-	self.ui.CDG_Frame:Hide()
-	self.db.global.window_shown = false
-	self:SaveFrameState()
-end
-
-
-function CalmDownandGamble:ResetStats()
-	self.db.global.rankings = {}
-end
-
-function CalmDownandGamble:CleanRankList()
-	local index = 1
-	local sort_descending = function(t,a,b) return t[b] < t[a] end
-	for player, gold in pairs(self.db.global.rankings) do
-		self:Print(player)
-		self.db.global.rankings[player] = tonumber(self.db.global.rankings[player])
-		self:Print(self.db.global.rankings[player])
-	end
-end
-
 -- Chat Channels
 -- =================
 function CalmDownandGamble:SetChatChannel() 
-
-	CHANNEL_CONSTS = {
-			{ label = "Raid"  , const = "RAID"  , addon_const = "RAID", callback = "CHAT_MSG_RAID"  , callback_leader = "CHAT_MSG_RAID_LEADER"  }, -- Index 1
-			{ label = "Party" , const = "PARTY" , addon_const = "PARTY", callback = "CHAT_MSG_PARTY" , callback_leader = "CHAT_MSG_PARTY_LEADER" }, -- Index 2
-			{ label = "Guild" , const = "GUILD" , addon_const = "GUILD", callback = "CHAT_MSG_GUILD" , callback_leader = nil },                     -- Index 3
-			{ label = "Say"   , const = "SAY"   , addon_const = "GUILD", callback = "CHAT_MSG_SAY"   , callback_leader = nil },                     -- Index 4
-	}	
-	self.chat.channel = CHANNEL_CONSTS[self.chat.channel_id]
-	self.chat.num_channels = table.getn(CHANNEL_CONSTS)
+	self.chat.channel = self.chat.CHANNEL_CONSTS[self.chat.channel_id]
+	self.chat.num_channels = table.getn(self.chat.CHANNEL_CONSTS)
 	self.ui.chat_channel:SetText(self.chat.channel.label)
 	
 	self:PrintDebug(self.chat.channel.label)
@@ -143,7 +82,11 @@ function CalmDownandGamble:ChatChannelToggle()
 end
 
 function CalmDownandGamble:MessageChat(msg)
-	SendChatMessage(msg, self.chat.channel.const)
+	if (self.db.global.custom_channel_index and (self.chat.channel.const == "CHANNEL")) then 
+		SendChatMessage(msg, self.chat.channel.const, nil, self.db.global.custom_channel_index)
+	else 
+		SendChatMessage(msg, self.chat.channel.const)
+	end
 end
 
 function CalmDownandGamble:MessageAddon(event, msg)
@@ -167,8 +110,6 @@ function CalmDownandGamble:UnregisterChatEvents()
 		self:UnregisterEvent(self.chat.channel.callback_leader)
 	end
 end
-
-
 
 -- Game Modes
 -- ================
@@ -242,7 +183,13 @@ function CalmDownandGamble:StartGame()
 	self:RegisterChatEvents()
 	self.game.mode.init_game(self.game)
 	self:PrintDebug("Initialized Current GAME")
-	
+
+	-- In case of custom channel, we need to let the guild know! 
+	if (self.db.global.custom_channel_index and (self.chat.channel.const == "CHANNEL")) then 
+	    channel_name = self:GetCustomChannelName()
+		SendChatMessage("Just started a Gambling Round in a custom channel! To join in use /cdg joinChat or /join "..channel_name, "GUILD")
+	end
+
 	-- Welcome Message!
 	local welcome_msg = "CDG is now in session! Mode: "..self.game.mode.label..", Bet: "..self.game.data.gold_amount.." gold"
 	self:MessageChat(welcome_msg)
@@ -364,7 +311,6 @@ end
 
 -- Utils
 -- ========
-
 function CalmDownandGamble:GameResultsCallback(...)
 	local callback = select(1, ...)
 	local message = select(2, ...)
@@ -587,8 +533,6 @@ function CalmDownandGamble:EvaluateScores()
 		
 end
 
-
-
 -- ChatFrame Interaction Callbacks (Entry and Rolls)
 -- ==================================================== 
 function CalmDownandGamble:RollCallback(...)
@@ -640,7 +584,6 @@ function CalmDownandGamble:ChatChannelCallback(...)
 
 end
 
-
 -- Button Interaction Callbacks (State and Settings)
 -- ==================================================== 
 function CalmDownandGamble:PrintBanlist()
@@ -678,8 +621,6 @@ function CalmDownandGamble:PrintRanklist()
 	
 end
 
-
-
 function CalmDownandGamble:RollForMe()
 	if self.game.data == nil then 
 		SendSystemMessage("You need an active game for me to roll for you!")
@@ -702,14 +643,23 @@ function CalmDownandGamble:TimedStart()
 	end
 end
 
--- Lock Position for UI  
+-- UI ELEMENTS 
+-- ======================================================
+function CalmDownandGamble:ShowUI()
+	self.ui.CDG_Frame:Show()
+	self.db.global.window_shown = true
+end
+
+function CalmDownandGamble:HideUI()
+	self.ui.CDG_Frame:Hide()
+	self.db.global.window_shown = false
+	self:SaveFrameState()
+end
+
 function CalmDownandGamble:SaveFrameState()
 	self.db.global.ui = self:CopyTable(self.ui.CDG_Frame.status)
 end
 
-
--- UI ELEMENTS 
--- ======================================================
 function CalmDownandGamble:ConstructUI()
 	
 	-- Settings to be used -- 
@@ -785,8 +735,6 @@ function CalmDownandGamble:ConstructUI()
 
 			}
 		}
-		
-		
 	};
 	
 	-- Give us a base UI Table to work with -- 
@@ -830,34 +778,4 @@ function CalmDownandGamble:ConstructUI()
 	
 	-- Register for UI Events
 	self:RegisterEvent("PLAYER_LEAVING_WORLD", function(...) self:SaveFrameState(...) end)
-	
-end
-
--- MiniMap Icon Definition
-function CalmDownandGamble:ConstructMiniMapIcon() 
-	self.minimap = { }
-	self.minimap.icon_data = LibStub("LibDataBroker-1.1"):NewDataObject("CalmDownandGambleIcon", {
-		type = "data source",
-		text = "Calm Down and Gamble!",
-		icon = "Interface\\Icons\\INV_Misc_Coin_02",
-
-		OnClick = function() 
-			if (CalmDownandGamble.db.global.window_shown) then
-				CalmDownandGamble:HideUI()
-				CDGClient:ShowUI()
-			elseif (CDGClient.db.global.window_shown) then
-				CDGClient:HideUI()
-			else
-				CalmDownandGamble:ShowUI()
-			end
-		end,
-
-		OnTooltipShow = function(tooltip)
-			tooltip:AddLine("Calm Down and Gamble!",1,1,1)
-			tooltip:Show()
-		end,
-	})
-
-	self.minimap.icon = LibStub("LibDBIcon-1.0")
-	self.minimap.icon:Register("CalmDownandGambleIcon", self.minimap.icon_data, self.db.global.minimap)
 end

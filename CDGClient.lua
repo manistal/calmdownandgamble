@@ -1,18 +1,12 @@
 
-
 -- Declare the new addon and load the libraries we want to use 
 CDGClient = LibStub("AceAddon-3.0"):NewAddon("CDGClient", "AceConsole-3.0", "AceComm-3.0", "AceEvent-3.0", "AceTimer-3.0", "AceHook-3.0", "AceSerializer-3.0")
 local CDGClient	= LibStub("AceAddon-3.0"):GetAddon("CDGClient")
 local AceGUI = LibStub("AceGUI-3.0")
 
-local DEBUG = false
-
--- Basic Adddon Initialization stuff, virtually inherited functions 
--- ================================================================ 
-
 -- CONSTRUCTOR 
 function CDGClient:OnInitialize()
-	if DEBUG then self:Print("Load Begin") end
+	CalmDownandGamble:PrintDebug("Load Begin") 
 
 	-- Set up Infrastructure
 	local defaults = {
@@ -21,40 +15,21 @@ function CDGClient:OnInitialize()
 			game_mode_index = 1, 
 			window_shown = false,
 			auto_pop = true,
-			ui = nil
+			ui = nil, 
+			custom_channel_index = nil
 		}
 	}
 
     self.db = LibStub("AceDB-3.0"):New("CDGClientDB", defaults)
 	self:ConstructUI()
 	self:RegisterCallbacks()
-	self:InitState()
 
-	if DEBUG then self:Print("Load Complete!!") end
-end
-
--- INIT FOR ENABLE  
-function CDGClient:OnEnable()
-end
-
-
--- Initialization Helper Functions
--- ===========================================
-function CDGClient:InitState()
-
+	CalmDownandGamble:PrintDebug("Load Complete!!")
 end
 
 -- Slash Command Setup and Calls
 -- =========================================================
 function CDGClient:RegisterCallbacks()
-	-- Register Some Slash Commands
-	self:RegisterChatCommand("cdg", "ShowUI")
-	self:RegisterChatCommand("cdgchide", "HideUI")
-	self:RegisterChatCommand("cdgcdebug", "SetDebug")
-	self:RegisterChatCommand("cdgcdisable", "DisablePop")
-	self:RegisterChatCommand("cdgcenable", "EnablePop")
-	self:RegisterChatCommand("cdgclearui", "ClearUIState")
-
 	self:RegisterEvent("CHAT_MSG_SYSTEM", "RollCallback")
 	
     -- callbacks to get game information from master
@@ -63,37 +38,7 @@ function CDGClient:RegisterCallbacks()
     self:RegisterComm("CDG_END_GAME", "GameResultsCallback")
 	self:RegisterComm("CDG_GUILD_ROLL", "GuildRollCallback")
 	
-	if DEBUG then self:Print("REGISTRATIONS COMPLETE") end
-end
-
-function CDGClient:SetDebug()
-	DEBUG = not DEBUG
-end
-
-function CDGClient:ClearUIState()
-	self.db.global.ui = nil
-end
-
-function CDGClient:ShowUI()
-	self.ui.CDG_Frame:Show()
-	self.db.global.window_shown = true
-end
-
-function CDGClient:HideUI()
-	self.ui.CDG_Frame:Hide()
-	self.db.global.window_shown = false
-	self:SaveFrameState()
-end
-
-function CDGClient:DisablePop()
-	self.db.global.auto_pop = false
-end
-function CDGClient:EnablePop()
-	self.db.global.auto_pop = true
-end
-
-function CDGClient:ResetStats()
-	self.db.global.rankings = {}
+	CalmDownandGamble:PrintDebug("REGISTRATIONS COMPLETE")
 end
 
 -- ChatFrame Interaction Callbacks (Entry and Rolls)
@@ -146,7 +91,7 @@ end
 function CDGClient:NewGameCallback(...)
     -- Reset Game Settings -- 
     --self.current_game = {}
-	if DEBUG then self:Print("NEWGAME") end
+	CalmDownandGamble:PrintDebug("NEWGAME")
 	local callback = select(1, ...)
 	local message = select(2, ...)
 	local chat = select(3, ...)
@@ -161,10 +106,7 @@ function CDGClient:NewGameCallback(...)
 	self.current_game.addon_const = chat
 	self.current_game.roll_range = "("..self.current_game.roll_lower.."-"..self.current_game.roll_upper..")"
 	
-
 	local player, realm = UnitName("player")
-	if DEBUG then player = "DEBUG" end
-	
 	local valid_source = (sender ~= player) 
 	if self.db.global.auto_pop and valid_source then
 		self.ui.CDG_Frame:Show()
@@ -172,13 +114,10 @@ function CDGClient:NewGameCallback(...)
 		self.ui.CDG_Frame:SetStatusText(new_game_msg)
 	end
 	
-	if DEBUG then
-		self:Print(self.current_game.roll_lower)
-		self:Print(self.current_game.roll_upper)
-		self:Print(self.current_game.channel_const)
-		self:Print(self.current_game.roll_range)
-	end
-	
+	CalmDownandGamble:PrintDebug(self.current_game.roll_lower)
+	CalmDownandGamble:PrintDebug(self.current_game.roll_upper)
+	CalmDownandGamble:PrintDebug(self.current_game.channel_const)
+	CalmDownandGamble:PrintDebug(self.current_game.roll_range)
 end
 
 function CDGClient:NewRollsCallback(...)
@@ -215,7 +154,11 @@ end
 
 function CDGClient:EnterForMe()
 	if self.current_game then 
-		SendChatMessage("1", self.current_game.channel_const)
+		if (self.db.global.custom_channel_index and (self.current_game.channel_const == "CHANNEL")) then 
+			SendChatMessage("1", self.current_game.channel_const, nil, self.db.global.custom_channel_index)
+		else
+			SendChatMessage("1", self.current_game.channel_const)
+		end
 	end
 end
 
@@ -237,7 +180,18 @@ function CDGClient:SaveFrameState()
 end
 
 -- UI ELEMENTS 
--- ======================================================
+-- ==============
+function CDGClient:ShowUI()
+	self.ui.CDG_Frame:Show()
+	self.db.global.window_shown = true
+end
+
+function CDGClient:HideUI()
+	self.ui.CDG_Frame:Hide()
+	self.db.global.window_shown = false
+	self:SaveFrameState()
+end
+
 function CDGClient:ConstructUI()
 	
 	-- Settings to be used -- 
@@ -310,7 +264,6 @@ function CDGClient:ConstructUI()
 	
 	-- Register for UI Events
 	self:RegisterEvent("PLAYER_LEAVING_WORLD", function(...) self:SaveFrameState(...) end)
-	
 end
 
 
