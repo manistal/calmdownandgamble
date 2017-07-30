@@ -49,39 +49,40 @@ function CalmDownandGamble:GetCustomChannelName()
     return channel_name
 end
 
-function CalmDownandGamble:JoinCustomChannel() 
-    channel_name = self:GetCustomChannelName()
+function CalmDownandGamble:JoinCustomChannel(channel_name) 
+    -- Only if we're not only in a channel 
+    if (self.db.global.custom_channel.index) then return end
+    if (channel_name == nil) then channel_name = self:GetCustomChannelName() end
 
     -- Joining a channel without the slash command is wonky, so kind've abusing the slashcmd list
     SlashCmdList["JOIN"](channel_name)
     channel_number, channel_string, instanceID = GetChannelName(channel_name)
 
     -- Update our references so we send chat to the right place
-    self.db.global.custom_channel_index = channel_number
-    CDGClient.db.global.custom_channel_index = channel_number
-
-    -- Add it to the consts table so we can see it     
-    custom_channel = { 
-        label = "CDG Chat", 
-        const = "CHANNEL", 
-        addon_const = "GUILD", 
-        callback = "CHAT_MSG_CHANNEL", 
-        callback_leader = nil 
-    }
-    table.insert(self.chat.CHANNEL_CONSTS, custom_channel)
+    self.db.global.custom_channel.index = channel_number
+    self.db.global.custom_channel.name = channel_name
 
     -- Remove it on logout/reload to avoid conflicts
 	self:RegisterEvent("PLAYER_LEAVING_WORLD", "LeaveCustomChannel")
 end
 
 function CalmDownandGamble:LeaveCustomChannel() 
-    channel_name = self:GetCustomChannelName()
+    LeaveChannelByName(self.db.global.custom_channel.name)
+    self.db.global.custom_channel.index = nil
+    self.db.global.custom_channel.name = ""
+end
 
-    -- Leave and remove the channel from the index
-    LeaveChannelByName(channel_name)
-    self.chat.CHANNEL_CONSTS[#self.chat.CHANNEL_CONSTS] = nil
-    self.db.global.custom_channel_index = nil
-    CDGClient.db.global.custom_channel_index = nil
+function CalmDownandGamble:PrintSlashCommandHelp()
+    self:Print("CalmDown and Gamble Slash Commands: ")
+    self:Print(" /cdg <command> ")
+    self:Print("    <no command>  - Toggles UI like the minimap button does")
+    self:Print("    ban <player> - Bans player from entering CDG")
+    self:Print("    unban <player> - Unbans player")
+    self:Print("    resetStats - Clears hall of fame/shame")
+    self:Print("    resetBans - Clears all bans ")
+    self:Print("    autoPop - Toggles popup when someone in guild or party starts a game. ")
+    self:Print("    join - Join custom gambling channel for your guild")
+    self:Print("    leave - Leave custom gambling channel")
 end
 
 -- Slash Commands
@@ -89,17 +90,18 @@ end
 
 -- Handler Needed to support multiargument commands 
 function CalmDownandGamble:SlashCommandHandler(...)
-    command = select(1, ...)
+    command_args = self:SplitString(select(1, ...), "%S+")
+    command = command_args[1]
 
     if (command == "") then 
         ToggleClientAndCasino()
 
     elseif (command == "ban") then 
-        player = select(2, ...)
+        player = command_args[2]
 	    self.db.global.ban_list[player] = true
 
     elseif (command == "unban") then 
-        player = select(2, ...)
+        player = command_args[2]
 	    self.db.global.ban_list[player] = nil
 
     elseif (command == "resetStats") then 
@@ -114,11 +116,20 @@ function CalmDownandGamble:SlashCommandHandler(...)
     elseif (command == "debug") then 
         self.DEBUG_ENABLED = not self.DEBUG_ENABLED
 
-    elseif (command == "joinChat") then 
-        self:JoinCustomChannel()
+    elseif (command == "join") then 
+        channel_name = command_args[2]
+        self:JoinCustomChannel(channel_name)
 
-    elseif (command == "leaveChat") then 
+    elseif (command == "leave") then 
         self:LeaveCustomChannel()
+
+    elseif (command == "help") then
+        self:PrintSlashCommandHelp()
+
+    else 
+        self:Print("Unrecognized CDG Slash Command: ")
+        self:Print(command)
+        self:Print("Use /cdg help for more information.")
 
     end
 end

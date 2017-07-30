@@ -11,12 +11,9 @@ function CDGClient:OnInitialize()
 	-- Set up Infrastructure
 	local defaults = {
 	   global = {
-			rankings = { },
-			game_mode_index = 1, 
 			window_shown = false,
 			auto_pop = true,
 			ui = nil, 
-			custom_channel_index = nil
 		}
 	}
 
@@ -34,7 +31,6 @@ function CDGClient:RegisterCallbacks()
 	
     -- callbacks to get game information from master
     self:RegisterComm("CDG_NEW_GAME", "NewGameCallback")
-    self:RegisterComm("CDG_NEW_ROLL", "NewRollsCallback")
     self:RegisterComm("CDG_END_GAME", "GameResultsCallback")
 	self:RegisterComm("CDG_GUILD_ROLL", "GuildRollCallback")
 	
@@ -43,34 +39,36 @@ end
 
 -- ChatFrame Interaction Callbacks (Entry and Rolls)
 -- ==================================================== 
+
+-- Function to send rolls to other players rolls, this is the sender for non-party rolls
 function CDGClient:RollCallback(...)
 	if (self.current_game == nil) then return end
 
 	-- Parse the input Args 
 	local roll_text = select(2, ...)
-	local message = self:SplitString(roll_text, "%S+")
+	local message = CalmDownandGamble:SplitString(roll_text, "%S+")
 	local sender, roll, roll_range = message[1], message[3], message[4]
 	
 	-- Check that the roll is valid ( also that the message is for us)
 	local valid_roll = self.current_game and (self.current_game.roll_range == roll_range) 
 
 	local player, realm = UnitName("player")
-	local valid_source = (sender == player) and (self.current_game.addon_const == "GUILD")
-	
+	local valid_source = (sender == player) and ((self.current_game.addon_const == "GUILD") or (self.current_game.addon_const == "CHANNEL"))
+
 	if valid_roll and valid_source then 
-        -- BRODACAST TO MASTER -- 
-        self:SendCommMessage("CDG_GUILD_ROLL", roll_text, self.current_game.addon_const)
+        self:SendCommMessage("CDG_GUILD_ROLL", roll_text, self.current_game.addon_const, tostring(CalmDownandGamble.db.global.custom_channel.index))
 	end
 	
 end
 
 -- See guildies rolls
+-- Purely cosmetic, doesn't effect gamestate, this is just a dummy reciever of others rolls
 function CDGClient:GuildRollCallback(...)
 	if (self.current_game == nil) then return end
 
 	-- Parse the input Args 
 	local roll_text = select(2, ...)
-	local message = self:SplitString(roll_text, "%S+")
+	local message = CalmDownandGamble:SplitString(roll_text, "%S+")
 	local sender, roll, roll_range = message[1], message[3], message[4]
 	
 	-- Dont listen for your own rolls
@@ -78,25 +76,16 @@ function CDGClient:GuildRollCallback(...)
 	if (sender ~= player) then
 		SendSystemMessage(roll_text)
 	end
-
-end
-
-function CDGClient:ChatChannelCallback(...)
-	local message = select(2, ...)
-	local sender = select(3, ...)
-
-    -- DUNNO IF WE NEED THIS -- 
 end
 
 function CDGClient:NewGameCallback(...)
     -- Reset Game Settings -- 
-    --self.current_game = {}
 	CalmDownandGamble:PrintDebug("NEWGAME")
 	local callback = select(1, ...)
 	local message = select(2, ...)
 	local chat = select(3, ...)
 	local sender = select(4, ...)
-	message = self:SplitString(message, "%S+")
+	message = CalmDownandGamble:SplitString(message, "%S+")
 	
 	self.current_game = {}
 	self.current_game.roll_lower = message[1]
@@ -120,10 +109,6 @@ function CDGClient:NewGameCallback(...)
 	CalmDownandGamble:PrintDebug(self.current_game.roll_range)
 end
 
-function CDGClient:NewRollsCallback(...)
-    -- self.current_game.accepting_rolls = true
-end
-
 function CDGClient:GameResultsCallback(...)
 	if (self.current_game == nil) then return end
 
@@ -133,7 +118,7 @@ function CDGClient:GameResultsCallback(...)
 	local chat = select(3, ...)
 	local sender = select(4, ...)
 
-	message = self:SplitString(message, "%S+")	
+	message = CalmDownandGamble:SplitString(message, "%S+")	
 	
     self.current_game.winner = message[1]
 	self.current_game.loser = message[2]
@@ -154,16 +139,12 @@ end
 
 function CDGClient:EnterForMe()
 	if self.current_game then 
-		if (self.db.global.custom_channel_index and (self.current_game.channel_const == "CHANNEL")) then 
-			SendChatMessage("1", self.current_game.channel_const, nil, self.db.global.custom_channel_index)
-		else
-			SendChatMessage("1", self.current_game.channel_const)
-		end
+		SendChatMessage("1", self.current_game.channel_const, nil, CalmDownandGamble.db.global.custom_channel.index)
 	end
 end
 
 function CDGClient:OpenTradeWinner()
-	if self.current_game then
+	if (self.current_game and self.current_game.winner) then
 		if (TradeFrame:IsVisible()) then
 			local copper = self.current_game.cash_winnings * 100 * 100 
 			SetTradeMoney(copper)
@@ -265,17 +246,3 @@ function CDGClient:ConstructUI()
 	-- Register for UI Events
 	self:RegisterEvent("PLAYER_LEAVING_WORLD", function(...) self:SaveFrameState(...) end)
 end
-
-
--- Util Functions -- Lua doesnt provide alot of basic functionality
--- =======================================================================
-function CDGClient:SplitString(str, pattern)
-	local ret_list = {}
-	local index = 1
-	for token in string.gmatch(str, pattern) do
-		ret_list[index] = token
-		index = index + 1
-	end
-	return ret_list
-end
-

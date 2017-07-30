@@ -15,11 +15,14 @@ function CalmDownandGamble:OnInitialize()
 			rankings = { },
 			ban_list = { },
 			chat_index = 1,
-			custom_channel_index = nil,
 			game_mode_index = 1, 
 			game_stage_index = 1,
 			window_shown = false,
 			ui = nil, 
+			custom_channel = {
+				index = nil,
+				name = "",
+			}, 
 			minimap = {
 				hide = false,
 			}
@@ -35,15 +38,15 @@ function CalmDownandGamble:OnInitialize()
 	}
 
 	-- If we're going to dynamically add private channels, we need to ensure we dont start with them
-	chat_index = (self.db.global.chat_index <= 4) and self.db.global.chat_index or 1
 	self.chat = {
-		channel_id = chat_index,
+		channel_id = self.db.global.chat_index,
 		channel = {},
-		CHANNEL_CONSTS = {
-			{ label = "Raid"  , const = "RAID"  , addon_const = "RAID", callback = "CHAT_MSG_RAID"  , callback_leader = "CHAT_MSG_RAID_LEADER"  }, -- Index 1
-			{ label = "Party" , const = "PARTY" , addon_const = "PARTY", callback = "CHAT_MSG_PARTY" , callback_leader = "CHAT_MSG_PARTY_LEADER" }, -- Index 2
-			{ label = "Guild" , const = "GUILD" , addon_const = "GUILD", callback = "CHAT_MSG_GUILD" , callback_leader = nil },                     -- Index 3
-			{ label = "Say"   , const = "SAY"   , addon_const = "GUILD", callback = "CHAT_MSG_SAY"   , callback_leader = nil },                     -- Index 4
+		CHANNEL_CONSTS = { 
+			{ label = "Raid"  ,   const = "RAID"  ,  addon_const = "RAID",  callback = "CHAT_MSG_RAID"  ,  callback_leader = "CHAT_MSG_RAID_LEADER"  }, -- Index 1
+			{ label = "Party" ,   const = "PARTY" ,  addon_const = "PARTY", callback = "CHAT_MSG_PARTY" ,  callback_leader = "CHAT_MSG_PARTY_LEADER" }, -- Index 2
+			{ label = "Guild" ,   const = "GUILD" ,  addon_const = "GUILD", callback = "CHAT_MSG_GUILD"     },                     -- Index 3
+			{ label = "Say"   ,   const = "SAY"   ,  addon_const = "GUILD", callback = "CHAT_MSG_SAY"       },                     -- Index 4
+    		{ label = "CDG Chat", const = "CHANNEL", addon_const = "CHANNEL", callback = "CHAT_MSG_CHANNEL" },                     -- Index 5
 		}
 	}	
 
@@ -82,19 +85,14 @@ function CalmDownandGamble:ChatChannelToggle()
 end
 
 function CalmDownandGamble:MessageChat(msg)
-	if (self.db.global.custom_channel_index and (self.chat.channel.const == "CHANNEL")) then 
-		SendChatMessage(msg, self.chat.channel.const, nil, self.db.global.custom_channel_index)
-	else 
-		SendChatMessage(msg, self.chat.channel.const)
-	end
+	SendChatMessage(msg, self.chat.channel.const, nil, self.db.global.custom_channel.index)
 end
 
 function CalmDownandGamble:MessageAddon(event, msg)
-	self:SendCommMessage(event, msg, self.chat.channel.addon_const)
+	self:SendCommMessage(event, msg, self.chat.channel.addon_const, tostring(self.db.global.custom_channel.index))
 end
 
 function CalmDownandGamble:RegisterChatEvents()
-
 	self:RegisterEvent("CHAT_MSG_SYSTEM", function(...) self:RollCallback(...) end)
 	self:RegisterEvent(self.chat.channel.callback, function(...) self:ChatChannelCallback(...) end)
 	if (self.chat.channel.callback_leader) then
@@ -185,15 +183,18 @@ function CalmDownandGamble:StartGame()
 	self:PrintDebug("Initialized Current GAME")
 
 	-- In case of custom channel, we need to let the guild know! 
-	if (self.db.global.custom_channel_index and (self.chat.channel.const == "CHANNEL")) then 
-	    channel_name = self:GetCustomChannelName()
-		SendChatMessage("Just started a Gambling Round in a custom channel! To join in use /cdg joinChat or /join "..channel_name, "GUILD")
+	if ((self.chat.channel.const == "CHANNEL") and (self.db.global.custom_channel.index == nil)) then 
+		self:JoinCustomChannel(nil)
+		SendChatMessage("Just started a Gambling Round in a custom channel! To join in use /cdg joinChat or /join "..self.db.global.custom_channel.name, "GUILD")
 	end
 
 	-- Welcome Message!
 	local welcome_msg = "CDG is now in session! Mode: "..self.game.mode.label..", Bet: "..self.game.data.gold_amount.." gold"
 	self:MessageChat(welcome_msg)
 	self:MessageChat("Press 1 to Join!")
+	if (self.chat.channel.const == "CHANNEL") then 
+		self:MessageChat("Tell your friends to join the channel by /cdg join or /join "..self.db.global.custom_channel.name) 
+	end
 	
 	-- Notify Clients of New GAME
 	local start_args = self.game.data.roll_lower.." "..self.game.data.roll_upper.." "..self.game.data.gold_amount.." "..self.chat.channel.const
@@ -242,8 +243,6 @@ function CalmDownandGamble:StartRolls()
 end
 
 function CalmDownandGamble:PrintTieBreakerPlayers(players)
-
-
 	tiebreaker_list = ""
 	for player, roll in pairs(players) do
 		-- TODO - Figure out how to use this for Yahtzee self.game.mode.fmt_score(roll)
