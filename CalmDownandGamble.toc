@@ -2,7 +2,7 @@
 ## X-Min-Interface: 70000
 ## Title: CalmDownandGamble
 ## Author: Fuzz Magtheridon-US
-## Version: 1.0
+## Version: 7.2.5
 ## Notes: CALM DOWN AND GAMBLE!
 ## DefaultState: Enabled
 ## LoadOnDemand: 0
