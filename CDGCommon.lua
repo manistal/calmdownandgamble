@@ -80,7 +80,7 @@ function CalmDownandGamble:PrintSlashCommandHelp()
     self:Print("    unban <player> - Unbans player")
     self:Print("    resetStats - Clears hall of fame/shame")
     self:Print("    resetBans - Clears all bans ")
-    self:Print("    autoPop - Toggles popup when someone in guild or party starts a game. ")
+    self:Print("    auto - Toggles auto activate of rolling UI")
     self:Print("    join - Join custom gambling channel for your guild")
     self:Print("    leave - Leave custom gambling channel")
 end
@@ -110,8 +110,13 @@ function CalmDownandGamble:SlashCommandHandler(...)
     elseif (command == "resetBans") then 
         self.db.global.ban_list = {}
 
-    elseif (command == "autoPop") then 
+    elseif (command == "auto") then 
         CDGClient.db.global.auto_pop = not CDGClient.db.global.auto_pop
+        if CDGClient.db.global.auto_pop then 
+            self:Print("Enabled auto show of rolling UI.")
+        else
+            self:Print("Disabled auto show of rolling UI.")
+        end
 
     elseif (command == "debug") then 
         self.DEBUG_ENABLED = not self.DEBUG_ENABLED
