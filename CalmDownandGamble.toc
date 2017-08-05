@@ -7,33 +7,30 @@
 ## DefaultState: Enabled
 ## LoadOnDemand: 0
 ## SavedVariables: CalmDownandGambleDB, CDGClientDB
+## OptionalDeps: Ace3, LibDBIcon-1.0
 
-Ace3\LibStub\LibStub.lua
-Ace3\LibDataBroker-1.1\LibDataBroker-1.1.lua
-Ace3\CallbackHandler-1.0\CallbackHandler-1.0.xml
-Ace3\LibDBIcon-1.0\lib\lib.xml
-Ace3\AceAddon-3.0\AceAddon-3.0.xml
-Ace3\AceEvent-3.0\AceEvent-3.0.xml
-Ace3\AceTimer-3.0\AceTimer-3.0.xml
-Ace3\AceHook-3.0\AceHook-3.0.xml
-Ace3\AceLocale-3.0\AceLocale-3.0.xml
-Ace3\AceDB-3.0\AceDB-3.0.xml
-Ace3\AceConsole-3.0\AceConsole-3.0.xml
-Ace3\AceGUI-3.0\AceGUI-3.0.xml
-Ace3\AceConfig-3.0\AceConfig-3.0.xml
-Ace3\AceComm-3.0\AceComm-3.0.xml
-Ace3\AceSerializer-3.0\AceSerializer-3.0.xml
-Ace3\LibCompress\LibCompress.lua
-Ace3\LibTalentQuery-1.0\LibTalentQuery-1.0.lua
-Ace3\LibDialog-1.0\lib.xml
-Ace3\LibBase64-1.0\lib.xml
+libs\LibStub\LibStub.lua
+libs\CallbackHandler-1.0\CallbackHandler-1.0.xml
+libs\LibDataBroker-1.1\LibDataBroker-1.1.lua
 
-embeds.xml
+libs\AceAddon-3.0\AceAddon-3.0.xml
+libs\AceDB-3.0\AceDB-3.0.xml
+libs\AceDBOptions-3.0\AceDBOptions-3.0.xml
+libs\AceEvent-3.0\AceEvent-3.0.xml
+libs\AceConsole-3.0\AceConsole-3.0.xml
+libs\AceHook-3.0\AceHook-3.0.xml
+libs\AceLocale-3.0\AceLocale-3.0.xml
+libs\AceGUI-3.0\AceGUI-3.0.xml
+libs\AceConfig-3.0\AceConfig-3.0.xml
+libs\AceComm-3.0\AceComm-3.0.xml
+libs\AceTimer-3.0\AceTimer-3.0.xml
+libs\AceConfig-3.0\AceConfig-3.0.xml
+libs\AceSerializer-3.0\AceSerializer-3.0.xml
+
+libs\LibDBIcon-1.0\LibDBIcon-1.0.lua
+
 CalmDownandGamble.lua
 CDGUtils.lua
 CDGGameModes.lua
 CDGClient.lua
 CDGCommon.lua
-
-
-
