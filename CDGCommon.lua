@@ -3,13 +3,13 @@
 -- Global 3 way UI Toggler 
 -- ==========================
 local ToggleClientAndCasino = function() 
-    if (CalmDownandGamble.db.global.window_shown) then
-        CalmDownandGamble:HideUI()
-        CDGClient:ShowUI()
-    elseif (CDGClient.db.global.window_shown) then
+    if (CDGClient.db.global.window_shown) then
         CDGClient:HideUI()
-    else
         CalmDownandGamble:ShowUI()
+    elseif (CalmDownandGamble.db.global.window_shown) then
+        CalmDownandGamble:HideUI()
+    else
+        CDGClient:ShowUI()
     end
 end
 
@@ -93,7 +93,7 @@ function CalmDownandGamble:SlashCommandHandler(...)
     command_args = self:SplitString(select(1, ...), "%S+")
     command = command_args[1]
 
-    if (command == "") then 
+    if (command == nil) then 
         ToggleClientAndCasino()
 
     elseif (command == "ban") then 
