@@ -1,8 +1,8 @@
-## Interface: 70200
-## X-Min-Interface: 70000
+## Interface: 80000
+## X-Min-Interface: 80000
 ## Title: CalmDownandGamble
 ## Author: Fuzz Magtheridon-US
-## Version: 7.2.5
+## Version: 8.0.1
 ## Notes: CALM DOWN AND GAMBLE!
 ## DefaultState: Enabled
 ## LoadOnDemand: 0
@@ -10,7 +10,7 @@
 ## OptionalDeps: Ace3, LibDBIcon-1.0
 
 libs\LibStub\LibStub.lua
-libs\CallbackHandler-1.0\CallbackHandler-1.0.xml
+libs\CallbackHandler-1.0\CallbackHandler-1.0.lua
 libs\LibDataBroker-1.1\LibDataBroker-1.1.lua
 
 libs\AceAddon-3.0\AceAddon-3.0.xml
