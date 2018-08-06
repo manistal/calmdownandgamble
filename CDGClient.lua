@@ -221,6 +221,8 @@ function CDGClient:ConstructUI()
 	self.ui.CDG_Frame:SetStatusTable(cdg_ui_elements.main_frame)
 	self.ui.CDG_Frame:EnableResize(false)
 	self.ui.CDG_Frame:SetCallback("OnClose", function() self:HideUI() end)
+	self.ui.CDG_Frame.frame:EnableMouse(true)
+	self.ui.CDG_Frame.frame:SetScript("OnMouseDown", function(w, button) if button == "RightButton" then self:ToggleClient() end end)
 
 	
 	-- Set up Buttons Above Text Box-- 

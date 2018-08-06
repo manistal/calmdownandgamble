@@ -747,6 +747,9 @@ function CalmDownandGamble:ConstructUI()
 	self.ui.CDG_Frame:SetStatusTable(cdg_ui_elements.main_frame)
 	self.ui.CDG_Frame:EnableResize(false)
 	self.ui.CDG_Frame:SetCallback("OnClose", function() self:HideUI() end)
+	self.ui.CDG_Frame.frame:EnableMouse(true)
+	self.ui.CDG_Frame.frame:SetScript("OnMouseDown", function(w, button) if button == "RightButton" then self:ToggleCasino() end end)
+
 	self.ui.CDG_Frame.frame:SetUserPlaced(true)
 	
 	-- Set up edit box for gold -- 

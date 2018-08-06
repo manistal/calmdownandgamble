@@ -13,6 +13,16 @@ local ToggleClientAndCasino = function()
     end
 end
 
+function CalmDownandGamble:ToggleCasino() 
+    CDGClient:ShowUI()
+    CalmDownandGamble:HideUI()
+end
+
+function CDGClient:ToggleClient() 
+    CalmDownandGamble:ShowUI()
+    CDGClient:HideUI()
+end
+
 -- MiniMap Icon Definition
 -- =========================
 function CalmDownandGamble:ConstructMiniMapIcon() 
