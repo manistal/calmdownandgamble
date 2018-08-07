@@ -46,7 +46,7 @@ function CalmDownandGamble:OnInitialize()
 			{ label = "Party" ,   const = "PARTY" ,  addon_const = "PARTY", callback = "CHAT_MSG_PARTY" ,  callback_leader = "CHAT_MSG_PARTY_LEADER" }, -- Index 2
 			{ label = "Guild" ,   const = "GUILD" ,  addon_const = "GUILD", callback = "CHAT_MSG_GUILD"     },                     -- Index 3
 			{ label = "Say"   ,   const = "SAY"   ,  addon_const = "GUILD", callback = "CHAT_MSG_SAY"       },                     -- Index 4
-    		{ label = "CDG Chat", const = "CHANNEL", addon_const = "CHANNEL", callback = "CHAT_MSG_CHANNEL" },                     -- Index 5
+    		{ label = "CDG", const = "CHANNEL", addon_const = "CHANNEL", callback = "CHAT_MSG_CHANNEL" },                     -- Index 5
 		}
 	}	
 
@@ -133,10 +133,10 @@ end
 -- =====================
 function CalmDownandGamble:SetGameStage() 
 	GAME_STAGES = {
-			{ label = "New Game",  callback = function() self:StartGame() end }, -- Index 1
-			{ label = "Last Call!",   callback = function() self:LastCall() end }, -- Index 2
-			{ label = "Start Rolls!", callback = function() self:StartRolls() end }, -- Index 3
-			{ label = "Roll Status", callback = function() self:RollStatus() end }, -- Index 4
+			{ label = "NewGame",  callback = function() self:StartGame() end }, -- Index 1
+			{ label = "LastCall",   callback = function() self:LastCall() end }, -- Index 2
+			{ label = "StartRoll", callback = function() self:StartRolls() end }, -- Index 3
+			{ label = "Status", callback = function() self:RollStatus() end }, -- Index 4
 	}	
 	
 	self.game.stage = GAME_STAGES[self.game.stage_id]
@@ -642,6 +642,20 @@ function CalmDownandGamble:TimedStart()
 	end
 end
 
+
+-- NEEDS TO BE COMMON WITH CDGCLIENT! TODO!
+function CalmDownandGamble:OpenTradeWinner()
+		ssageChat(self.game.data.loser.." owes "..self.game.data.winner.." "..self.game.data.cash_winnings.." gold!")
+	if (self.game.data and self.game.data.winner) then
+		if (TradeFrame:IsVisible()) then
+			local copper = self.game.data.cash_winnings * 100 * 100 
+			SetTradeMoney(copper)
+			MoneyInputFrame_SetCopper(TradePlayerInputMoneyFrame, copper)
+		else 
+			InitiateTrade(self.game.data.winner)
+		end
+	end
+end
 -- UI ELEMENTS 
 -- ======================================================
 function CalmDownandGamble:ShowUI()
@@ -665,51 +679,56 @@ function CalmDownandGamble:ConstructUI()
 	local cdg_ui_elements = {
 		-- Main Box Frame -- 
 		main_frame = {
-			width = 443,
-			height = 145	
+			width = 475,
+			height = 130	
+		},
+
+		casino_subframe = {
+			width = 475,
+			height = 72	
 		},
 		
-		-- Order in which the buttons are layed out -- 
-		button_index = {
+		-- Order in which the buttons are layed out in the Casino Subgroup
+		casino_button_index = {
 			"game_stage",
-			"enter_for_me",
-			"roll_for_me",
-			"chat_channel",
 			"game_mode",
-			"print_stats_table",
+			"chat_channel",
 			"reset_game"
+		},
+
+		-- Order in which the buttons are layed out In the play subgroup
+		play_button_index = {
+			"enter_for_me",
+			"roll_for_me", 
+			"open_trade"
 		},
 		
 		-- Button Definitions -- 
 		buttons = {
 			chat_channel = {
-				width = 100,
+				width = 80,
 				label = "Raid",
 				click_callback = function() self:ChatChannelToggle() end
 			},
 			game_mode = {
-				width = 100,
+				width = 80,
 				label = "(Classic)",
 				click_callback = function() self:ToggleGameMode() end
 			},
-			print_ban_list = {
-				width = 100,
-				label = "Print bans",
-				click_callback = function() self:PrintBanlist() end
-			},
-			print_stats_table = {
-				width = 100,
-				label = "Print stats",
-				click_callback = function() self:PrintRanklist() end
-			},
 			reset_game = {
-				width = 100,
+				width = 80,
 				label = "Reset",
 				click_callback = function() self:ResetGame() end
 			},
+			game_stage = {
+				width = 95,
+				label = "Start!",
+				click_callback = function() self:ToggleGameStage() end
+
+			},
 			enter_for_me = {
 				width = 100,
-				label = "Enter me",
+				label = "Enter",
 				click_callback = function() self:EnterForMe() end
 			},			
 			roll_for_me = {
@@ -717,29 +736,19 @@ function CalmDownandGamble:ConstructUI()
 				label = "Roll!",
 				click_callback = function() self:RollForMe() end
 			},
-			start_gambling = {
+			-- TODO : Make this common with CDGClient
+			open_trade = {
 				width = 100,
-				label = "Start roll",
-				click_callback = function() self:StartRolls() end
-			},
-			last_call = {
-				width = 100,
-				label = "Last call!",
-				click_callback = function() self:LastCall() end
-			},
-			game_stage = {
-				width = 100,
-				label = "New game",
-				click_callback = function() self:ToggleGameStage() end
-
+				label = "Payout",
+				click_callback = function() self:OpenTradeWinner() end
 			}
 		}
 	};
 	
-	-- Give us a base UI Table to work with -- 
+	-- ui - represents the Top level of the storage hierarchy for the UI
 	self.ui = {}
 	
-	-- Constructor Calls -- 
+	-- CDG_Frame - Represents the window frame of the addon
 	self.ui.CDG_Frame = AceGUI:Create("Frame")
 	self.ui.CDG_Frame:SetTitle("Calm Down Gambling")
 	self.ui.CDG_Frame:SetStatusText("")
@@ -749,17 +758,19 @@ function CalmDownandGamble:ConstructUI()
 	self.ui.CDG_Frame:SetCallback("OnClose", function() self:HideUI() end)
 	self.ui.CDG_Frame.frame:EnableMouse(true)
 	self.ui.CDG_Frame.frame:SetScript("OnMouseDown", function(w, button) if button == "RightButton" then self:ToggleCasino() end end)
-
 	self.ui.CDG_Frame.frame:SetUserPlaced(true)
-	
-	-- Set up edit box for gold -- 
-	self.ui.gold_amount_entry = AceGUI:Create("EditBox")
-	self.ui.gold_amount_entry:SetLabel("Gold Amount")
-	self.ui.gold_amount_entry:SetWidth(100)
-	self.ui.CDG_Frame:AddChild(self.ui.gold_amount_entry)
-	
-	-- Set up Buttons Above Text Box-- 
-	for _, button_name in pairs(cdg_ui_elements.button_index) do
+
+	-- CDG_PlayerFrame - groups the player  Controls
+	-- =====================================================
+	-- TODO : Switch the UI code into XML, because this is stupid
+	-- Pad the top layer of buttons to be centered 
+	padding = AceGUI:Create("Button")
+	padding:SetWidth(70) -- Duno why, looked the best
+	padding.frame:SetAlpha(0)
+	self.ui.CDG_Frame:AddChild(padding)
+
+	-- play_button_index - Controls for playing
+	for _, button_name in pairs(cdg_ui_elements.play_button_index) do
 		local button_settings = cdg_ui_elements.buttons[button_name]
 	
 		self.ui[button_name] = AceGUI:Create("Button")
@@ -770,9 +781,35 @@ function CalmDownandGamble:ConstructUI()
 		self.ui.CDG_Frame:AddChild(self.ui[button_name])
 	end
 	
-	if (self.db.global.ui ~= nil) then
-		self.ui.CDG_Frame:SetStatusTable(self.db.global.ui)
+	-- CDG_CasinoFrame - Groups the casino controls
+	-- ====================================================
+	self.ui.CDG_CasinoFrame = AceGUI:Create("SimpleGroup")
+	self.ui.CDG_CasinoFrame:SetLayout("Flow")
+	self.ui.CDG_CasinoFrame.frame:SetWidth(cdg_ui_elements.main_frame.width)
+
+	-- gold_amount_entry - Text box for gold entry
+	self.ui.gold_amount_entry = AceGUI:Create("EditBox")
+	self.ui.gold_amount_entry:SetWidth(95)
+	self.ui.CDG_CasinoFrame:AddChild(self.ui.gold_amount_entry)
+	
+	-- casino_button_index - Buttons to run the game
+	for _, button_name in pairs(cdg_ui_elements.casino_button_index) do
+		local button_settings = cdg_ui_elements.buttons[button_name]
+	
+		self.ui[button_name] = AceGUI:Create("Button")
+		self.ui[button_name]:SetText(button_settings.label)
+		self.ui[button_name]:SetWidth(button_settings.width)
+		self.ui[button_name]:SetCallback("OnClick", button_settings.click_callback)
+		
+		self.ui.CDG_CasinoFrame:AddChild(self.ui[button_name])
 	end
+	self.ui.CDG_Frame:AddChild(self.ui.CDG_CasinoFrame)
+
+
+	
+	--if (self.db.global.ui ~= nil) then
+	--	self.ui.CDG_Frame:SetStatusTable(self.db.global.ui)
+	--end
 	
 	if not self.db.global.window_shown then
 		self.ui.CDG_Frame:Hide()

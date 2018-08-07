@@ -120,6 +120,9 @@ function CalmDownandGamble:SlashCommandHandler(...)
     elseif (command == "resetBans") then 
         self.db.global.ban_list = {}
 
+    elseif (command == "stats") then 
+        self:PrintRanklist()
+
     elseif (command == "auto") then 
         CDGClient.db.global.auto_pop = not CDGClient.db.global.auto_pop
         if CDGClient.db.global.auto_pop then 
