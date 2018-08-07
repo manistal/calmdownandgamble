@@ -18,7 +18,7 @@ function CalmDownandGamble:OnInitialize()
 			game_mode_index = 1, 
 			game_stage_index = 1,
 			window_shown = false,
-			ui = nil, 
+			ui_frame = nil, 
 			custom_channel = {
 				index = nil,
 				name = "",
@@ -670,7 +670,7 @@ function CalmDownandGamble:HideUI()
 end
 
 function CalmDownandGamble:SaveFrameState()
-	self.db.global.ui = self:CopyTable(self.ui.CDG_Frame.status)
+	self.db.global.ui_frame = self:CopyTable(self.ui.CDG_Frame.status)
 end
 
 function CalmDownandGamble:ConstructUI()
@@ -807,9 +807,9 @@ function CalmDownandGamble:ConstructUI()
 
 
 	
-	--if (self.db.global.ui ~= nil) then
-	--	self.ui.CDG_Frame:SetStatusTable(self.db.global.ui)
-	--end
+	if (self.db.global.ui_frame ~= nil) then
+		self.ui.CDG_Frame:SetStatusTable(self.db.global.ui_frame)
+	end
 	
 	if not self.db.global.window_shown then
 		self.ui.CDG_Frame:Hide()
