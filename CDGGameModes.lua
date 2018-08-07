@@ -79,6 +79,31 @@ CDG_BIGTWOS = {
 
 }
 
+-- LILONES
+-- ==============
+CDG_LILONES = {
+	label = "LilOnes",
+	
+	init_game = function(game)
+		game.data.roll_lower = 1
+		game.data.roll_upper = 2
+		game.data.roll_range = "(1-2)"
+	end,
+	
+	roll_to_score = function(roll)
+		return tonumber(roll)
+	end,
+	
+	fmt_score = function(roll) return roll end,
+	
+	sort_rolls = CDG_SORT_ASCENDING,
+	
+	payout = function(game)
+		game.data.cash_winnings = game.data.gold_amount
+	end,
+
+}
+
 -- Inverse
 -- ===========
 CDG_INVERSE = {
