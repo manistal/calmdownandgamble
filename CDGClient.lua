@@ -246,9 +246,9 @@ function CDGClient:ConstructUI()
 		self.ui.CDG_Frame:AddChild(self.ui[button_name])
 	end
 	
-	--if (self.db.global.ui ~= nil) then
-	--	self.ui.CDG_Frame:SetStatusTable(self.db.global.ui)
-	--end
+	if (self.db.global.ui ~= nil) then
+		self.ui.CDG_Frame:SetStatusTable(self.db.global.ui)
+	end
 	
 	if not self.db.global.window_shown then
 		self.ui.CDG_Frame:Hide()
