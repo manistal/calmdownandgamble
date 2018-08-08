@@ -290,34 +290,34 @@ CDG_YAHTZEE = {
 
 }
 
-CDG_GOLF = {
-	label = "Golf",
+CDG_CURLING = {
+	label = "Curling",
 	target_roll = 0,
 	
 	init_game = function(game)
 		game.data.roll_lower = 1
 		game.data.roll_upper = CDG_MAX_ROLL(game.data.gold_amount * 2) 
 		game.data.roll_range = "(1-"..game.data.roll_upper..")"
-		CDG_GOLF.target_roll = game.data.gold_amount
+		CDG_CURLING.target_roll = game.data.gold_amount
 	end,
 	
 	roll_to_score = function(roll)
-		return math.abs(CDG_GOLF.target_roll - tonumber(roll))
+		return math.abs(CDG_CURLING.target_roll - tonumber(roll))
 	end,
 	
 	fmt_score = function(roll) return roll end,
 	
 	sort_rolls =  function(scores, playera, playerb) 
-		local scoreA = CDG_GOLF.roll_to_score(scores[playera])
-		local scoreB = CDG_GOLF.roll_to_score(scores[playerb])
+		local scoreA = CDG_CURLING.roll_to_score(scores[playera])
+		local scoreB = CDG_CURLING.roll_to_score(scores[playerb])
 		-- Sort from Highest to Lowest
 		return scoreB > scoreA
 	end,
 	
 	payout = function(game)
 		losing_roll = game.data.player_rolls[game.data.loser]
-		game.data.cash_winnings = math.abs(CDG_GOLF.target_roll - losing_roll)
-		CalmDownandGamble:MessageChat("Target Roll for Golf was: "..CDG_GOLF.target_roll) 
-		CalmDownandGamble:MessageChat(game.data.loser.." was "..game.data.cash_winnings.." away from the target!")
+		game.data.cash_winnings = math.abs(CDG_CURLING.target_roll - losing_roll)
+		CalmDownandGamble:MessageChat("Bullseye for Curling was: "..CDG_CURLING.target_roll) 
+		CalmDownandGamble:MessageChat(game.data.loser.." was "..game.data.cash_winnings.." away from the bullseye!")
 	end,
 }
