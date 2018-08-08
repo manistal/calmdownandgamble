@@ -295,6 +295,11 @@ function CalmDownandGamble:EndGame()
 	self:MessageAddon("CDG_END_GAME", end_args)
 	self.ui.CDG_Frame:SetStatusText(self.game.data.cash_winnings.."g  "..self.game.data.loser.." => "..self.game.data.winner)
 	
+	-- Clear the Roll Status UI
+	self.ui.CDG_RollFrame:ReleaseChildren()
+	self.ui.CDG_RollFrame:Release()
+	self.ui.CDG_RollFrame = nil
+
 	-- Reset Game Hooks and Data
 	self:UnregisterChatEvents()
 	self:ResetGameStage()
@@ -534,6 +539,54 @@ end
 
 -- ChatFrame Interaction Callbacks (Entry and Rolls)
 -- ==================================================== 
+
+function CalmDownandGamble:UpdateRollStatusUI()
+	if ((self.ui ~= nil) and (self.game.data ~= nil)) then
+
+		if (self.ui.CDG_RollFrame == nil) then
+
+			-- Create the Rolling Frame and attach it to the casino frame
+			-- *THIS IS STUPID DO IT IN XML TODODODODO*TODO -- 
+			self.ui.CDG_RollFrame = AceGUI:Create("Frame")
+			self.ui.CDG_RollFrame:SetWidth(200)
+			self.ui.CDG_RollFrame:SetHeight(self.ui.CDG_Frame.frame:GetHeight() * 2)
+			self.ui.CDG_RollFrame:ClearAllPoints()
+			self.ui.CDG_RollFrame:SetPoint("BOTTOMLEFT", self.ui.CDG_Frame.frame, "BOTTOMRIGHT", 0, 0)
+			self.ui.CDG_RollFrame:SetTitle("Roll Status")
+			
+
+			-- Boiler plat code for a container object
+			self.ui.CDG_RollFrameScrollcontainer = AceGUI:Create("SimpleGroup") 
+			self.ui.CDG_RollFrameScrollcontainer:SetFullWidth(true)
+			self.ui.CDG_RollFrameScrollcontainer:SetHeight(self.ui.CDG_RollFrame.frame:GetHeight() - 75)
+			self.ui.CDG_RollFrameScrollcontainer:SetLayout("Fill") 
+			self.ui.CDG_RollFrame:AddChild(self.ui.CDG_RollFrameScrollcontainer)
+
+			-- Attach a scrollbar to the container 
+			self.ui.CDG_RollFrameScroll = AceGUI:Create("ScrollFrame")
+			self.ui.CDG_RollFrameScroll:SetLayout("Flow") 
+			self.ui.CDG_RollFrameScrollcontainer:AddChild(self.ui.CDG_RollFrameScroll)
+
+		end
+
+		-- Refresh the list of players and their rolls
+		self.ui.CDG_RollFrameScroll:ReleaseChildren()	
+		for player, roll in self:sortedpairs(self.game.data.player_rolls, self.game.mode.sort_rolls) do
+
+			label = AceGUI:Create("Label")
+			if (roll ~= tonumber(-1)) then 
+				label:SetText(roll.." : "..player)
+			else 
+				label:SetText("- : "..player)
+			end
+			label:SetFont("Fonts\\FRIZQT__.TTF", 16, "OUTLINE, MONOCHROME")
+			self.ui.CDG_RollFrameScroll:AddChild(label)
+		end
+	
+	end
+end
+
+
 function CalmDownandGamble:RollCallback(...)
 	if (self.game.data == nil) then return end
 
@@ -552,8 +605,13 @@ function CalmDownandGamble:RollCallback(...)
 	if valid_roll then 
 		if (self.game.data.player_rolls[player] == -1) then
 			self:PrintDebug("Player: "..player.." Roll: "..roll.." RollRange: "..roll_range)
+
+			-- Update Game State Data 
 			-- TODO: Only in NONGROUP channels if channel == "CDG_ROLL_DICE" then SendSystemMessage(roll_text) end
 			self.game.data.player_rolls[player] = tonumber(roll)
+
+			-- Update the UI and Check for the game end 
+			self:UpdateRollStatusUI()			
 			self:CheckRollsComplete(false)
 		end
 	end
@@ -757,9 +815,16 @@ function CalmDownandGamble:ConstructUI()
 	self.ui.CDG_Frame:EnableResize(false)
 	self.ui.CDG_Frame:SetCallback("OnClose", function() self:HideUI() end)
 	self.ui.CDG_Frame.frame:EnableMouse(true)
-	self.ui.CDG_Frame.frame:SetScript("OnMouseDown", function(w, button) if button == "RightButton" then self:ToggleCasino() end end)
 	self.ui.CDG_Frame.frame:SetUserPlaced(true)
 
+	-- Mouse callbacks 
+	on_mouse_down = function(w, button) 
+		if (button == "RightButton") then 
+			self:ToggleCasino() 
+		end 
+	end
+	self.ui.CDG_Frame.frame:SetScript("OnMouseDown", on_mouse_down)
+	
 	-- CDG_PlayerFrame - groups the player  Controls
 	-- =====================================================
 	-- TODO : Switch the UI code into XML, because this is stupid

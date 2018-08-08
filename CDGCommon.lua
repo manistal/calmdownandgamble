@@ -4,8 +4,7 @@
 -- ==========================
 local ToggleClientAndCasino = function() 
     if (CDGClient.db.global.window_shown) then
-        CDGClient:HideUI()
-        CalmDownandGamble:ShowUI()
+        CDGClient:ToggleClient()
     elseif (CalmDownandGamble.db.global.window_shown) then
         CalmDownandGamble:HideUI()
     else
@@ -14,13 +13,13 @@ local ToggleClientAndCasino = function()
 end
 
 function CalmDownandGamble:ToggleCasino() 
-    CDGClient:ShowUI()
     CalmDownandGamble:HideUI()
+    CDGClient:ShowUI()
 end
 
 function CDGClient:ToggleClient() 
-    CalmDownandGamble:ShowUI()
     CDGClient:HideUI()
+    CalmDownandGamble:ShowUI()
 end
 
 -- MiniMap Icon Definition
