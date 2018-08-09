@@ -577,9 +577,10 @@ function CalmDownandGamble:UpdateRollStatusUI()
 			if (roll ~= tonumber(-1)) then 
 				label:SetText(roll.." : "..player)
 			else 
-				label:SetText("- : "..player)
+				label:SetText(" - : "..player)
 			end
 			label:SetFont("Fonts\\FRIZQT__.TTF", 16, "OUTLINE, MONOCHROME")
+			label:SetColor(255, 255, 0)
 			self.ui.CDG_RollFrameScroll:AddChild(label)
 		end
 	
