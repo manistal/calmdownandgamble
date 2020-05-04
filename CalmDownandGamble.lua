@@ -189,13 +189,17 @@ function CalmDownandGamble:StartGame()
 	end
 
 	-- Welcome Message!
-	local welcome_msg = "CDG is now in session! Mode: "..self.game.mode.label..", Bet: "..self.game.data.gold_amount.." gold"
-	self:MessageChat(welcome_msg)
-	self:MessageChat("Press 1 to Join!")
-	if (self.chat.channel.const == "CHANNEL") then 
-		self:MessageChat("Tell your friends to join the channel by /cdg join or /join "..self.db.global.custom_channel.name) 
+	if self.game.mode.label == "Curling" then
+		self:MessageChat("CDG is now in session! Mode: Curling!")
+		self:MessageChat("Roll from 1-"..self.game.data.gold_amount.." to try and hit "..CDG_CURLING.target_roll.."!") 
+	else
+		local welcome_msg = "CDG is now in session! Mode: "..self.game.mode.label..", Bet: "..self.game.data.gold_amount.." gold"
+		self:MessageChat(welcome_msg)
+		self:MessageChat("Press 1 to Join!")
+		if (self.chat.channel.const == "CHANNEL") then 
+			self:MessageChat("Tell your friends to join the channel by /cdg join or /join "..self.db.global.custom_channel.name) 
+		end
 	end
-	
 	-- Notify Clients of New GAME
 	local start_args = self.game.data.roll_lower.." "..self.game.data.roll_upper.." "..self.game.data.gold_amount.." "..self.chat.channel.const
 	self:MessageAddon("CDG_NEW_GAME", start_args)
