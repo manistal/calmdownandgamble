@@ -4,13 +4,22 @@
 -- ==========================
 local ToggleClientAndCasino = function() 
     if (CDGClient.db.global.window_shown) then
-        CDGClient:HideUI()
-        CalmDownandGamble:ShowUI()
+        CDGClient:ToggleClient()
     elseif (CalmDownandGamble.db.global.window_shown) then
         CalmDownandGamble:HideUI()
     else
         CDGClient:ShowUI()
     end
+end
+
+function CalmDownandGamble:ToggleCasino() 
+    CalmDownandGamble:HideUI()
+    CDGClient:ShowUI()
+end
+
+function CDGClient:ToggleClient() 
+    CDGClient:HideUI()
+    CalmDownandGamble:ShowUI()
 end
 
 -- MiniMap Icon Definition
@@ -109,6 +118,9 @@ function CalmDownandGamble:SlashCommandHandler(...)
 
     elseif (command == "resetBans") then 
         self.db.global.ban_list = {}
+
+    elseif (command == "stats") then 
+        self:PrintRanklist()
 
     elseif (command == "auto") then 
         CDGClient.db.global.auto_pop = not CDGClient.db.global.auto_pop

@@ -163,6 +163,9 @@ end
 -- UI ELEMENTS 
 -- ==============
 function CDGClient:ShowUI()
+    -- Set the location to where the master is
+	self.ui.CDG_Frame.frame:ClearAllPoints()
+	self.ui.CDG_Frame.frame:SetPoint("TOPRIGHT", CalmDownandGamble.ui.CDG_Frame.frame, "TOPRIGHT", 0, 0)
 	self.ui.CDG_Frame:Show()
 	self.db.global.window_shown = true
 end
@@ -221,7 +224,15 @@ function CDGClient:ConstructUI()
 	self.ui.CDG_Frame:SetStatusTable(cdg_ui_elements.main_frame)
 	self.ui.CDG_Frame:EnableResize(false)
 	self.ui.CDG_Frame:SetCallback("OnClose", function() self:HideUI() end)
+	self.ui.CDG_Frame.frame:EnableMouse(true)
 
+	-- Mouse callbacks 
+	on_mouse_down = function(w, button) 
+		if (button == "RightButton") then 
+			self:ToggleClient() 
+		end 
+	end
+	self.ui.CDG_Frame.frame:SetScript("OnMouseDown", on_mouse_down)
 	
 	-- Set up Buttons Above Text Box-- 
 	for _, button_name in pairs(cdg_ui_elements.button_index) do
