@@ -432,22 +432,30 @@ function CalmDownandGamble:EvaluateScores()
 	
 	local high_roller_count = self:TableLength(high_roller_playoff)
 	local low_roller_count = self:TableLength(low_roller_playoff)
-	
 	local found_winner = (high_roller_count == 1) 
 	local found_loser = (low_roller_count == 1) 
+	
+	--Set the payout before we tiebreak --
+	
+	if self.game.data.winning_roll == nil then
+		self.game.data.winning_roll = winning_roll
+	end
+	if self.game.data.losing_roll == nil then
+		self.game.data.losing_roll = losing_roll
+	end
+	
+
 	
 	-- High Tiebreaker -- 
 	if self.game.data.high_tiebreaker then 
 		if found_winner then 
 			self.game.data.winner = winner
-			self.game.data.winning_roll = winning_roll
 			self.game.data.high_tiebreaker = false
 			self.game.data.high_roller_playoff = {}
 		-- TODO handle the case where we pick off losers
 		--elseif ((self.game.data.loser == nil) and (not self.game.data.low_tiebreaker) and found_loser) then
 			-- Handle the case where the first loser in high tiebreaker is the actual loser
 			--self.game.data.loser = loser
-			--self.game.data.losing_roll = losing_roll
 			--self.game.data.low_tiebreaker = false
 			--self.game.data.low_roller_playoff = {}
 		else
@@ -468,7 +476,6 @@ function CalmDownandGamble:EvaluateScores()
 	
 		if found_loser then 
 			self.game.data.loser = loser
-			self.game.data.losing_roll = losing_roll
 			self.game.data.low_tiebreaker = false
 			self.game.data.low_roller_playoff = {}
 		elseif (high_roller_count == self:TableLength(self.game.data.player_rolls)) then
@@ -489,7 +496,6 @@ function CalmDownandGamble:EvaluateScores()
 	else
 		if found_winner then 
 			self.game.data.winner = winner
-			self.game.data.winning_roll = winning_roll
 			self.game.data.high_tiebreaker = false
 			self.game.data.high_roller_playoff = {}
 		else 
@@ -498,7 +504,6 @@ function CalmDownandGamble:EvaluateScores()
 		
 		if found_loser then 
 			self.game.data.loser = loser
-			self.game.data.losing_roll = losing_roll
 			self.game.data.low_tiebreaker = false
 			self.game.data.low_roller_playoff = {}
 		else
@@ -529,7 +534,6 @@ function CalmDownandGamble:EvaluateScores()
 		return false
 	elseif (self.game.data.loser == nil) and found_loser then  -- special case, everyone was a high roller, 1v1
 		self.game.data.loser = loser
-		self.game.data.losing_roll = losing_roll
 		return true
 	else
 		return true
