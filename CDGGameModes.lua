@@ -57,7 +57,7 @@ CDG_MYSTERY = {
 -- BigTwos 
 -- ==============
 CDG_BIGTWOS = {
-	label = "BigTwos",
+	label = "Big2s",
 	
 	init_game = function(game)
 		game.data.roll_lower = 1

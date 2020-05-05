@@ -557,13 +557,15 @@ function CalmDownandGamble:UpdateRollStatusUI()
 			-- *THIS IS STUPID DO IT IN XML TODODODODO*TODO -- 
 			self.ui.CDG_RollFrame = AceGUI:Create("Frame")
 			self.ui.CDG_RollFrame:SetWidth(200)
-			self.ui.CDG_RollFrame:SetHeight(self.ui.CDG_Frame.frame:GetHeight() * 2)
+			self.ui.CDG_RollFrame:SetHeight(self.ui.CDG_Frame.frame:GetHeight())
 			self.ui.CDG_RollFrame:ClearAllPoints()
+			self.ui.CDG_RollFrame:EnableResize(false)
 			self.ui.CDG_RollFrame:SetPoint("BOTTOMLEFT", self.ui.CDG_Frame.frame, "BOTTOMRIGHT", 0, 0)
-			self.ui.CDG_RollFrame:SetTitle("Roll Status")
+			self.ui.CDG_RollFrame:SetTitle("Rolls")
 			
 
 			-- Boiler plat code for a container object
+			self.ui.CDG_RollFrameScrollcontainer = AceGUI:Create("SimpleGroup") 
 			self.ui.CDG_RollFrameScrollcontainer = AceGUI:Create("SimpleGroup") 
 			self.ui.CDG_RollFrameScrollcontainer:SetFullWidth(true)
 			self.ui.CDG_RollFrameScrollcontainer:SetHeight(self.ui.CDG_RollFrame.frame:GetHeight() - 75)
@@ -587,8 +589,8 @@ function CalmDownandGamble:UpdateRollStatusUI()
 			else 
 				label:SetText(" - : "..player)
 			end
-			label:SetFont("Fonts\\FRIZQT__.TTF", 16, "OUTLINE, MONOCHROME")
-			label:SetColor(255, 255, 0)
+			label:SetFont("Fonts\\FRIZQT__.TTF", 12, "OUTLINE, MONOCHROME")
+			label:SetColor(255, 155, 55)
 			self.ui.CDG_RollFrameScroll:AddChild(label)
 		end
 	
@@ -766,8 +768,8 @@ function CalmDownandGamble:ConstructUI()
 		-- Order in which the buttons are layed out In the play subgroup
 		play_button_index = {
 			"enter_for_me",
-			"roll_for_me", 
-			"open_trade"
+			"roll_for_me"
+			--"open_trade"
 		},
 		
 		-- Button Definitions -- 
@@ -794,12 +796,12 @@ function CalmDownandGamble:ConstructUI()
 
 			},
 			enter_for_me = {
-				width = 100,
+				width = 115,
 				label = "Enter",
 				click_callback = function() self:EnterForMe() end
 			},			
 			roll_for_me = {
-				width = 100,
+				width = 115,
 				label = "Roll!",
 				click_callback = function() self:RollForMe() end
 			},
@@ -819,6 +821,7 @@ function CalmDownandGamble:ConstructUI()
 	self.ui.CDG_Frame = AceGUI:Create("Frame")
 	self.ui.CDG_Frame:SetTitle("Calm Down Gambling")
 	self.ui.CDG_Frame:SetStatusText("")
+	self.ui.CDG_Frame.frame:SetMinResize(300,75)
 	self.ui.CDG_Frame:SetLayout("Flow")
 	self.ui.CDG_Frame:SetStatusTable(cdg_ui_elements.main_frame)
 	self.ui.CDG_Frame:EnableResize(false)
@@ -839,10 +842,15 @@ function CalmDownandGamble:ConstructUI()
 	-- TODO : Switch the UI code into XML, because this is stupid
 	-- Pad the top layer of buttons to be centered 
 	padding = AceGUI:Create("Button")
-	padding:SetWidth(70) -- Duno why, looked the best
+	padding:SetWidth(1) -- Duno why, looked the best
 	padding.frame:SetAlpha(0)
-	self.ui.CDG_Frame:AddChild(padding)
+	--self.ui.CDG_Frame:AddChild(padding)
 
+		-- gold_amount_entry - Text box for gold entry
+	self.ui.gold_amount_entry = AceGUI:Create("EditBox")
+	self.ui.gold_amount_entry:SetWidth(105)
+	self.ui.CDG_Frame:AddChild(self.ui.gold_amount_entry)
+	
 	-- play_button_index - Controls for playing
 	for _, button_name in pairs(cdg_ui_elements.play_button_index) do
 		local button_settings = cdg_ui_elements.buttons[button_name]
@@ -860,11 +868,6 @@ function CalmDownandGamble:ConstructUI()
 	self.ui.CDG_CasinoFrame = AceGUI:Create("SimpleGroup")
 	self.ui.CDG_CasinoFrame:SetLayout("Flow")
 	self.ui.CDG_CasinoFrame.frame:SetWidth(cdg_ui_elements.main_frame.width)
-
-	-- gold_amount_entry - Text box for gold entry
-	self.ui.gold_amount_entry = AceGUI:Create("EditBox")
-	self.ui.gold_amount_entry:SetWidth(95)
-	self.ui.CDG_CasinoFrame:AddChild(self.ui.gold_amount_entry)
 	
 	-- casino_button_index - Buttons to run the game
 	for _, button_name in pairs(cdg_ui_elements.casino_button_index) do
