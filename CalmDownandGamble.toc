@@ -1,8 +1,8 @@
-## Interface: 80000
-## X-Min-Interface: 80000
+## Interface: 11302
+## X-Min-Interface: 11302
 ## Title: CalmDownandGamble
 ## Author: Fuzz Magtheridon-US
-## Version: 8.0.1
+## Version: 1.13.0
 ## Notes: CALM DOWN AND GAMBLE!
 ## DefaultState: Enabled
 ## LoadOnDemand: 0
