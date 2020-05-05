@@ -57,7 +57,7 @@ CDG_MYSTERY = {
 -- BigTwos 
 -- ==============
 CDG_BIGTWOS = {
-	label = "BigTwos",
+	label = "Big2s",
 	
 	init_game = function(game)
 		game.data.roll_lower = 1
@@ -296,11 +296,11 @@ CDG_CURLING = {
 	
 	init_game = function(game)
 		game.data.roll_lower = 1
-		game.data.roll_upper = CDG_MAX_ROLL(game.data.gold_amount * 2) 
+		game.data.roll_upper = CDG_MAX_ROLL(game.data.gold_amount) 
 		game.data.roll_range = "(1-"..game.data.roll_upper..")"
-		CDG_CURLING.target_roll = game.data.gold_amount
+		CDG_CURLING.target_roll = math.random(game.data.roll_upper)
 	end,
-	
+			
 	roll_to_score = function(roll)
 		return math.abs(CDG_CURLING.target_roll - tonumber(roll))
 	end,
