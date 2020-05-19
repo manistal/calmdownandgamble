@@ -194,7 +194,10 @@ function CalmDownandGamble:StartGame()
 	-- Welcome Message!
 	local welcome_msg = "CDG is now in session! Mode: "..self.game.mode.label..", Bet: "..self.game.data.gold_amount.." gold"
 	self:MessageChat(welcome_msg)
+	if (self.game.mode.custom_intro ~= nil) then self:MessageChat(self.game.mode.custom_intro()) end
 	self:MessageChat("Press 1 to Join!")
+
+	-- TODO: Why is this BS different?
 	if (self.chat.channel.const == "CHANNEL") then 
 		self:MessageChat("Tell your friends to join the channel by /cdg join or /join "..self.db.global.custom_channel.name) 
 	end
@@ -306,24 +309,10 @@ function CalmDownandGamble:EndGame()
 	-- Reset Game Hooks and Data
 	self:UnregisterChatEvents()
 	self:ResetGameStage()
-	self.previous_gameData = self.deepcopy(self.game.data)
+	self.previous_gameData = self:deepcopy(self.game.data)
 	self.game.data = nil
 end
 
-function deepcopy(orig)
-    local orig_type = type(orig)
-    local copy
-    if orig_type == 'table' then
-        copy = {}
-        for orig_key, orig_value in next, orig, nil do
-            copy[deepcopy(orig_key)] = deepcopy(orig_value)
-        end
-        setmetatable(copy, deepcopy(getmetatable(orig)))
-    else -- number, string, boolean, etc
-        copy = orig
-    end
-    return copy
-end
 
 function CalmDownandGamble:ResetGame()
 	self:UnregisterChatEvents()

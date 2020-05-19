@@ -52,5 +52,17 @@ function CalmDownandGamble:sortedpairs(t, order)
     end
 end
 
-
-
+function CalmDownandGamble:deepcopy(orig)
+    local orig_type = type(orig)
+    local copy
+    if orig_type == 'table' then
+        copy = {}
+        for orig_key, orig_value in next, orig, nil do
+            copy[CalmDownandGamble:deepcopy(orig_key)] = CalmDownandGamble:deepcopy(orig_value)
+        end
+        setmetatable(copy, CalmDownandGamble:deepcopy(getmetatable(orig)))
+    else -- number, string, boolean, etc
+        copy = orig
+    end
+    return copy
+end

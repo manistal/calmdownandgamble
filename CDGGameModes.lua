@@ -298,11 +298,16 @@ CDG_CURLING = {
 		game.data.roll_lower = 1
 		game.data.roll_upper = CDG_MAX_ROLL(game.data.gold_amount) 
 		game.data.roll_range = "(1-"..game.data.roll_upper..")"
-		CDG_CURLING.target_roll = math.random(game.data.roll_upper)
+		game.target_roll = math.random(game.data.roll_upper)
+		CDG_CURLING.game = game
+	end,
+
+	custom_intro = function()
+		return "Roll from 1-"..CDG_CURLING.game.data.gold_amount.." to try and hit "..CDG_CURLING.game.target_roll.."!"
 	end,
 			
 	roll_to_score = function(roll)
-		return math.abs(CDG_CURLING.target_roll - tonumber(roll))
+		return math.abs(CDG_CURLING.game.target_roll - tonumber(roll))
 	end,
 	
 	fmt_score = function(roll) return roll end,
@@ -316,8 +321,8 @@ CDG_CURLING = {
 	
 	payout = function(game)
 		losing_roll = game.data.player_rolls[game.data.loser]
-		game.data.cash_winnings = math.abs(CDG_CURLING.target_roll - losing_roll)
-		CalmDownandGamble:MessageChat("Bullseye for Curling was: "..CDG_CURLING.target_roll) 
+		game.data.cash_winnings = math.abs(CDG_CURLING.game.target_roll - losing_roll)
+		CalmDownandGamble:MessageChat("Bullseye for Curling was: "..CDG_CURLING.game.target_roll) 
 		CalmDownandGamble:MessageChat(game.data.loser.." was "..game.data.cash_winnings.." away from the bullseye!")
 	end,
 }
