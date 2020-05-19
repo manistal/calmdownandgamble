@@ -2,14 +2,13 @@
 
 TAGNAME=$1
 
-git tag $TAGNAME && git push origin $TAGNAME
+git tag $TAGNAME 2> /dev/null && git push origin $TAGNAME
 
-SCRIPTPATH="$( cd "$(dirname "$0")" >/dev/null 2>&1 ; pwd -P )"
-RELEASE_DIR="${SCRIPTPATH}/release/CalmDownandGamble"
-mkdir -p ${RELEASE_DIR}
+SCRIPT_PATH="$( cd "$(dirname "$0")" >/dev/null 2>&1 ; pwd -P )"
+RELEASE_DIR="/tmp/CDGRelease/CalmDownandGamble"
+mkdir -p /tmp/CDGRelease
 
-cp -rf ${SCRIPTPATH}/* ${RELEASE_DIR}/.
-rm -rf ${RELEASE_DIR}/.git
-rm -rf ${RELEASE_DIR}/release
+cp -rf "${SCRIPT_PATH}" "${RELEASE_DIR}"
+rm -rf "${RELEASE_DIR}/.git"
 
 zip -r CalmDownandGamble-${TAGNAME}.zip ${RELEASE_DIR}
