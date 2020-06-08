@@ -29,6 +29,8 @@ libs\AceSerializer-3.0\AceSerializer-3.0.xml
 
 libs\LibDBIcon-1.0\LibDBIcon-1.0.lua
 
+libs\DigitPoker-1.0\DigitPoker-1.0.xml
+
 CalmDownandGamble.lua
 CDGUtils.lua
 CDGGameModes.lua
