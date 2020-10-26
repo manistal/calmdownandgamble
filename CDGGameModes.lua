@@ -132,7 +132,7 @@ CDG_INVERSE = {
 -- Russian Roullette
 -- ===================
 CDG_ROULETTE= {
-	label = "Roullette",
+	label = "Roulette",
 	
 	init_game = function(game)
 		game.data.roll_lower = 1

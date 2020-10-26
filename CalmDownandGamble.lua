@@ -453,6 +453,14 @@ function CalmDownandGamble:EvaluateScores()
 	local found_winner = (high_roller_count == 1) 
 	local found_loser = (low_roller_count == 1) 
 	
+	-- Set the payout values before we tiebreak
+	if self.game.data.winning_roll == nil then
+		self.game.data.winning_roll = winning_roll
+	end
+	if self.game.data.losing_roll == nil then
+		self.game.data.losing_roll = losing_roll
+	end
+
 	-- High Tiebreaker -- 
 	if self.game.data.high_tiebreaker then 
 		if found_winner then 
