@@ -115,7 +115,7 @@ end
 -- ================
 function CalmDownandGamble:SetGameMode() 
 	-- Loaded from external File
-	GAME_MODES = { CDG_HILO, CDG_INVERSE, CDG_BIGTWOS, CDG_LILONES, CDG_YAHTZEE, CDG_CURLING }
+	GAME_MODES = { CDG_HILO, CDG_INVERSE, CDG_BIGTWOS, CDG_LILONES, CDG_YAHTZEE, CDG_CURLING, CDG_POKER }
 	self.game.mode = GAME_MODES[self.game.mode_id]
 	self.game.num_modes = table.getn(GAME_MODES)
 	self.ui.game_mode:SetText(self.game.mode.label)
@@ -555,9 +555,7 @@ end
 
 function CalmDownandGamble:UpdateRollStatusUI()
 	if ((self.ui ~= nil) and (self.game.data ~= nil)) then
-
 		if (self.ui.CDG_RollFrame == nil) then
-
 			-- Create the Rolling Frame and attach it to the casino frame
 			-- *THIS IS STUPID DO IT IN XML TODODODODO*TODO -- 
 			self.ui.CDG_RollFrame = AceGUI:Create("Frame")
@@ -585,7 +583,6 @@ function CalmDownandGamble:UpdateRollStatusUI()
 		-- Refresh the list of players and their rolls
 		self.ui.CDG_RollFrameScroll:ReleaseChildren()	
 		for player, roll in self:sortedpairs(self.game.data.player_rolls, self.game.mode.sort_rolls) do
-
 			label = AceGUI:Create("Label")
 			if (roll ~= tonumber(-1)) then 
 				label:SetText(roll.." : "..player)
