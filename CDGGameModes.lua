@@ -326,3 +326,47 @@ CDG_CURLING = {
 		CalmDownandGamble:MessageChat(game.data.loser.." was "..game.data.cash_winnings.." away from the bullseye!")
 	end,
 }
+
+
+-- Poker
+-- ============
+local DigitPoker = LibStub("DigitPoker-1.0")
+
+CDG_POKER = {
+	label = "Poker",
+	
+	init_game = function(game)
+		game.data.roll_range = "(11111-99999)"
+		game.data.roll_upper = 99999
+		game.data.roll_lower = 11111
+	end,
+	
+	roll_to_score = function(roll)
+        roll = tostring(roll)
+		score = DigitPoker.score(DigitPoker.parse(roll))
+		return score
+	end,
+    
+    fmt_score = function(roll)
+        roll = tostring(roll)
+        return DigitPoker.formatHand(DigitPoker.parse(roll))
+    end,
+	
+	sort_rolls =  function(rolls, playera, playerb)
+		local scoreA = CDG_POKER.roll_to_score(rolls[playera])
+		local scoreB = CDG_POKER.roll_to_score(rolls[playerb])
+		-- Sort from Highest to Lowest
+		return scoreB < scoreA
+	end,
+	
+	payout = function(game)
+		for player, roll in CalmDownandGamble:sortedpairs(game.data.player_rolls, game.mode.sort_rolls) do
+            CalmDownandGamble:Print(player .. ' ' .. roll)
+            local formatted = CDG_POKER.fmt_score(roll)
+			local name = DigitPoker.name(DigitPoker.parse(tostring(roll)))
+			CalmDownandGamble:MessageChat(player.." hand: "..formatted.." - "..name)
+		end
+		game.data.cash_winnings = game.data.gold_amount
+	end,
+
+}
