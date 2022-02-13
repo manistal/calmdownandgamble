@@ -52,8 +52,10 @@ function CalmDownandGamble:OnInitialize()
 		}
 	}	
 
+	self:Print("[CDG_DEBUG] ".."BEFOREUI") 
 	-- AceGUI Table Constructor
 	self:ConstructUI()
+	self:Print("[CDG_DEBUG] ".."AFTERUI") 
 
 	-- Register with the minimap icon frame
 	self:ConstructMiniMapIcon()
