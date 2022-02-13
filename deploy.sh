@@ -13,9 +13,12 @@ mkdir -p /tmp/CDGRelease
 # Copy up 
 cp -rf "${SCRIPT_PATH}" "${RELEASE_DIR}"
 rm -rf "${RELEASE_DIR}/.git"
+rm -rf "${RELEASE_DIR}/.gitignore"
+rm -rf "${RELEASE_DIR}/deploy.sh"
 
 # Zip up 
-zip -r CalmDownandGamble-${TAGNAME}.zip ${RELEASE_DIR}
+cd ${RELEASE_DIR}
+zip -r CalmDownandGamble-${TAGNAME}.zip "CalmDownandGamble"
 
 # Cleanup
 rm -rf /tmp/CDGRelease
