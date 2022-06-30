@@ -115,7 +115,7 @@ end
 -- ================
 function CalmDownandGamble:SetGameMode() 
 	-- Loaded from external File
-	GAME_MODES = { CDG_HILO, CDG_INVERSE, CDG_BIGTWOS, CDG_LILONES, CDG_YAHTZEE, CDG_CURLING }
+	GAME_MODES = { CDG_HILO, CDG_INVERSE, CDG_ROULETTE, CDG_BIGTWOS, CDG_LILONES, CDG_YAHTZEE, CDG_CURLING }
 	self.game.mode = GAME_MODES[self.game.mode_id]
 	self.game.num_modes = table.getn(GAME_MODES)
 	self.ui.game_mode:SetText(self.game.mode.label)
@@ -169,10 +169,12 @@ function CalmDownandGamble:StartGame()
 	self.game.data = {
 		accepting_players = true,
 		accepting_rolls = false,
-		high_tiebreaker = false,
-		low_tiebreaker = false,
+		high_tiebreak = nil,
+		low_tiebreak = nil,
 		winner = nil,
 		loser = nil,
+		round = "initial",
+		first_round = true,
 		winning_roll = nil,
 		losing_roll = nil,
 		high_roller_playoff = {},
@@ -235,11 +237,14 @@ function CalmDownandGamble:StartRolls()
 	
 	-- Tell Tiebreakers Who Has to Roll
 	local roll_msg = ""
-	if self.game.data.high_tiebreaker then 
+	if self.game.data.round == "losers" then 
+		self:MessageChat("The Losers Bracket! Low Tiebreaker:")
+		self:PrintTieBreakerPlayers(self.game.data.player_rolls)
+	elseif self.game.data.round == "winners" then
 		self:MessageChat("The Winners Bracket! High Tiebreaker:")
 		self:PrintTieBreakerPlayers(self.game.data.player_rolls)
-	elseif self.game.data.low_tiebreaker then 
-		self:MessageChat("The Losers! Low Tiebreaker:")
+	elseif self.game.data.round == "initial" and not self.game.data.first_round then
+		self:MessageChat("Tie! Reroll:")
 		self:PrintTieBreakerPlayers(self.game.data.player_rolls)
 	end
 	
@@ -291,6 +296,9 @@ function CalmDownandGamble:GameLoop()
 		self:MessageChat(self.game.data.loser.." owes "..self.game.data.winner.." "..self.game.data.cash_winnings.." gold!")
 		self:LogResults()
 		self:EndGame()
+	else
+		self.game.data.first_round = false
+		self:StartRolls()
 	end
 end
 
@@ -392,9 +400,10 @@ end
 -- based on scores where the winner is always first, and the loser last
 function CalmDownandGamble:EvaluateScores()
 	self:PrintDebug("Evaluating Scores")
-	
-	local winning_roll, losing_roll, high_roller_playoff, low_roller_playoff = nil, nil, {}, {}
+
 	local winner, loser = nil, nil
+	local winning_roll, losing_roll = nil, nil
+	local high_roller_playoff, low_roller_playoff = {}, {}
 	
     -- Loop over the players and look for highest/lowest/etc
 	local roll_index, total_rolls = 0, table.getn(self.game.data.player_rolls)
@@ -431,123 +440,182 @@ function CalmDownandGamble:EvaluateScores()
 		-- Score == Loser -> Tiebreaker
 		elseif (player_score == losing_roll)  then  -- also the worst
 			low_roller_playoff[player] = -1
-		
 		else
 		end
-		
-		
 	end
 
-	-- Save the actual high and low for payouts
-	if self.game.data.winning_roll == nil then	
-		self.game.data.winning_roll = winning_roll	
-	end	
-	if self.game.data.losing_roll == nil then	
-		self.game.data.losing_roll = losing_roll	
-	end	
-
-	
 	-- Determine Tiebreaker State
 	local high_roller_count = self:TableLength(high_roller_playoff)
 	local low_roller_count = self:TableLength(low_roller_playoff)
-	local found_winner = (high_roller_count == 1) 
-	local found_loser = (low_roller_count == 1) 
-	
-	-- Set the payout values before we tiebreak
-	if self.game.data.winning_roll == nil then
-		self.game.data.winning_roll = winning_roll
-	end
-	if self.game.data.losing_roll == nil then
+	local single_winner = (high_roller_count == 1) 
+	local single_loser = (low_roller_count == 1)
+
+	-- Evaluate Round --
+
+	local is_game_over = false
+
+	-- Initial Round --
+	if self.game.data.round == "initial" then
+
+		-- Save original rolls for payouts
+		self.game.data.winning_roll = winning_roll	
 		self.game.data.losing_roll = losing_roll
-	end
 
-	-- High Tiebreaker -- 
-	if self.game.data.high_tiebreaker then 
-		if found_winner then 
+		-- Winner and loser found. GG --
+		if single_winner and single_loser then
 			self.game.data.winner = winner
-			self.game.data.high_tiebreaker = false
-			self.game.data.high_roller_playoff = {}
-		else
-			self.game.data.player_rolls = self:CopyTable(high_roller_playoff)
-			self.game.data.high_tiebreaker = true
-			self:StartRolls()
-			self:PrintDebug("High Tie Breaker #2")
-			return false
-		end
-	-- Low Tiebreaker -- 
-	elseif self.game.data.low_tiebreaker then 
-
-		
-		-- if total_players == high_rollers
-		if (high_roller_count == self:TableLength(self.game.data.player_rolls)) then
-			
-		end
-	
-		if found_loser then 
 			self.game.data.loser = loser
-			self.game.data.low_tiebreaker = false
-			self.game.data.low_roller_playoff = {}
-		elseif (high_roller_count == self:TableLength(self.game.data.player_rolls)) then
-		-- all low tied again? will show up in "high_roller_playoff"
-			self.game.data.player_rolls = self:CopyTable(high_roller_playoff)
-			self.game.data.low_tiebreaker = true
-			self:StartRolls()
-			self:PrintDebug("Low Tiebreaker #4")
-			return false
-		else
-			self.game.data.player_rolls = self:CopyTable(low_roller_playoff)
-			self.game.data.low_tiebreaker = true
-			self:StartRolls()
-			self:PrintDebug("Low Tiebreaker #2")
-			return false
-		end
-	-- No Tiebreaker -- 
-	else
-		if found_winner then 
+			is_game_over = true
+
+		-- Winner found, start losers round --
+		elseif single_winner then
 			self.game.data.winner = winner
-			self.game.data.high_tiebreaker = false
-			self.game.data.high_roller_playoff = {}
-		else 
-			self.game.data.high_roller_playoff = self:CopyTable(high_roller_playoff)
-		end
-		
-		if found_loser then 
+			self.game.data.low_tiebreak = self:CopyTable(low_roller_playoff)
+			self.game.data.player_rolls = self.game.data.low_tiebreak
+			self.game.data.round = "losers"
+			if self.game.data.low_tiebreak_callback then
+				self.game.data.low_tiebreak_callback(self.game)
+			end
+
+		-- Loser found, start winners round --
+		elseif single_loser then
 			self.game.data.loser = loser
-			self.game.data.low_tiebreaker = false
-			self.game.data.low_roller_playoff = {}
+			self.game.data.high_tiebreak = self:CopyTable(high_roller_playoff)
+			self.game.data.player_rolls = self.game.data.high_tiebreak
+			self.game.data.round = "winners"
+			if self.game.data.high_tiebreak_callback then
+				self.game.data.high_tiebreak_callback(self.game)
+			end
+
+		-- Only low rolls, reroll --
+		elseif high_roller_count == 0 then
+			self.game.data.low_tiebreak = self:CopyTable(low_roller_playoff)
+			self.game.data.player_rolls = self.game.data.low_tiebreak
+			self.game.data.round = "initial"
+			if self.game.data.only_losers_callback then
+				self.game.data.only_losers_callback(game)
+			end
+
+		-- Only high rolls, reroll --
+		elseif low_roller_count == 0 then
+			self.game.data.high_tiebreak = self:CopyTable(high_roller_playoff)
+			self.game.data.player_rolls = self.game.data.high_tiebreak
+			self.game.data.round = "initial"
+			if self.game.data.high_tiebreak_callback then
+				self.game.data.high_tiebreak_callback(self.game)
+			end
+
+		-- Low roll ties and high roll ties, start with loser round --
 		else
-			self.game.data.low_roller_playoff = self:CopyTable(low_roller_playoff)
+			self.game.data.high_tiebreak = self:CopyTable(high_roller_playoff)
+			self.game.data.low_tiebreak = self:CopyTable(low_roller_playoff)
+			self.game.data.player_rolls = self.game.data.low_tiebreak
+			self.game.data.round = "losers"
+			if self.game.data.low_tiebreak_callback then
+				self.game.data.low_tiebreak_callback(self.game)
+			end
 		end
 
-	end
-	
-	
-	if (self:TableLength(self.game.data.low_roller_playoff) > 1) then 
-		self:PrintDebug("Low Tiebreaker #1")
-		-- start low tiebreaker -- 
-		self.game.data.low_tiebreaker = true
-		self.game.data.player_rolls = self:CopyTable(self.game.data.low_roller_playoff)
-		self:StartRolls()
-		return false
-	elseif (self:TableLength(self.game.data.high_roller_playoff) > 1) then 
-		self:PrintDebug("High Tiebreaker #1")
-		self.game.data.high_tiebreaker = true
-		self.game.data.player_rolls = self:CopyTable(self.game.data.high_roller_playoff)
-		self:StartRolls()
-		return false
-	elseif (self.game.data.loser == nil) and (not found_loser) then  -- special case, everyone was a high roller
-		self:PrintDebug("Low Tiebreaker #3")
-		self.game.data.low_tiebreaker = true
-		self.game.data.player_rolls = self:CopyTable(low_roller_playoff)
-		self:StartRolls()
-		return false
-	elseif (self.game.data.loser == nil) and found_loser then  -- special case, everyone was a high roller, 1v1
-		self.game.data.loser = loser
-		return true
+	-- Loser's Round --
+	elseif self.game.data.round == "losers" then
+
+		-- Loser found -- 
+		if single_loser then
+			self.game.data.loser = loser
+
+			-- If winner also found, end game --
+			if self.game.data.winner then
+				is_game_over = true
+
+			-- If no winner, start winners round --
+			else
+				self.game.data.player_rolls = self.game.data.high_tiebreak
+				self.game.data.round = "winners"
+				if self.game.data.high_tiebreak_callback then
+					self.game.data.high_tiebreak_callback(self.game)
+				end
+			end
+
+		-- No single loser found, roll again --
+		else
+
+			-- If there were no losers, play everyone again --
+			if low_roller_count == 0 then
+				self.game.data.low_tiebreak = self:CopyTable(high_roller_playoff)
+				if self.game.data.low_tiebreak_callback then
+					self.game.data.low_tiebreak_callback(self.game)
+				end
+
+			-- Only losers, reroll --
+			elseif high_roller_count == 0 then
+				self.game.data.low_tiebreak = self:CopyTable(low_roller_playoff)
+				if self.game.data.only_losers_callback then
+					self.game.data.only_losers_callback(game)
+				end
+
+			-- Many losers, play losers --
+			else
+				self.game.data.low_tiebreak = self:CopyTable(low_roller_playoff)
+				if self.game.data.low_tiebreak_callback then
+					self.game.data.low_tiebreak_callback(self.game)
+				end
+			end
+			self.game.data.player_rolls = self.game.data.low_tiebreak
+
+		end
+
+	-- Winner's Round --
+	elseif self.game.data.round == "winners" then
+
+		-- Winner found --
+		if single_winner then
+			self.game.data.winner = winner
+
+			-- If loser also found, end game --
+			if self.game.data.loser then
+				is_game_over = true
+
+			-- If no loser found, start losers round --
+			else
+				self.game.data.player_rolls = self.game.data.low_tiebreak
+				self.game.data.round = "losers"
+				if self.game.data.low_tiebreak_callback then
+					self.game.data.low_tiebreak_callback(self.game)
+				end
+			end
+
+		-- No winner found --
+		else
+
+			-- If high rollers exist --
+			if high_roller_count > 0 then
+				self.game.data.high_tiebreak = self:CopyTable(high_roller_playoff)
+				self.game.data.player_rolls = self.game.data.high_tiebreak
+				self.game.data.round = "winners"
+				if self.game.data.high_tiebreak_callback then
+					self.game.data.high_tiebreak_callback(self.game)
+				end
+
+			-- If only low rollers, reroll --
+			elseif low_roller_count > 0 then
+				self.game.data.high_tiebreak = self:CopyTable(low_roller_playoff)
+				self.game.data.player_rolls = self.game.data.high_tiebreak
+				self.game.data.round = "winners"
+				if self.game.data.only_losers_callback then
+					self.game.data.only_losers_callback(game)
+				end
+
+			-- Shouldn't be reached --
+			else
+				self:PrintDebug("Multiple winners else condition reached: high_roller_count = "..high_roller_count.." low_roller_count = "..low_roller_count)
+			end
+		end
+
+	-- Shouldn't be reached --
 	else
-		return true
+		self:PrintDebug("Unreachable Else: game.data.round not set properly")
 	end
-		
+	return is_game_over	
 end
 
 -- ChatFrame Interaction Callbacks (Entry and Rolls)
