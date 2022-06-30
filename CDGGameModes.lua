@@ -131,17 +131,54 @@ CDG_INVERSE = {
 
 -- Russian Roullette
 -- ===================
-CDG_ROULETTE= {
-	label = "Roulette",
-	
+CDG_ROULETTE = {
+	label = "Russian Roulette",
+
 	init_game = function(game)
 		game.data.roll_lower = 1
 		game.data.roll_upper = 6
 		game.data.roll_range = "(1-6)"
+		game.data.w_bullets = 6
+		game.data.l_bullets = nil
+		game.data.low_tiebreak_callback = function(game)
+			if not game.data.l_bullets then
+				game.data.l_bullets = game.data.w_bullets
+			end
+			if game.data.l_bullets > 2 then
+				game.data.l_bullets = game.data.l_bullets - 1
+			else
+				game.data.l_bullets = 6
+			end
+			game.data.roll_upper = game.data.l_bullets
+			game.data.roll_range = "("..game.data.roll_lower.."-"..game.data.roll_upper..")"
+		end
+		game.data.high_tiebreak_callback = function(game)
+			if game.data.w_bullets > 2 then
+				game.data.w_bullets = game.data.w_bullets - 1
+			else
+				game.data.w_bullets = 6
+			end
+			game.data.roll_upper = game.data.w_bullets
+			game.data.roll_range = "("..game.data.roll_lower.."-"..game.data.roll_upper..")"
+		end
+		game.data.only_losers_callback = function(game)
+			if game.data.round == "winners" then
+				game.data.w_bullets = 6
+				game.data.roll_upper = game.data.w_bullets
+			elseif game.data.round == "losers" then
+				game.data.l_bullets = 6
+				game.data.roll_upper = game.data.l_bullets
+			else -- Initial round --
+				game.data.w_bullets = 6
+				game.data.l_bullets = 6
+				game.data.roll_upper = 6
+			end
+			game.data.roll_range = "("..game.data.roll_lower.."-"..game.data.roll_upper..")"
+		end
 	end,
 	
 	roll_to_score = function(roll)
-		if (tonumber(roll) == 1) then
+		if tonumber(roll) == 1 then
 			return 0 -- They LOSE
 		else
 			return 1
@@ -151,13 +188,15 @@ CDG_ROULETTE= {
 	fmt_score = function(roll) return roll end,
 	
 	sort_rolls = CDG_SORT_DESCENDING,
+
+	custom_intro = function()
+		return "Roll 1 and you're dead. Last player alive wins. First player dead loses."
+	end,
 	
 	payout = function(game)
 		game.data.cash_winnings = game.data.gold_amount
 	end,
-
 }
-
 
 -- Yahtzee
 -- ============
