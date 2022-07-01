@@ -371,6 +371,8 @@ CDG_CURLING = {
 		-- Sort from Highest to Lowest
 		return scoreB > scoreA
 	end,
+
+	sort_scores = CDG_SORT_DESCENDING,
 	
 	payout = function(game)
 		losing_roll = game.data.player_rolls[game.data.loser]

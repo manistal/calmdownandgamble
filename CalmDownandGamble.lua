@@ -400,54 +400,26 @@ end
 -- based on scores where the winner is always first, and the loser last
 function CalmDownandGamble:EvaluateScores()
 	self:PrintDebug("Evaluating Scores")
-
-	local winner, loser = nil, nil
-	local winning_score, losing_score = nil, nil
-	local high_score_playoff, low_score_playoff = {}, {}
 	
 	-- score all player rolls --
 	local player_scores = {}
 	for player, roll in self.game.data.player_rolls do
 		player_scores[player] = self.game.mode.roll_to_score(roll)
 	end
-    -- Loop over the players scores and sort winners/losers
-	for player, score in self:sortedpairs(player_scores, self.game.mode.sort_scores) do
-		
-		self:PrintDebug("    "..player.." "..score)
-		
-		-- First Entry -> Winner 
-		if winner == nil then
-			winning_score = score
-			high_score_playoff[player] = -1
-			winner = player
-		
-		-- Score == Winner -> Tiebreaker
-		elseif (score == winning_score) then
-			high_score_playoff[player] = -1
-		
-		-- Score != Winner -> First Loser
-		elseif (losing_score == nil) then      
-			losing_score = score
-			low_score_playoff[player] = -1
-			loser = player
-			
-		-- Score != Loser and Index != End -> New Loser
-		elseif (score ~= losing_score) then   
-			low_score_playoff = {}
-			losing_score = score
-			low_score_playoff[player] = -1
-			loser = player
-		
-		-- Score == Loser -> Tiebreaker
-		elseif (score == losing_score)  then  -- also the worst
-			low_score_playoff[player] = -1
-		else
-		end
-	end
 
-	-- Determine Tiebreaker State
-	local high_score_count = self:TableLength(high_score_playoff)
-	local low_score_count = self:TableLength(low_score_playoff)
+    -- Loop over the players scores and sort winners/losers
+	-- included variables: 
+	--     winner (name of first winner)
+	--     loser (name of last loser)
+	--     winning_score (best score by mode's score sorting method)
+	--     losing_score (worst score by mode's score sorting method)
+	--     high_score_playoff (table of {player, -1} players who tied winner)
+	--     low_score_playoff (table of {player, -1} players who tied loser)
+	local sortedScores = sortScores(player_scores, self.game)
+
+	-- Determine Tiebreaker State --
+	local high_score_count = self:TableLength(sortedScores.high_score_playoff)
+	local low_score_count = self:TableLength(sortedScores.low_score_playoff)
 	local single_winner = (high_score_count == 1)
 	local single_loser = (low_score_count == 1)
 
@@ -459,19 +431,19 @@ function CalmDownandGamble:EvaluateScores()
 	if self.game.data.round == "initial" then
 
 		-- Save original rolls for payouts
-		self.game.data.winning_score = winning_score	
-		self.game.data.losing_score = losing_score
+		self.game.data.winning_score = sortedScores.winning_score	
+		self.game.data.losing_score = sortedScores.losing_score
 
 		-- Winner and loser found. GG --
 		if single_winner and single_loser then
-			self.game.data.winner = winner
-			self.game.data.loser = loser
+			self.game.data.winner = sortedScores.winner
+			self.game.data.loser = sortedScores.loser
 			is_game_over = true
 
 		-- Winner found, start losers round --
 		elseif single_winner then
-			self.game.data.winner = winner
-			self.game.data.low_tiebreak = self:CopyTable(low_score_playoff)
+			self.game.data.winner = sortedScores.winner
+			self.game.data.low_tiebreak = self:CopyTable(sortedScores.low_score_playoff)
 			self.game.data.player_rolls = self.game.data.low_tiebreak
 			self.game.data.round = "losers"
 			if self.game.data.low_tiebreak_callback then
@@ -480,8 +452,8 @@ function CalmDownandGamble:EvaluateScores()
 
 		-- Loser found, start winners round --
 		elseif single_loser then
-			self.game.data.loser = loser
-			self.game.data.high_tiebreak = self:CopyTable(high_score_playoff)
+			self.game.data.loser = sortedScores.loser
+			self.game.data.high_tiebreak = self:CopyTable(sortedScores.high_score_playoff)
 			self.game.data.player_rolls = self.game.data.high_tiebreak
 			self.game.data.round = "winners"
 			if self.game.data.high_tiebreak_callback then
@@ -490,7 +462,7 @@ function CalmDownandGamble:EvaluateScores()
 
 		-- Only low rolls, reroll --
 		elseif high_score_count == 0 then
-			self.game.data.low_tiebreak = self:CopyTable(low_score_playoff)
+			self.game.data.low_tiebreak = self:CopyTable(sortedScores.low_score_playoff)
 			self.game.data.player_rolls = self.game.data.low_tiebreak
 			self.game.data.round = "initial"
 			if self.game.data.only_losers_callback then
@@ -499,7 +471,7 @@ function CalmDownandGamble:EvaluateScores()
 
 		-- Only high rolls, reroll --
 		elseif low_score_count == 0 then
-			self.game.data.high_tiebreak = self:CopyTable(high_score_playoff)
+			self.game.data.high_tiebreak = self:CopyTable(sortedScores.high_score_playoff)
 			self.game.data.player_rolls = self.game.data.high_tiebreak
 			self.game.data.round = "initial"
 			if self.game.data.high_tiebreak_callback then
@@ -507,9 +479,9 @@ function CalmDownandGamble:EvaluateScores()
 			end
 
 		-- Low roll ties and high roll ties, start with loser round --
-		else
-			self.game.data.high_tiebreak = self:CopyTable(high_score_playoff)
-			self.game.data.low_tiebreak = self:CopyTable(low_score_playoff)
+		else -- low_score_count > 1 and high_score_count > 1 --
+			self.game.data.high_tiebreak = self:CopyTable(sortedScores.high_score_playoff)
+			self.game.data.low_tiebreak = self:CopyTable(sortedScores.low_score_playoff)
 			self.game.data.player_rolls = self.game.data.low_tiebreak
 			self.game.data.round = "losers"
 			if self.game.data.low_tiebreak_callback then
@@ -522,7 +494,7 @@ function CalmDownandGamble:EvaluateScores()
 
 		-- Loser found -- 
 		if single_loser then
-			self.game.data.loser = loser
+			self.game.data.loser = sortedScores.loser
 
 			-- If winner also found, end game --
 			if self.game.data.winner then
@@ -542,21 +514,21 @@ function CalmDownandGamble:EvaluateScores()
 
 			-- If there were no losers, play everyone again --
 			if low_score_count == 0 then
-				self.game.data.low_tiebreak = self:CopyTable(high_score_playoff)
+				self.game.data.low_tiebreak = self:CopyTable(sortedScores.high_score_playoff)
 				if self.game.data.low_tiebreak_callback then
 					self.game.data.low_tiebreak_callback(self.game)
 				end
 
 			-- Only losers, reroll --
 			elseif high_score_count == 0 then
-				self.game.data.low_tiebreak = self:CopyTable(low_score_playoff)
+				self.game.data.low_tiebreak = self:CopyTable(sortedScores.low_score_playoff)
 				if self.game.data.only_losers_callback then
 					self.game.data.only_losers_callback(self.game)
 				end
 
 			-- Many losers, play losers --
 			else
-				self.game.data.low_tiebreak = self:CopyTable(low_score_playoff)
+				self.game.data.low_tiebreak = self:CopyTable(sortedScores.low_score_playoff)
 				if self.game.data.low_tiebreak_callback then
 					self.game.data.low_tiebreak_callback(self.game)
 				end
@@ -570,7 +542,7 @@ function CalmDownandGamble:EvaluateScores()
 
 		-- Winner found --
 		if single_winner then
-			self.game.data.winner = winner
+			self.game.data.winner = sortedScores.winner
 
 			-- If loser also found, end game --
 			if self.game.data.loser then
@@ -590,7 +562,7 @@ function CalmDownandGamble:EvaluateScores()
 
 			-- If high rollers exist --
 			if high_score_count > 0 then
-				self.game.data.high_tiebreak = self:CopyTable(high_score_playoff)
+				self.game.data.high_tiebreak = self:CopyTable(sortedScores.high_score_playoff)
 				self.game.data.player_rolls = self.game.data.high_tiebreak
 				self.game.data.round = "winners"
 				if self.game.data.high_tiebreak_callback then
@@ -599,7 +571,7 @@ function CalmDownandGamble:EvaluateScores()
 
 			-- If only low rollers, reroll --
 			elseif low_score_count > 0 then
-				self.game.data.high_tiebreak = self:CopyTable(low_score_playoff)
+				self.game.data.high_tiebreak = self:CopyTable(sortedScores.low_score_playoff)
 				self.game.data.player_rolls = self.game.data.high_tiebreak
 				self.game.data.round = "winners"
 				if self.game.data.only_losers_callback then
@@ -617,6 +589,47 @@ function CalmDownandGamble:EvaluateScores()
 		self:PrintDebug("Unreachable Else: game.data.round not set properly")
 	end
 	return is_game_over	
+end
+
+function sortScores(player_scores, game)
+	local winner, loser = nil, nil
+    local winning_score, losing_score = nil, nil
+    local high_score_playoff, low_score_playoff = {}, {}
+    -- Loop over the players scores and sort winners/losers
+	for player, score in self:sortedpairs(player_scores, game.mode.sort_scores) do
+		self:PrintDebug("    "..player.." "..score)
+		-- First Entry -> Winner --
+		if winner == nil then
+			winning_score = score
+			high_score_playoff[player] = -1
+			winner = player
+		-- Score == Winner -> Tiebreaker --
+		elseif (score == winning_score) then
+			high_score_playoff[player] = -1
+		-- Score != Winner -> First Loser --
+		elseif (losing_score == nil) then
+			losing_score = score
+			low_score_playoff[player] = -1
+			loser = player
+		-- Score != Loser and Index != End -> New Loser --
+		elseif (score ~= losing_score) then   
+			low_score_playoff = {}
+			losing_score = score
+			low_score_playoff[player] = -1
+			loser = player
+		-- Score == Loser -> Tiebreaker --
+		elseif (score == losing_score)  then  -- also the worst
+			low_score_playoff[player] = -1
+		-- Shouldn't be reached --
+		else
+		end
+	end
+	return {winner = winner, 
+			loser = loser, 
+			winning_score = winning_score,
+			losing_score = losing_score,
+			high_score_playoff = high_score_playoff,
+			low_score_playoff = low_score_playoff}
 end
 
 -- ChatFrame Interaction Callbacks (Entry and Rolls)
