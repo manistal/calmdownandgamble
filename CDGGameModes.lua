@@ -346,12 +346,7 @@ CDG_YAHTZEE = {
 		return " "..score.." - "..hand
 	end,
 	
-	sort_rolls =  function(scores, playera, playerb) 
-		local _, scoreA = ScoreYahtzee(scores[playera])
-		local _, scoreB = ScoreYahtzee(scores[playerb])
-		-- Sort from Highest to Lowest
-		return scoreB < scoreA
-	end,
+	sort_rolls =  CDG_SORT_DESCENDING,
 
 	sort_scores = CDG_SORT_DESCENDING,
 	
@@ -386,12 +381,7 @@ CDG_CURLING = {
 	
 	fmt_score = function(roll) return roll end,
 	
-	sort_rolls =  function(scores, playera, playerb) 
-		local scoreA = CDG_CURLING.roll_to_score(scores[playera])
-		local scoreB = CDG_CURLING.roll_to_score(scores[playerb])
-		-- Sort from Highest to Lowest
-		return scoreB > scoreA
-	end,
+	sort_rolls =  CDG_SORT_DESCENDING,
 
 	sort_scores = CDG_SORT_ASCENDING,
 	
