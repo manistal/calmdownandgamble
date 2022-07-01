@@ -493,7 +493,7 @@ function CalmDownandGamble:EvaluateScores()
 			self.game.data.player_rolls = self.game.data.low_tiebreak
 			self.game.data.round = "initial"
 			if self.game.data.only_losers_callback then
-				self.game.data.only_losers_callback(game)
+				self.game.data.only_losers_callback(self.game)
 			end
 
 		-- Only high rolls, reroll --
@@ -550,7 +550,7 @@ function CalmDownandGamble:EvaluateScores()
 			elseif high_roller_count == 0 then
 				self.game.data.low_tiebreak = self:CopyTable(low_roller_playoff)
 				if self.game.data.only_losers_callback then
-					self.game.data.only_losers_callback(game)
+					self.game.data.only_losers_callback(self.game)
 				end
 
 			-- Many losers, play losers --
@@ -602,7 +602,7 @@ function CalmDownandGamble:EvaluateScores()
 				self.game.data.player_rolls = self.game.data.high_tiebreak
 				self.game.data.round = "winners"
 				if self.game.data.only_losers_callback then
-					self.game.data.only_losers_callback(game)
+					self.game.data.only_losers_callback(self.game)
 				end
 
 			-- Shouldn't be reached --
