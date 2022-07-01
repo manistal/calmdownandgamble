@@ -27,8 +27,8 @@ CDG_HILO = {
 	sort_scores = CDG_SORT_DESCENDING,
 	
 	payout = function(game)
-		game.data.cash_winnings = game.data.winning_roll - game.data.losing_roll
-	end,
+		game.data.cash_winnings = game.data.winning_score - game.data.losing_score
+	end
 }
 
 -- Mystery
@@ -54,8 +54,8 @@ CDG_MYSTERY = {
 	sort_scores = CDG_SORT_DESCENDING,
 	
 	payout = function(game)
-		game.data.cash_winnings = game.data.winning_roll - game.data.losing_roll
-	end,
+		game.data.cash_winnings = game.data.winning_score - game.data.losing_score
+	end
 }
 
 -- BigTwos 
@@ -81,8 +81,7 @@ CDG_BIGTWOS = {
 	
 	payout = function(game)
 		game.data.cash_winnings = game.data.gold_amount
-	end,
-
+	end
 }
 
 -- LILONES
@@ -108,8 +107,7 @@ CDG_LILONES = {
 	
 	payout = function(game)
 		game.data.cash_winnings = game.data.gold_amount
-	end,
-
+	end
 }
 
 -- Inverse
@@ -134,9 +132,8 @@ CDG_INVERSE = {
 	sort_scores = CDG_SORT_ASCENDING,
 	
 	payout = function(game)
-		game.data.cash_winnings = game.data.losing_roll - game.data.winning_roll
-	end,
-
+		game.data.cash_winnings = game.data.losing_score - game.data.winning_score
+	end
 }
 
 -- Russian Roullette
@@ -157,6 +154,7 @@ CDG_ROULETTE = {
 			if game.data.l_bullets > 2 then
 				game.data.l_bullets = game.data.l_bullets - 1
 			else
+				CalmDownandGamble:MessageChat("Reload!") 
 				game.data.l_bullets = 6
 			end
 			game.data.roll_upper = game.data.l_bullets
@@ -166,6 +164,7 @@ CDG_ROULETTE = {
 			if game.data.w_bullets > 2 then
 				game.data.w_bullets = game.data.w_bullets - 1
 			else
+				CalmDownandGamble:MessageChat("Reload!") 
 				game.data.w_bullets = 6
 			end
 			game.data.roll_upper = game.data.w_bullets
@@ -183,6 +182,7 @@ CDG_ROULETTE = {
 				game.data.l_bullets = 6
 				game.data.roll_upper = 6
 			end
+			CalmDownandGamble:MessageChat("You all shot yourself... Reload!") 
 			game.data.roll_range = "("..game.data.roll_lower.."-"..game.data.roll_upper..")"
 		end
 	end,
@@ -207,7 +207,7 @@ CDG_ROULETTE = {
 	
 	payout = function(game)
 		game.data.cash_winnings = game.data.gold_amount
-	end,
+	end
 }
 
 -- Yahtzee
@@ -339,8 +339,7 @@ CDG_YAHTZEE = {
 			CalmDownandGamble:MessageChat(player.." Roll: "..FormatYahtzee(roll).." Score: "..score.." - "..hand)
 		end
 		game.data.cash_winnings = game.data.gold_amount
-	end,
-
+	end
 }
 
 CDG_CURLING = {
@@ -372,12 +371,14 @@ CDG_CURLING = {
 		return scoreB > scoreA
 	end,
 
-	sort_scores = CDG_SORT_DESCENDING,
+	sort_scores = CDG_SORT_ASCENDING,
 	
 	payout = function(game)
+		winning_roll = game.data.player_rolls[game.data.winner]
 		losing_roll = game.data.player_rolls[game.data.loser]
 		game.data.cash_winnings = math.abs(CDG_CURLING.game.target_roll - losing_roll)
 		CalmDownandGamble:MessageChat("Bullseye for Curling was: "..CDG_CURLING.game.target_roll) 
-		CalmDownandGamble:MessageChat(game.data.loser.." was "..game.data.cash_winnings.." away from the bullseye!")
-	end,
+		CalmDownandGamble:MessageChat(game.data.winner.." was closest with a "..winning_roll)
+		CalmDownandGamble:MessageChat(game.data.loser.." was furthest away with a "..losing_roll)
+	end
 }
