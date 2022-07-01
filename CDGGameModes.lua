@@ -23,6 +23,8 @@ CDG_HILO = {
 	fmt_score = function(roll) return roll end,
 
 	sort_rolls = CDG_SORT_DESCENDING,
+
+	sort_scores = CDG_SORT_DESCENDING,
 	
 	payout = function(game)
 		game.data.cash_winnings = game.data.winning_roll - game.data.losing_roll
@@ -48,6 +50,8 @@ CDG_MYSTERY = {
 	fmt_score = function(roll) return roll end,
 
 	sort_rolls = CDG_SORT_DESCENDING,
+
+	sort_scores = CDG_SORT_DESCENDING,
 	
 	payout = function(game)
 		game.data.cash_winnings = game.data.winning_roll - game.data.losing_roll
@@ -72,6 +76,8 @@ CDG_BIGTWOS = {
 	fmt_score = function(roll) return roll end,
 	
 	sort_rolls = CDG_SORT_DESCENDING,
+
+	sort_scores = CDG_SORT_DESCENDING,
 	
 	payout = function(game)
 		game.data.cash_winnings = game.data.gold_amount
@@ -97,6 +103,8 @@ CDG_LILONES = {
 	fmt_score = function(roll) return roll end,
 	
 	sort_rolls = CDG_SORT_ASCENDING,
+
+	sort_scores = CDG_SORT_ASCENDING,
 	
 	payout = function(game)
 		game.data.cash_winnings = game.data.gold_amount
@@ -122,6 +130,8 @@ CDG_INVERSE = {
 	fmt_score = function(roll) return roll end,
 	
 	sort_rolls = CDG_SORT_ASCENDING,
+
+	sort_scores = CDG_SORT_ASCENDING,
 	
 	payout = function(game)
 		game.data.cash_winnings = game.data.losing_roll - game.data.winning_roll
@@ -188,6 +198,8 @@ CDG_ROULETTE = {
 	fmt_score = function(roll) return roll end,
 	
 	sort_rolls = CDG_SORT_DESCENDING,
+
+	sort_scores = CDG_SORT_DESCENDING,
 
 	custom_intro = function()
 		return "Roll 1 and you're dead. Last player alive wins. First player dead loses."
@@ -318,6 +330,8 @@ CDG_YAHTZEE = {
 		-- Sort from Highest to Lowest
 		return scoreB < scoreA
 	end,
+
+	sort_scores = CDG_SORT_DESCENDING,
 	
 	payout = function(game)
 		for player, roll in CalmDownandGamble:sortedpairs(game.data.player_rolls, game.mode.sort_rolls) do
