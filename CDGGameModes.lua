@@ -146,14 +146,10 @@ CDG_ROULETTE = {
 		game.data.roll_upper = 6
 		game.data.roll_range = "(1-6)"
 		game.data.w_bullets = 6
-		game.data.l_bullets = nil
+		game.data.l_bullets = 6
 		game.data.low_tiebreak_callback = function(game)
-			if not game.data.l_bullets then
-				game.data.l_bullets = game.data.w_bullets
-			end
-			if game.data.l_bullets > 2 then
-				game.data.l_bullets = game.data.l_bullets - 1
-			else
+			game.data.l_bullets = game.data.l_bullets - 1
+			if game.data.l_bullets < 2 then
 				CalmDownandGamble:MessageChat("Reload!") 
 				game.data.l_bullets = 6
 			end
@@ -161,16 +157,43 @@ CDG_ROULETTE = {
 			game.data.roll_range = "("..game.data.roll_lower.."-"..game.data.roll_upper..")"
 		end
 		game.data.high_tiebreak_callback = function(game)
-			if game.data.w_bullets > 2 then
-				game.data.w_bullets = game.data.w_bullets - 1
-			else
+			game.data.w_bullets = game.data.w_bullets - 1
+			if game.data.w_bullets < 2 then
 				CalmDownandGamble:MessageChat("Reload!") 
 				game.data.w_bullets = 6
 			end
 			game.data.roll_upper = game.data.w_bullets
 			game.data.roll_range = "("..game.data.roll_lower.."-"..game.data.roll_upper..")"
 		end
-		game.data.only_losers_callback = function(game)
+		game.data.high_tie_callback = function(game)
+			if game.data.round == "winners" then
+				game.data.w_bullets = game.data.w_bullets - 1
+				if game.data.w_bullets < 2 then
+					CalmDownandGamble:MessageChat("Reload!") 
+					game.data.w_bullets = 6
+				end
+				game.data.roll_upper = game.data.w_bullets
+			elseif game.data.round == "losers" then
+				game.data.l_bullets = game.data.l_bullets - 1
+				if game.data.l_bullets < 2 then
+					CalmDownandGamble:MessageChat("Reload!") 
+					game.data.l_bullets = 6
+				end
+				game.data.roll_upper = game.data.l_bullets
+			else -- Initial round --
+				game.data.w_bullets = game.data.w_bullets - 1
+				game.data.l_bullets = game.data.l_bullets - 1
+				if game.data.w_bullets < 2 or game.data.l_bullets < 2 then
+					CalmDownandGamble:MessageChat("Reload!") 
+					game.data.w_bullets = 6
+					game.data.l_bullets = 6
+				end
+				game.data.roll_upper = game.data.w_bullets
+			end
+			game.data.roll_range = "("..game.data.roll_lower.."-"..game.data.roll_upper..")"
+		end
+		game.data.low_tie_callback = function(game)
+			CalmDownandGamble:MessageChat("You all shot yourself... Reload!") 
 			if game.data.round == "winners" then
 				game.data.w_bullets = 6
 				game.data.roll_upper = game.data.w_bullets
@@ -182,7 +205,6 @@ CDG_ROULETTE = {
 				game.data.l_bullets = 6
 				game.data.roll_upper = 6
 			end
-			CalmDownandGamble:MessageChat("You all shot yourself... Reload!") 
 			game.data.roll_range = "("..game.data.roll_lower.."-"..game.data.roll_upper..")"
 		end
 	end,
