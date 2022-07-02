@@ -19,8 +19,6 @@ CDG_HILO = {
 	roll_to_score = function(roll)
 		return tonumber(roll)
 	end,
-	
-	fmt_score = function(roll) return roll end,
 
 	sort_rolls = CDG_SORT_DESCENDING,
 
@@ -46,8 +44,6 @@ CDG_MYSTERY = {
 	roll_to_score = function(roll)
 		return tonumber(roll)
 	end,
-	
-	fmt_score = function(roll) return roll end,
 
 	sort_rolls = CDG_SORT_DESCENDING,
 
@@ -73,8 +69,6 @@ CDG_BIGTWOS = {
 		return tonumber(roll)
 	end,
 	
-	fmt_score = function(roll) return roll end,
-	
 	sort_rolls = CDG_SORT_DESCENDING,
 
 	sort_scores = CDG_SORT_DESCENDING,
@@ -99,8 +93,6 @@ CDG_LILONES = {
 		return tonumber(roll)
 	end,
 	
-	fmt_score = function(roll) return roll end,
-	
 	sort_rolls = CDG_SORT_ASCENDING,
 
 	sort_scores = CDG_SORT_ASCENDING,
@@ -124,8 +116,6 @@ CDG_INVERSE = {
 	roll_to_score = function(roll)
 		return tonumber(roll)
 	end,
-	
-	fmt_score = function(roll) return roll end,
 	
 	sort_rolls = CDG_SORT_ASCENDING,
 
@@ -217,8 +207,6 @@ CDG_ROULETTE = {
 		end
 	end,
 	
-	fmt_score = function(roll) return roll end,
-	
 	sort_rolls = CDG_SORT_DESCENDING,
 
 	sort_scores = CDG_SORT_DESCENDING,
@@ -234,126 +222,208 @@ CDG_ROULETTE = {
 
 -- Yahtzee
 -- ============
-local function ScoreYahtzee(roll)
-	-- Get the total of this dice, common score
-	total = 0
-	for digit in string.gmatch(roll, "%d") do
-		if (tonumber(digit) == 0) then
-			total = total + 1 -- Adjust for 0
+
+local function getYahtzeeScore(digits)
+	local result = 0
+	local scoringDigit = digits[1]
+	local isYahtzee = true
+	for index, digit in ipairs(digits) do
+		if digit ~= scoringDigit then
+			isYahtzee = false
+		end
+	end
+	if isYahtzee then
+		result = 50
+	end
+	return result
+end
+
+local function getHighStraightScore(digits)
+	local result = 0
+	table.sort(digits)
+	if digits[1] + 4 == digits[2] + 3
+	   and digits[1] + 4 == digits[3] + 2
+	   and digits[1] + 4 == digits[4] + 1 
+	   and digits[1] + 4 == digits[5] then
+		result = 40
+	end
+	return result
+end
+
+local function getLowStraightScore(digits)
+	local result = 0
+	table.sort(digits)
+	local last_digit = nil
+	local num_straight = 1
+	for index,digit in ipairs(digits) do
+		if last_digit then
+			if digit == last_digit + 1 then
+				num_straight = num_straight + 1
+			elseif digit ~= last_digit then
+				num_straight = 1
+			end
+		end
+		last_digit = digit
+	end
+	if num_straight >= 4 then
+		result = 30
+	end
+	return result
+end
+
+local function getFullHouseScore(digits)
+	local result = 0
+	local buckets = {}
+	for index,digit in ipairs(digits) do
+		if not buckets[digit] then
+			buckets[digit] = 1
 		else
-			total = total + tonumber(digit)
+			buckets[digit] = buckets[digit] + 1
 		end
 	end
-	
-	hand, score, highroll = "", 0, 0
-	
-	-- Evaluate best possible hand
-	for digit in string.gmatch(roll, "%d") do
-	
-		-- If you hit these your other numbers wont be better
-		local _, count = string.gsub(roll, digit, "")
-		if (count == 5) then
-			return "YAHTZEE!", 100 + total
-		end
-		
-		if (count == 4) then
-			return "Four of a Kind!", 80
-		end
-		
-		if (count == 3) then
-			-- Check for Full House
-			for digit in string.gmatch(roll, "%d") do
-				local _, other_count = string.gsub(roll, digit, "")
-				if (other_count == 2) then
-					return "Full House!", 75
-				end
-			end
-			
-			return "Three of a Kind!", 30
-		end
-		
-		
-		-- Doubles, could get better
-		if (count == 2) then
-			-- Check for full house
-			for digit in string.gmatch(roll, "%d") do
-				local _, other_count = string.gsub(roll, digit, "")
-				if (other_count == 3) then
-					return "Full House!", 75
-				end
-			end
-			
-			-- Doubles are the dice added together, 0->1 
-			new_score = tonumber(digit)*2 
-			if (tonumber(digit) == 0) then
-				new_score = 2 + total
-			end
-			
-			-- Evaluate the best doubles
-			if (new_score > score) then
-				score = new_score 
-				hand = "Double "..digit.."s!"
-			end
-		end
-		
-		-- Singles UGH
-		if (count == 1) then
-			if (tonumber(digit) > highroll) then
-				highroll = tonumber(digit)
-			end
-		end
-		
-	end	
-	
-	-- Singles Bummer
-	if (score == 0) then
-		score = highroll
-		hand = "Singles, "..highroll.." High"
-		if (highroll == 0) then
-			score = 1
+	local three_count = false
+	local two_count = false
+	for digit,count in ipairs(buckets) do
+		if count == 2 then
+			two_count = true
+		elseif count == 3 then
+			three_count = true
 		end
 	end
-
-	return hand, score
+	if two_count and three_count then
+		result = 25
+	end
+	return result
 end
 
-local function FormatYahtzee(roll)
-	local ret_string = ""
-	for digit in string.gmatch(roll, "%d") do
-		ret_string = ret_string..digit.."-"
-    end
-	ret_string = ret_string.."!!"
-	return string.gsub(ret_string, "-!!", "")
+local function getFourOfAKindScore(digits)
+	local result = 0
+	local total = 0
+	local buckets = {}
+	for index,digit in ipairs(digits) do
+		total = total + digit
+		if not buckets[digit] then
+			buckets[digit] = 1
+		else
+			buckets[digit] = buckets[digit] + 1
+		end
+	end
+	for digit, count in ipairs(buckets) do
+		if count >= 4 then
+			result = total
+		end
+	end
+	return result
 end
 
+local function getThreeOfAKindScore(digits)
+	local result = 0
+	local total = 0
+	local buckets = {}
+	for index,digit in ipairs(digits) do
+		total = total + digit
+		if not buckets[digit] then
+			buckets[digit] = 1
+		else
+			buckets[digit] = buckets[digit] + 1
+		end
+	end
+	for digit, count in ipairs(buckets) do
+		if count >= 3 then
+			result = total
+		end
+	end
+	return result
+end
+
+local function getDieScore(num, digits)
+	if num == 0 then num = 10 end
+	local total = 0
+	for index,digit in ipairs(digits) do
+		if digit == num then
+			total = total + digit
+		end
+	end
+	return total
+end
+
+local function CollectDiceRolls(roll)
+	local base10 = roll - 1
+	local digits = {}
+	local index = 1
+	while index < 6 do
+		local digit = math.floor(base10 / (6 ^ (5 - index))) + 1
+		digits[index] = digit
+		base10 = base10 % (6 ^ (5 - index))
+		index = index + 1
+	end
+	return digits
+end
+
+local function ScoreYahtzee(roll)
+	if roll == -1 then return "",-1 end
+	local dice_rolls = CollectDiceRolls(roll)
+	local scores = {
+		{ name = "Yahtzee", score = getYahtzeeScore(dice_rolls)},
+		{ name = "High Straight", score = getHighStraightScore(dice_rolls)},
+		{ name = "Low Straight", score = getLowStraightScore(dice_rolls)},
+		{ name = "Full House", score = getFullHouseScore(dice_rolls)},
+		{ name = "4 of a Kind", score = getFourOfAKindScore(dice_rolls)},
+		{ name = "3 of a Kind", score = getThreeOfAKindScore(dice_rolls)},
+		{ name = "Sixes", score = getDieScore(6, dice_rolls)},
+		{ name = "Fives", score = getDieScore(5, dice_rolls)},
+		{ name = "Fours", score = getDieScore(4, dice_rolls)},
+		{ name = "Threes", score = getDieScore(3, dice_rolls)},
+		{ name = "Twos", score = getDieScore(2, dice_rolls)},
+		{ name = "Ones", score = getDieScore(1, dice_rolls)}
+	}
+	table.sort(scores, function(a, b) return a.score > b.score end)
+	for index, value in ipairs(scores) do
+		return value.name, value.score, dice_rolls
+	end
+end
+
+local function FormatDiceRolls(dice_rolls)
+	local text = ""
+	for index,digit in ipairs(dice_rolls) do
+		text = text..digit
+		if index < 5 then
+			text = text.."-"
+		end
+	end
+	return text
+end
 
 CDG_YAHTZEE = {
 	label = "Yahtzee",
 	
 	init_game = function(game)
-		game.data.roll_range = "(11111-99999)"
-		game.data.roll_upper = 99999
-		game.data.roll_lower = 11111
+		game.data.roll_range = "(1-7776)"
+		game.data.roll_upper = 7776
+		game.data.roll_lower = 1
+		game.data.roll_accepted_callback = function(player, roll)
+			local hand, score, dice_rolls = ScoreYahtzee(roll)
+			local text = player.." rolled "..FormatDiceRolls(dice_rolls).." Score: "..score.." - "..hand
+			CalmDownandGamble:MessageChat(text)
+		end
 	end,
 	
+	-- Translates roll to a base6 five digit number --
+	-- Each digit is a die roll from 1-6 --
 	roll_to_score = function(roll)
-		hand, score = ScoreYahtzee(roll)
+		local hand, score, dice_rolls = ScoreYahtzee(roll)
 		return score
 	end,
 	
-	fmt_score = function(roll)
-		hand, score = ScoreYahtzee(roll)
-		return " "..score.." - "..hand
-	end,
-	
-	sort_rolls =  CDG_SORT_DESCENDING,
+	sort_rolls = CDG_SORT_DESCENDING,
 
 	sort_scores = CDG_SORT_DESCENDING,
 	
 	payout = function(game)
-		for player, roll in CalmDownandGamble:sortedpairs(game.data.player_rolls, game.mode.sort_rolls) do
-			local hand, score = ScoreYahtzee(roll)
-			CalmDownandGamble:MessageChat(player.." Roll: "..FormatYahtzee(roll).." Score: "..score.." - "..hand)
+		CalmDownandGamble:MessageChat("== Game Over! ==")
+		for player, score in CalmDownandGamble:sortedpairs(game.data.all_player_scores, game.mode.sort_scores) do
+			local hand, score, dice_rolls = ScoreYahtzee(game.data.all_player_rolls[player])
+			CalmDownandGamble:MessageChat(player.." Dice: "..FormatDiceRolls(dice_rolls).." Score: "..score.." - "..hand)
 		end
 		game.data.cash_winnings = game.data.gold_amount
 	end
@@ -379,18 +449,14 @@ CDG_CURLING = {
 		return math.abs(CDG_CURLING.game.target_roll - tonumber(roll))
 	end,
 	
-	fmt_score = function(roll) return roll end,
-	
 	sort_rolls =  CDG_SORT_DESCENDING,
 
 	sort_scores = CDG_SORT_ASCENDING,
 	
 	payout = function(game)
-		winning_roll = game.data.player_rolls[game.data.winner]
-		losing_roll = game.data.player_rolls[game.data.loser]
-		game.data.cash_winnings = math.abs(CDG_CURLING.game.target_roll - losing_roll)
+		game.data.cash_winnings = math.abs(CDG_CURLING.game.target_roll - game.data.losing_roll)
 		CalmDownandGamble:MessageChat("Bullseye for Curling was: "..CDG_CURLING.game.target_roll) 
-		CalmDownandGamble:MessageChat(game.data.winner.." was closest with a "..winning_roll)
-		CalmDownandGamble:MessageChat(game.data.loser.." was furthest away with a "..losing_roll)
+		CalmDownandGamble:MessageChat(game.data.winner.." was closest with a "..game.data.winning_roll)
+		CalmDownandGamble:MessageChat(game.data.loser.." was furthest away with a "..game.data.losing_roll)
 	end
 }

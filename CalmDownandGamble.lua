@@ -256,7 +256,6 @@ end
 function CalmDownandGamble:PrintTieBreakerPlayers(players)
 	tiebreaker_list = ""
 	for player, roll in pairs(players) do
-		-- TODO - Figure out how to use this for Yahtzee self.game.mode.fmt_score(roll)
 		tiebreaker_list = tiebreaker_list..player.." vs "
 	end
 	tiebreaker_list = tiebreaker_list:sub(1, -5)
@@ -284,7 +283,7 @@ function CalmDownandGamble:CheckRollsComplete(print_players)
 	end
 	
 	if (rolls_complete) then
-		self.game.accepting_rolls = false
+		self.game.data.accepting_rolls = false
 		self:GameLoop()
 	end
 	
@@ -407,18 +406,8 @@ function CalmDownandGamble:EvaluateScores()
 		player_scores[player] = self.game.mode.roll_to_score(roll)
 	end
 
-    -- Loop over the players scores and sort winners/losers
-	-- included variables in sorted_scores:
-	--    winner (name of first winner)
-	--    winning_score (best score by mode's score sorting method)
-	--    high_score_playoff (table of {player, -1} players who tied winner)
-	--    high_score_count (number of winners)
-	--    single_winner (if only one winner)
-	--    loser (name of last loser)
-	--    losing_score (worst score by mode's score sorting method)
-	--    low_score_playoff (table of {player, -1} players who tied loser)
-	--    low_score_count (number of losers)
-	--    single_loser (if only one loser)
+	self.game.data.player_scores = player_scores
+
 	local sorted_scores = self:sortScores(player_scores, self.game)
 
 	-- Resolve Round --
@@ -443,6 +432,10 @@ end
 function CalmDownandGamble:resolveInitialRound(sorted_scores, game)
 	local is_game_over, next_round = false, "initial"
 	-- Save original rolls for payouts
+	game.data.all_player_rolls = game.data.player_rolls
+	game.data.winning_roll = game.data.player_rolls[sorted_scores.winner]
+	game.data.losing_roll = game.data.player_rolls[sorted_scores.loser]
+	game.data.all_player_scores = game.data.player_scores
 	game.data.winning_score = sorted_scores.winning_score
 	game.data.losing_score = sorted_scores.losing_score
 	-- Winner and loser found. GG --
@@ -582,6 +575,18 @@ function CalmDownandGamble:resolveWinnersRound(sorted_scores, game)
 	return is_game_over, next_round
 end
 
+-- Loop over the players scores and sort winners/losers
+-- included variables in sorted_scores:
+--    winner (name of first winner)
+--    winning_score (best score by mode's score sorting method)
+--    high_score_playoff (table of {player, -1} players who tied winner)
+--    high_score_count (number of winners)
+--    single_winner (if only one winner)
+--    loser (name of last loser)
+--    losing_score (worst score by mode's score sorting method)
+--    low_score_playoff (table of {player, -1} players who tied loser)
+--    low_score_count (number of losers)
+--    single_loser (if only one loser)
 function CalmDownandGamble:sortScores(player_scores, game)
 	local winner, loser = nil, nil
     local winning_score, losing_score = nil, nil
@@ -704,7 +709,9 @@ function CalmDownandGamble:RollCallback(...)
 			-- Update Game State Data 
 			-- TODO: Only in NONGROUP channels if channel == "CDG_ROLL_DICE" then SendSystemMessage(roll_text) end
 			self.game.data.player_rolls[player] = tonumber(roll)
-
+			if self.game.data.roll_accepted_callback then
+				self.game.data.roll_accepted_callback(player, roll)
+			end
 			-- Update the UI and Check for the game end 
 			self:UpdateRollStatusUI()			
 			self:CheckRollsComplete(false)
