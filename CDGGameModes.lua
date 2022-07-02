@@ -223,67 +223,63 @@ CDG_ROULETTE = {
 -- Yahtzee
 -- ============
 
-local function getYahtzeeScore(digits)
+-- Sorts dice_rolls into table where index = dice roll and value = count
+local function bucketDiceRolls(dice_rolls)
+	local buckets = {0,0,0,0,0,0}
+	for index,digit in ipairs(dice_rolls) do
+		buckets[digit] = buckets[digit] + 1
+	end
+	return buckets
+end
+
+local function getYahtzeeScore(dice_rolls)
 	local result = 0
-	local scoringDigit = digits[1]
-	local isYahtzee = true
-	for index, digit in ipairs(digits) do
-		if digit ~= scoringDigit then
-			isYahtzee = false
+	for digit,count in ipairs(bucketDiceRolls(dice_rolls)) do
+		if count >= 5 then
+			result = 50
 		end
 	end
-	if isYahtzee then
-		result = 50
-	end
 	return result
 end
 
-local function getHighStraightScore(digits)
+local function getHighStraightScore(dice_rolls)
 	local result = 0
-	table.sort(digits)
-	if digits[1] + 4 == digits[2] + 3
-	   and digits[1] + 4 == digits[3] + 2
-	   and digits[1] + 4 == digits[4] + 1 
-	   and digits[1] + 4 == digits[5] then
-		result = 40
-	end
-	return result
-end
-
-local function getLowStraightScore(digits)
-	local result = 0
-	table.sort(digits)
-	local last_digit = nil
-	local num_straight = 1
-	for index,digit in ipairs(digits) do
-		if last_digit then
-			if digit == last_digit + 1 then
-				num_straight = num_straight + 1
-			elseif digit ~= last_digit then
-				num_straight = 1
-			end
-		end
-		last_digit = digit
-	end
-	if num_straight >= 4 then
-		result = 30
-	end
-	return result
-end
-
-local function getFullHouseScore(digits)
-	local result = 0
-	local buckets = {}
-	for index,digit in ipairs(digits) do
-		if not buckets[digit] then
-			buckets[digit] = 1
+	local buckets = bucketDiceRolls(dice_rolls)
+	local num_straight = 0
+	for digit,count in ipairs(buckets) do
+		if count > 0 then
+			num_straight = num_straight + 1
 		else
-			buckets[digit] = buckets[digit] + 1
+			num_straight = 0
+		end
+		if num_straight >= 5 then
+			result = 40
 		end
 	end
+	return result
+end
+
+local function getLowStraightScore(dice_rolls)
+	local result = 0
+	local num_straight = 0
+	for digit,count in ipairs(bucketDiceRolls(dice_rolls)) do
+		if count > 0 then
+			num_straight = num_straight + 1
+		else
+			num_straight = 0
+		end
+		if num_straight >= 4 then
+			result = 30
+		end
+	end
+	return result
+end
+
+local function getFullHouseScore(dice_rolls)
+	local result = 0
 	local three_count = false
 	local two_count = false
-	for digit,count in ipairs(buckets) do
+	for digit,count in ipairs(bucketDiceRolls(dice_rolls)) do
 		if count == 2 then
 			two_count = true
 		elseif count == 3 then
@@ -296,50 +292,41 @@ local function getFullHouseScore(digits)
 	return result
 end
 
-local function getFourOfAKindScore(digits)
+local function getFourOfAKindScore(dice_rolls)
 	local result = 0
 	local total = 0
-	local buckets = {}
-	for index,digit in ipairs(digits) do
-		total = total + digit
-		if not buckets[digit] then
-			buckets[digit] = 1
-		else
-			buckets[digit] = buckets[digit] + 1
+	local foakFound = false
+	for digit,count in ipairs(bucketDiceRolls(dice_rolls)) do
+		total = total + (digit * count)
+		if count == 4 then
+			foakFound = true
 		end
 	end
-	for digit, count in ipairs(buckets) do
-		if count >= 4 then
-			result = total
-		end
+	if foakFound then
+		result = total
 	end
 	return result
 end
 
-local function getThreeOfAKindScore(digits)
+local function getThreeOfAKindScore(dice_rolls)
 	local result = 0
 	local total = 0
-	local buckets = {}
-	for index,digit in ipairs(digits) do
-		total = total + digit
-		if not buckets[digit] then
-			buckets[digit] = 1
-		else
-			buckets[digit] = buckets[digit] + 1
+	local toakFound = false
+	for digit,count in ipairs(bucketDiceRolls(dice_rolls)) do
+		total = total + (digit * count)
+		if count == 3 then
+			toakFound = true
 		end
 	end
-	for digit, count in ipairs(buckets) do
-		if count >= 3 then
-			result = total
-		end
+	if toakFound then
+		result = total
 	end
 	return result
 end
 
-local function getDieScore(num, digits)
-	if num == 0 then num = 10 end
+local function getDieScore(num, dice_rolls)
 	local total = 0
-	for index,digit in ipairs(digits) do
+	for index,digit in ipairs(dice_rolls) do
 		if digit == num then
 			total = total + digit
 		end
@@ -401,11 +388,15 @@ CDG_YAHTZEE = {
 		game.data.roll_range = "(1-7776)"
 		game.data.roll_upper = 7776
 		game.data.roll_lower = 1
-		game.data.roll_accepted_callback = function(player, roll)
-			local hand, score, dice_rolls = ScoreYahtzee(roll)
-			local text = player.." rolled "..FormatDiceRolls(dice_rolls).." Score: "..score.." - "..hand
+		game.data.roll_accepted_callback = function(game, player, roll)
+			local dice_rolls = CollectDiceRolls(roll)
+			local text = player.." rolled "..FormatDiceRolls(dice_rolls)
 			CalmDownandGamble:MessageChat(text)
 		end
+	end,
+
+	custom_intro = function()
+		return " Note: The weird roll number translates into five 6-sided dice"
 	end,
 	
 	-- Translates roll to a base6 five digit number --

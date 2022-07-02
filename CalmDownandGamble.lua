@@ -705,12 +705,11 @@ function CalmDownandGamble:RollCallback(...)
 	if valid_roll then 
 		if (self.game.data.player_rolls[player] == -1) then
 			self:PrintDebug("Player: "..player.." Roll: "..roll.." RollRange: "..roll_range)
-
 			-- Update Game State Data 
 			-- TODO: Only in NONGROUP channels if channel == "CDG_ROLL_DICE" then SendSystemMessage(roll_text) end
 			self.game.data.player_rolls[player] = tonumber(roll)
 			if self.game.data.roll_accepted_callback then
-				self.game.data.roll_accepted_callback(player, roll)
+				self.game.data.roll_accepted_callback(self.game, player, roll)
 			end
 			-- Update the UI and Check for the game end 
 			self:UpdateRollStatusUI()			
