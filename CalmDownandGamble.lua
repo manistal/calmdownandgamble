@@ -169,8 +169,6 @@ function CalmDownandGamble:StartGame()
 	self.game.data = {
 		accepting_players = true,
 		accepting_rolls = false,
-		high_tiebreak = nil,
-		low_tiebreak = nil,
 		winner = nil,
 		loser = nil,
 		round = "initial",
@@ -251,6 +249,9 @@ function CalmDownandGamble:StartRolls()
 	-- Off to the races!
 	self:MessageChat(roll_msg)
 	self:MessageChat("Time to roll! Good Luck! Command:   /roll "..self.game.data.roll_range)
+	if self.game.mode.custom_roll_message then
+		self:MessageChat(self.game.mode.custom_roll_message)
+	end
 end
 
 function CalmDownandGamble:PrintTieBreakerPlayers(players)
@@ -399,43 +400,50 @@ end
 -- based on scores where the winner is always first, and the loser last
 function CalmDownandGamble:EvaluateScores()
 	self:PrintDebug("Evaluating Scores")
-	
+
+	-- Save current round info --
+	local current_round = self.game.data.round
+	local current_rollers = self:CopyTable(sorted_scores.low_score_playoff)
+
 	-- score all player rolls --
 	local player_scores = {}
-	for player, roll in pairs(self.game.data.player_rolls) do
+	for player, roll in pairs(current_rollers) do
 		player_scores[player] = self.game.mode.roll_to_score(roll)
 	end
 
-	self.game.data.player_scores = player_scores
-
+	-- Order scores by winner first, return all info about score comparisions --
 	local sorted_scores = self:sortScores(player_scores, self.game)
 
 	-- Resolve Round --
-	local is_game_over, next_round = false, nil
+	local is_game_over, next_round, next_rollers = false, nil, {}
 	-- Initial Round --
-	if self.game.data.round == "initial" then
+	if current_round == "initial" then
 		is_game_over, next_round = self:resolveInitialRound(sorted_scores, self.game)
 	-- Loser's Round --
-	elseif self.game.data.round == "losers" then
+	elseif current_round == "losers" then
 		is_game_over, next_round = self:resolveLosersRound(sorted_scores, self.game)
 	-- Winner's Round --
-	elseif self.game.data.round == "winners" then
+	elseif current_round == "winners" then
 		is_game_over, next_round = self:resolveWinnersRound(sorted_scores, self.game)
 	-- Shouldn't be reached --
 	else
 		self:PrintDebug("Unreachable Else: game.data.round not set properly"..game.data.round)
 	end
+	if self.game.mode.round_resolved_callback then
+		self.game.mode.round_resolved_callback(self.game, current_round, current_rollers, next_round, next_rollers)
+	end
+	self.game.data.player_rolls = next_rollers
 	self.game.data.round = next_round
 	return is_game_over
 end
 
 function CalmDownandGamble:resolveInitialRound(sorted_scores, game)
-	local is_game_over, next_round = false, "initial"
-	-- Save original rolls for payouts
+	local is_game_over, next_round, next_rollers = false, nil, {}
+	-- Save original rolls, scores for displaying payouts, results --
 	game.data.all_player_rolls = game.data.player_rolls
 	game.data.winning_roll = game.data.player_rolls[sorted_scores.winner]
 	game.data.losing_roll = game.data.player_rolls[sorted_scores.loser]
-	game.data.all_player_scores = game.data.player_scores
+	game.data.all_player_scores = sorted_scores
 	game.data.winning_score = sorted_scores.winning_score
 	game.data.losing_score = sorted_scores.losing_score
 	-- Winner and loser found. GG --
@@ -446,53 +454,40 @@ function CalmDownandGamble:resolveInitialRound(sorted_scores, game)
 	-- Winner found, start losers round --
 	elseif sorted_scores.single_winner then
 		game.data.winner = sorted_scores.winner
-		game.data.low_tiebreak = self:CopyTable(sorted_scores.low_score_playoff)
-		game.data.player_rolls = game.data.low_tiebreak
+		game.data.low_score_playoff = self:CopyTable(sorted_scores.low_score_playoff)
+		next_rollers = game.data.low_score_playoff
 		next_round = "losers"
-		if game.data.low_tiebreak_callback then
-			game.data.low_tiebreak_callback(game)
-		end
 	-- Loser found, start winners round --
 	elseif sorted_scores.single_loser then
 		game.data.loser = sorted_scores.loser
-		game.data.high_tiebreak = self:CopyTable(sorted_scores.high_score_playoff)
-		game.data.player_rolls = game.data.high_tiebreak
+		game.data.high_score_playoff = self:CopyTable(sorted_scores.high_score_playoff)
+		next_rollers = game.data.high_score_playoff
 		next_round = "winners"
-		if game.data.high_tiebreak_callback then
-			game.data.high_tiebreak_callback(game)
-		end
-	-- Low roll ties and high roll ties, start with loser round --
+	-- Low score playoff and high score playoff, start with loser round --
 	elseif sorted_scores.low_score_count > 1 and sorted_scores.high_score_count > 1 then
-		game.data.high_tiebreak = self:CopyTable(sorted_scores.high_score_playoff)
-		game.data.low_tiebreak = self:CopyTable(sorted_scores.low_score_playoff)
-		game.data.player_rolls = game.data.low_tiebreak
+		game.data.high_score_playoff = self:CopyTable(sorted_scores.high_score_playoff)
+		game.data.low_score_playoff = self:CopyTable(sorted_scores.low_score_playoff)
+		next_rollers = game.data.low_score_playoff
 		next_round = "losers"
-		if game.data.low_tiebreak_callback then
-			game.data.low_tiebreak_callback(game)
-		end
 	-- Only low rolls, reroll --
 	elseif sorted_scores.high_score_count == 0 then
-		game.data.low_tiebreak = self:CopyTable(sorted_scores.low_score_playoff)
-		game.data.player_rolls = game.data.low_tiebreak
-		if game.data.low_tie_callback then
-			game.data.low_tie_callback(game)
-		end
+		game.data.low_score_playoff = self:CopyTable(sorted_scores.low_score_playoff)
+		next_rollers = game.data.low_score_playoff
+		next_round = "initial"
 	-- Only high rolls, reroll --
 	elseif sorted_scores.low_score_count == 0 then
-		game.data.high_tiebreak = self:CopyTable(sorted_scores.high_score_playoff)
-		game.data.player_rolls = game.data.high_tiebreak
-		if game.data.high_tie_callback then
-			game.data.high_tie_callback(game)
-		end
+		game.data.high_score_playoff = self:CopyTable(sorted_scores.high_score_playoff)
+		next_rollers = game.data.high_score_playoff
+		next_round = "initial"
 	-- This condition should never be reached --
 	else
 		self:PrintDebug("Unreachable Else: resolveInitialRound")
 	end
-	return is_game_over, next_round
+	return is_game_over, next_round, next_rollers
 end
 
 function CalmDownandGamble:resolveLosersRound(sorted_scores, game)
-	local is_game_over, next_round = false, "losers"
+	local is_game_over, next_round, next_rollers = false, nil, {}
 	-- Loser found -- 
 	if sorted_scores.single_loser then
 		game.data.loser = sorted_scores.loser
@@ -501,40 +496,26 @@ function CalmDownandGamble:resolveLosersRound(sorted_scores, game)
 			is_game_over = true
 		-- If no winner, start winners round --
 		else
-			game.data.player_rolls = game.data.high_tiebreak
+			next_rollers = game.data.high_score_playoff
 			next_round = "winners"
-			if game.data.high_tiebreak_callback then
-				game.data.high_tiebreak_callback(game)
-			end
 		end
 	-- No single loser found, roll again --
 	else
 		-- Only winners, play everyone again --
 		if sorted_scores.low_score_count == 0 then
-			game.data.low_tiebreak = self:CopyTable(sorted_scores.high_score_playoff)
-			if game.data.high_tie_callback then
-				game.data.high_tie_callback(game)
-			end
-		-- Only losers, play everyone again --
-		elseif sorted_scores.high_score_count == 0 then
-			game.data.low_tiebreak = self:CopyTable(sorted_scores.low_score_playoff)
-			if game.data.low_tie_callback then
-				game.data.low_tie_callback(game)
-			end
+			game.data.high_score_playoff = self:CopyTable(sorted_scores.high_score_playoff)
 		-- Many losers, play losers --
 		else
-			game.data.low_tiebreak = self:CopyTable(sorted_scores.low_score_playoff)
-			if game.data.low_tiebreak_callback then
-				game.data.low_tiebreak_callback(game)
-			end
+			game.data.high_score_playoff = self:CopyTable(sorted_scores.low_score_playoff)
 		end
-		game.data.player_rolls = game.data.low_tiebreak
+		next_rollers = game.data.high_score_playoff
+		next_round = "losers"
 	end
-	return is_game_over, next_round
+	return is_game_over, next_round, next_rollers
 end
 
 function CalmDownandGamble:resolveWinnersRound(sorted_scores, game)
-	local is_game_over, next_round = false, "winners"
+	local is_game_over, next_round, next_rollers = false, nil, {}
 	-- Winner found --
 	if sorted_scores.single_winner then
 		game.data.winner = sorted_scores.winner
@@ -543,36 +524,22 @@ function CalmDownandGamble:resolveWinnersRound(sorted_scores, game)
 			is_game_over = true
 		-- If no loser found, start losers round --
 		else
-			game.data.player_rolls = game.data.low_tiebreak
+			next_rollers = game.data.low_score_playoff
 			next_round = "losers"
-			if game.data.low_tiebreak_callback then
-				game.data.low_tiebreak_callback(game)
-			end
 		end
 	-- No winner found --
 	else
-		-- Only winners, play everyone again --
-		if sorted_scores.low_score_count == 0 then
-			game.data.high_tiebreak = self:CopyTable(sorted_scores.high_score_playoff)
-			if game.data.high_tie_callback then
-				game.data.high_tie_callback(game)
-			end
 		-- Only losers, play everyone again --
-		elseif sorted_scores.high_score_count == 0 then
-			game.data.high_tiebreak = self:CopyTable(sorted_scores.low_score_playoff)
-			if game.data.low_tie_callback then
-				game.data.low_tie_callback(game)
-			end
+		if sorted_scores.high_score_count == 0 then
+			game.data.high_score_playoff = self:CopyTable(sorted_scores.low_score_playoff)
 		-- Many winners, play winners --
 		else
-			game.data.high_tiebreak = self:CopyTable(sorted_scores.high_score_playoff)
-			if game.data.high_tiebreak_callback then
-				game.data.high_tiebreak_callback(game)
-			end
+			game.data.high_score_playoff = self:CopyTable(sorted_scores.high_score_playoff)
 		end
-		game.data.player_rolls = game.data.high_tiebreak
+		next_rollers = game.data.high_score_playoff
+		next_round = "winners"
 	end
-	return is_game_over, next_round
+	return is_game_over, next_round, next_rollers
 end
 
 -- Loop over the players scores and sort winners/losers
@@ -708,8 +675,8 @@ function CalmDownandGamble:RollCallback(...)
 			-- Update Game State Data 
 			-- TODO: Only in NONGROUP channels if channel == "CDG_ROLL_DICE" then SendSystemMessage(roll_text) end
 			self.game.data.player_rolls[player] = tonumber(roll)
-			if self.game.data.roll_accepted_callback then
-				self.game.data.roll_accepted_callback(self.game, player, roll)
+			if self.game.mode.roll_accepted_callback then
+				self.game.mode.roll_accepted_callback(self.game, player, roll)
 			end
 			-- Update the UI and Check for the game end 
 			self:UpdateRollStatusUI()			

@@ -137,66 +137,6 @@ CDG_ROULETTE = {
 		game.data.roll_range = "(1-6)"
 		game.data.w_bullets = 6
 		game.data.l_bullets = 6
-		game.data.low_tiebreak_callback = function(game)
-			game.data.l_bullets = game.data.l_bullets - 1
-			if game.data.l_bullets < 2 then
-				CalmDownandGamble:MessageChat("Reload!") 
-				game.data.l_bullets = 6
-			end
-			game.data.roll_upper = game.data.l_bullets
-			game.data.roll_range = "("..game.data.roll_lower.."-"..game.data.roll_upper..")"
-		end
-		game.data.high_tiebreak_callback = function(game)
-			game.data.w_bullets = game.data.w_bullets - 1
-			if game.data.w_bullets < 2 then
-				CalmDownandGamble:MessageChat("Reload!") 
-				game.data.w_bullets = 6
-			end
-			game.data.roll_upper = game.data.w_bullets
-			game.data.roll_range = "("..game.data.roll_lower.."-"..game.data.roll_upper..")"
-		end
-		game.data.high_tie_callback = function(game)
-			if game.data.round == "winners" then
-				game.data.w_bullets = game.data.w_bullets - 1
-				if game.data.w_bullets < 2 then
-					CalmDownandGamble:MessageChat("Reload!") 
-					game.data.w_bullets = 6
-				end
-				game.data.roll_upper = game.data.w_bullets
-			elseif game.data.round == "losers" then
-				game.data.l_bullets = game.data.l_bullets - 1
-				if game.data.l_bullets < 2 then
-					CalmDownandGamble:MessageChat("Reload!") 
-					game.data.l_bullets = 6
-				end
-				game.data.roll_upper = game.data.l_bullets
-			else -- Initial round --
-				game.data.w_bullets = game.data.w_bullets - 1
-				game.data.l_bullets = game.data.l_bullets - 1
-				if game.data.w_bullets < 2 or game.data.l_bullets < 2 then
-					CalmDownandGamble:MessageChat("Reload!") 
-					game.data.w_bullets = 6
-					game.data.l_bullets = 6
-				end
-				game.data.roll_upper = game.data.w_bullets
-			end
-			game.data.roll_range = "("..game.data.roll_lower.."-"..game.data.roll_upper..")"
-		end
-		game.data.low_tie_callback = function(game)
-			CalmDownandGamble:MessageChat("You all shot yourself... Reload!") 
-			if game.data.round == "winners" then
-				game.data.w_bullets = 6
-				game.data.roll_upper = game.data.w_bullets
-			elseif game.data.round == "losers" then
-				game.data.l_bullets = 6
-				game.data.roll_upper = game.data.l_bullets
-			else -- Initial round --
-				game.data.w_bullets = 6
-				game.data.l_bullets = 6
-				game.data.roll_upper = 6
-			end
-			game.data.roll_range = "("..game.data.roll_lower.."-"..game.data.roll_upper..")"
-		end
 	end,
 	
 	roll_to_score = function(roll)
@@ -217,6 +157,63 @@ CDG_ROULETTE = {
 	
 	payout = function(game)
 		game.data.cash_winnings = game.data.gold_amount
+	end,
+
+	round_resolved_callback = function(game, current_round, current_rollers, next_round, next_rollers)
+		-- Handle everyone killing themselves --
+		local everyone_is_dead = true
+		for player, roll in pairs(current_rollers) do
+			if roll > 1 then
+				local everyone_is_dead = false
+			end
+		end
+		-- Reload if all dead
+		if everyone_is_dead then
+			CalmDownandGamble:MessageChat("You all shot yourself... Reload!") 
+			if next_round == "winners" then
+				game.data.w_bullets = 6
+				game.data.roll_upper = game.data.w_bullets
+			elseif next_round == "losers" then
+				game.data.l_bullets = 6
+				game.data.roll_upper = game.data.l_bullets
+			elseif next_round == "initial" then
+				game.data.w_bullets = 6
+				game.data.l_bullets = 6
+				game.data.roll_upper = 6
+			else
+			end
+			game.data.roll_range = "("..game.data.roll_lower.."-"..game.data.roll_upper..")"
+		-- Reroll, decrement w and l bullets --
+		elseif current_round == "initial" then
+			game.data.w_bullets = game.data.w_bullets - 1
+			game.data.l_bullets = game.data.l_bullets - 1
+			if game.data.w_bullets < 2 or game.data.l_bullets < 2 then
+				CalmDownandGamble:MessageChat("Reload!") 
+				game.data.w_bullets = 6
+				game.data.l_bullets = 6
+			end
+			game.data.roll_upper = game.data.w_bullets
+		-- Losers round, decrement l bullets --
+		elseif current_round == "loser" then
+			game.data.l_bullets = game.data.l_bullets - 1
+			if game.data.l_bullets < 2 then
+				CalmDownandGamble:MessageChat("Reload!") 
+				game.data.l_bullets = 6
+			end
+			game.data.roll_upper = game.data.l_bullets
+			game.data.roll_range = "("..game.data.roll_lower.."-"..game.data.roll_upper..")"
+		-- Winners round, decrement w bullets --
+		elseif current_round == "winners" then
+			game.data.w_bullets = game.data.w_bullets - 1
+			if game.data.w_bullets < 2 then
+				CalmDownandGamble:MessageChat("Reload!") 
+				game.data.w_bullets = 6
+			end
+			game.data.roll_upper = game.data.w_bullets
+			game.data.roll_range = "("..game.data.roll_lower.."-"..game.data.roll_upper..")"
+		-- Game over, do nothing --
+		else
+		end
 	end
 }
 
@@ -348,7 +345,6 @@ local function CollectDiceRolls(roll)
 end
 
 local function ScoreYahtzee(roll)
-	if roll == -1 then return "",-1 end
 	local dice_rolls = CollectDiceRolls(roll)
 	local scores = {
 		{ name = "Yahtzee", score = getYahtzeeScore(dice_rolls)},
@@ -388,19 +384,12 @@ CDG_YAHTZEE = {
 		game.data.roll_range = "(1-7776)"
 		game.data.roll_upper = 7776
 		game.data.roll_lower = 1
-		game.data.roll_accepted_callback = function(game, player, roll)
-			local dice_rolls = CollectDiceRolls(roll)
-			local text = player.." rolled "..FormatDiceRolls(dice_rolls)
-			CalmDownandGamble:MessageChat(text)
-		end
 	end,
 
-	custom_intro = function()
-		return " Note: The weird roll number translates into five 6-sided dice"
+	custom_roll_message = function()
+		return "Note: This roll translates into five dice (A five dice roll has 7776 possibilities)."
 	end,
 	
-	-- Translates roll to a base6 five digit number --
-	-- Each digit is a die roll from 1-6 --
 	roll_to_score = function(roll)
 		local hand, score, dice_rolls = ScoreYahtzee(roll)
 		return score
@@ -417,6 +406,12 @@ CDG_YAHTZEE = {
 			CalmDownandGamble:MessageChat(player.." Dice: "..FormatDiceRolls(dice_rolls).." Score: "..score.." - "..hand)
 		end
 		game.data.cash_winnings = game.data.gold_amount
+	end,
+
+	roll_accepted_callback = function(game, player, roll)
+		local dice_rolls = CollectDiceRolls(roll)
+		local text = player.." rolled "..FormatDiceRolls(dice_rolls)
+		CalmDownandGamble:MessageChat(text)
 	end
 }
 
