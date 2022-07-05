@@ -152,7 +152,7 @@ CDG_ROULETTE = {
 	sort_scores = CDG_SORT_DESCENDING,
 
 	custom_intro = function()
-		return "Roll 1 and you die. Last player alive wins. First player dead loses. Your roll range decreases every round you survive. Reload when there's one chamber left or you shoot yourself."
+		return "Roll 1 and you die. Last player alive wins. Your roll range changes to match your remaining chambers"
 	end,
 	
 	payout = function(game)
@@ -207,12 +207,14 @@ CDG_ROULETTE = {
 				game.data.l_bullets = 6
 				game.data.roll_upper = game.data.l_bullets
 			-- Empty chamber condition --
-			elseif game.data.l_bullets < 2
+			elseif game.data.l_bullets < 2 then
 				CalmDownandGamble:MessageChat("Only one chamber left. Reload!") 
 				game.data.l_bullets = 6
 				game.data.roll_upper = game.data.l_bullets
+			end
 		else
 		end
+		game.data.roll_range = "("..game.data.roll_lower.."-"..game.data.roll_upper..")"
 	end
 }
 
@@ -376,14 +378,6 @@ local function FormatDiceRolls(dice_rolls)
 	return text
 end
 
-local function FormatName(player)
-	local formatted = player
-	while string.len(formatted) < 12 do
-		formatted = formatted.." "
-	end
-	return formatted
-end
-
 CDG_YAHTZEE = {
 	label = "Yahtzee",
 	
@@ -391,10 +385,6 @@ CDG_YAHTZEE = {
 		game.data.roll_range = "(1-7776)"
 		game.data.roll_upper = 7776
 		game.data.roll_lower = 1
-	end,
-
-	custom_roll_message = function()
-		return "Note: This 7776 roll translates into five dice (A five dice roll has 7776 possibilities)."
 	end,
 	
 	roll_to_score = function(roll)
@@ -410,14 +400,14 @@ CDG_YAHTZEE = {
 		CalmDownandGamble:MessageChat("== Game Over! ==")
 		for player, score in CalmDownandGamble:sortedpairs(game.data.all_player_scores, game.mode.sort_scores) do
 			local hand, score, dice_rolls = ScoreYahtzee(game.data.all_player_rolls[player])
-			CalmDownandGamble:MessageChat(FormatName(player).." Dice: "..FormatDiceRolls(dice_rolls).." Score: "..score.." - "..hand)
+			CalmDownandGamble:MessageChat(player.." Dice: "..FormatDiceRolls(dice_rolls).." Score: "..score.." - "..hand)
 		end
 		game.data.cash_winnings = game.data.gold_amount
 	end,
 
 	roll_accepted_callback = function(game, player, roll)
 		local dice_rolls = CollectDiceRolls(roll)
-		local text = FormatName(player).." rolled "..FormatDiceRolls(dice_rolls)
+		local text = player.." rolled "..FormatDiceRolls(dice_rolls)
 		CalmDownandGamble:MessageChat(text)
 	end
 }

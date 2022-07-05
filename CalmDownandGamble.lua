@@ -250,7 +250,7 @@ function CalmDownandGamble:StartRolls()
 	self:MessageChat(roll_msg)
 	self:MessageChat("Time to roll! Good Luck! Command:   /roll "..self.game.data.roll_range)
 	if self.game.mode.custom_roll_message then
-		self:MessageChat(self.game.mode.custom_roll_message)
+		self:MessageChat(self.game.mode.custom_roll_message())
 	end
 end
 
@@ -403,7 +403,7 @@ function CalmDownandGamble:EvaluateScores()
 
 	-- Save current round info --
 	local current_round = self.game.data.round
-	local current_rollers = self:CopyTable(sorted_scores.low_score_playoff)
+	local current_rollers = self:CopyTable(self.game.data.player_rolls)
 
 	-- score all player rolls --
 	local player_scores = {}
@@ -440,10 +440,10 @@ end
 function CalmDownandGamble:resolveInitialRound(sorted_scores, game)
 	local is_game_over, next_round, next_rollers = false, nil, {}
 	-- Save original rolls, scores for displaying payouts, results --
-	game.data.all_player_rolls = game.data.player_rolls
+	game.data.all_player_rolls = self:CopyTable(game.data.player_rolls)
 	game.data.winning_roll = game.data.player_rolls[sorted_scores.winner]
 	game.data.losing_roll = game.data.player_rolls[sorted_scores.loser]
-	game.data.all_player_scores = sorted_scores
+	game.data.all_player_scores = self:CopyTable(sorted_scores.player_scores)
 	game.data.winning_score = sorted_scores.winning_score
 	game.data.losing_score = sorted_scores.losing_score
 	-- Winner and loser found. GG --
@@ -544,6 +544,7 @@ end
 
 -- Loop over the players scores and sort winners/losers
 -- included variables in sorted_scores:
+--    player_scores (list of scores for reference)
 --    winner (name of first winner)
 --    winning_score (best score by mode's score sorting method)
 --    high_score_playoff (table of {player, -1} players who tied winner)
@@ -591,7 +592,8 @@ function CalmDownandGamble:sortScores(player_scores, game)
 	local low_score_count = self:TableLength(low_score_playoff)
 	local single_winner = (high_score_count == 1)
 	local single_loser = (low_score_count == 1)
-	return {winner = winner, 
+	return {player_scores = player_scores,
+			winner = winner, 
 			winning_score = winning_score,
 			single_winner = single_winner,
 			high_score_playoff = high_score_playoff,
@@ -816,15 +818,15 @@ function CalmDownandGamble:ConstructUI()
 		casino_button_index = {
 			"game_stage",
 			"game_mode",
-			"chat_channel",
-			"reset_game"
+			"chat_channel"
 		},
 
 		-- Order in which the buttons are layed out In the play subgroup
 		play_button_index = {
 			"enter_for_me",
 			"roll_for_me", 
-			"open_trade"
+			"open_trade",
+			"reset_game"
 		},
 		
 		-- Button Definitions -- 
