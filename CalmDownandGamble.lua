@@ -115,7 +115,7 @@ end
 -- ================
 function CalmDownandGamble:SetGameMode() 
 	-- Loaded from external File
-	GAME_MODES = { CDG_HILO, CDG_INVERSE, CDG_ROULETTE, CDG_BIGTWOS, CDG_LILONES, CDG_YAHTZEE, CDG_CURLING }
+	GAME_MODES = { CDG_HILO, CDG_INVERSE, CDG_ROULETTE, CDG_BIGTWOS, CDG_LILONES, CDG_YAHTZEE, CDG_CURLING, CDG_LANDMINES }
 	self.game.mode = GAME_MODES[self.game.mode_id]
 	self.game.num_modes = table.getn(GAME_MODES)
 	self.ui.game_mode:SetText(self.game.mode.label)
@@ -194,7 +194,9 @@ function CalmDownandGamble:StartGame()
 	-- Welcome Message!
 	local welcome_msg = "CDG is now in session! Mode: "..self.game.mode.label..", Bet: "..self.game.data.gold_amount.." gold"
 	self:MessageChat(welcome_msg)
-	if (self.game.mode.custom_intro ~= nil) then self:MessageChat(self.game.mode.custom_intro()) end
+	if self.game.mode.custom_intro then 
+		self:MessageChat(self.game.mode.custom_intro())
+	end
 	self:MessageChat("Press 1 to Join!")
 
 	-- TODO: Why is this BS different?
@@ -678,7 +680,7 @@ function CalmDownandGamble:RollCallback(...)
 			-- TODO: Only in NONGROUP channels if channel == "CDG_ROLL_DICE" then SendSystemMessage(roll_text) end
 			self.game.data.player_rolls[player] = tonumber(roll)
 			if self.game.mode.roll_accepted_callback then
-				self.game.mode.roll_accepted_callback(self.game, player, roll)
+				self.game.mode.roll_accepted_callback(self.game, player, tonumber(roll))
 			end
 			-- Update the UI and Check for the game end 
 			self:UpdateRollStatusUI()			
