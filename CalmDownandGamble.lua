@@ -395,9 +395,9 @@ end
 
 -- SCORING FUNCTION
 -- ===================
--- Sorts the rolls base on the game mode sorting function
--- The game mode sorting fucntion accepts rolls and returns a sorted table
--- based on scores where the winner is always first, and the loser last
+-- Sorts the scores base on the game mode sorting function
+-- The game mode sorting fucntion accepts scores and returns a sorted table
+--  where the winner is always first, and the loser last
 function CalmDownandGamble:EvaluateScores()
 	self:PrintDebug("Evaluating Scores")
 
@@ -411,20 +411,20 @@ function CalmDownandGamble:EvaluateScores()
 		player_scores[player] = self.game.mode.roll_to_score(roll)
 	end
 
-	-- Order scores by winner first, return all info about score comparisions --
+	-- Order scores by winner first, return all meta info about score comparisions --
 	local sorted_scores = self:sortScores(player_scores, self.game)
 
 	-- Resolve Round --
 	local is_game_over, next_round, next_rollers = false, nil, {}
 	-- Initial Round --
 	if current_round == "initial" then
-		is_game_over, next_round = self:resolveInitialRound(sorted_scores, self.game)
+		is_game_over, next_round, next_rollers = self:resolveInitialRound(sorted_scores, self.game)
 	-- Loser's Round --
 	elseif current_round == "losers" then
-		is_game_over, next_round = self:resolveLosersRound(sorted_scores, self.game)
+		is_game_over, next_round, next_rollers = self:resolveLosersRound(sorted_scores, self.game)
 	-- Winner's Round --
 	elseif current_round == "winners" then
-		is_game_over, next_round = self:resolveWinnersRound(sorted_scores, self.game)
+		is_game_over, next_round, next_rollers = self:resolveWinnersRound(sorted_scores, self.game)
 	-- Shouldn't be reached --
 	else
 		self:PrintDebug("Unreachable Else: game.data.round not set properly"..game.data.round)

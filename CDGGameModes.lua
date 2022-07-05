@@ -152,7 +152,7 @@ CDG_ROULETTE = {
 	sort_scores = CDG_SORT_DESCENDING,
 
 	custom_intro = function()
-		return "Roll 1 and you're dead. Last player alive wins. First player dead loses."
+		return "Roll 1 and you die. Last player alive wins. First player dead loses. Your roll range decreases every round you survive. Reload when there's one chamber left or you shoot yourself."
 	end,
 	
 	payout = function(game)
@@ -160,58 +160,57 @@ CDG_ROULETTE = {
 	end,
 
 	round_resolved_callback = function(game, current_round, current_rollers, next_round, next_rollers)
-		-- Handle everyone killing themselves --
+
+		-- Count the shot just made --
+		-- Decrease w bullets on initial and winners rounds --
+		if current_round == "initial" or current_round == "winners" then
+			game.data.w_bullets = game.data.w_bullets - 1
+			game.data.roll_upper = game.data.w_bullets
+		-- Decrease l bullets on losers round --
+		elseif current_round == "loser" then
+			game.data.l_bullets = game.data.l_bullets - 1
+			game.data.roll_upper = game.data.l_bullets
+		-- Game over, do nothing --
+		else
+		end
+		
+		-- Check who needs to reload --
 		local everyone_is_dead = true
+		local any_losers = false
 		for player, roll in pairs(current_rollers) do
 			if roll > 1 then
-				local everyone_is_dead = false
+				everyone_is_dead = false
+			elseif roll == 1 then
+				any_losers = true
 			end
 		end
-		-- Reload if all dead
+		-- If everyone shot themselves, reload --
 		if everyone_is_dead then
 			CalmDownandGamble:MessageChat("You all shot yourself... Reload!") 
-			if next_round == "winners" then
+			if next_round == "initial" or next_round == "winners" then
 				game.data.w_bullets = 6
 				game.data.roll_upper = game.data.w_bullets
 			elseif next_round == "losers" then
 				game.data.l_bullets = 6
 				game.data.roll_upper = game.data.l_bullets
-			elseif next_round == "initial" then
-				game.data.w_bullets = 6
-				game.data.l_bullets = 6
-				game.data.roll_upper = 6
 			else
 			end
-			game.data.roll_range = "("..game.data.roll_lower.."-"..game.data.roll_upper..")"
-		-- Reroll, decrement w and l bullets --
-		elseif current_round == "initial" then
-			game.data.w_bullets = game.data.w_bullets - 1
-			game.data.l_bullets = game.data.l_bullets - 1
-			if game.data.w_bullets < 2 or game.data.l_bullets < 2 then
-				CalmDownandGamble:MessageChat("Reload!") 
-				game.data.w_bullets = 6
-				game.data.l_bullets = 6
-			end
+		-- Empty chamber condition on initial or winners rounds--
+		elseif (next_round == "initial" or next_round == "winners") and game.data.w_bullets < 2 then
+			CalmDownandGamble:MessageChat("Only one chamber left. Reload!") 
+			game.data.w_bullets = 6
 			game.data.roll_upper = game.data.w_bullets
-		-- Losers round, decrement l bullets --
-		elseif current_round == "loser" then
-			game.data.l_bullets = game.data.l_bullets - 1
-			if game.data.l_bullets < 2 then
-				CalmDownandGamble:MessageChat("Reload!") 
+		elseif next_round == "losers" then
+			if any_losers then
+				-- Losers in the losers round (everyone_is_dead condition means at least 1 winner) --
+				CalmDownandGamble:MessageChat("All you losers shot yourself. Reload!") 
 				game.data.l_bullets = 6
-			end
-			game.data.roll_upper = game.data.l_bullets
-			game.data.roll_range = "("..game.data.roll_lower.."-"..game.data.roll_upper..")"
-		-- Winners round, decrement w bullets --
-		elseif current_round == "winners" then
-			game.data.w_bullets = game.data.w_bullets - 1
-			if game.data.w_bullets < 2 then
-				CalmDownandGamble:MessageChat("Reload!") 
-				game.data.w_bullets = 6
-			end
-			game.data.roll_upper = game.data.w_bullets
-			game.data.roll_range = "("..game.data.roll_lower.."-"..game.data.roll_upper..")"
-		-- Game over, do nothing --
+				game.data.roll_upper = game.data.l_bullets
+			-- Empty chamber condition --
+			elseif game.data.l_bullets < 2
+				CalmDownandGamble:MessageChat("Only one chamber left. Reload!") 
+				game.data.l_bullets = 6
+				game.data.roll_upper = game.data.l_bullets
 		else
 		end
 	end
@@ -377,6 +376,14 @@ local function FormatDiceRolls(dice_rolls)
 	return text
 end
 
+local function FormatName(player)
+	local formatted = player
+	while string.len(formatted) < 12 do
+		formatted = formatted.." "
+	end
+	return formatted
+end
+
 CDG_YAHTZEE = {
 	label = "Yahtzee",
 	
@@ -387,7 +394,7 @@ CDG_YAHTZEE = {
 	end,
 
 	custom_roll_message = function()
-		return "Note: This roll translates into five dice (A five dice roll has 7776 possibilities)."
+		return "Note: This 7776 roll translates into five dice (A five dice roll has 7776 possibilities)."
 	end,
 	
 	roll_to_score = function(roll)
@@ -403,14 +410,14 @@ CDG_YAHTZEE = {
 		CalmDownandGamble:MessageChat("== Game Over! ==")
 		for player, score in CalmDownandGamble:sortedpairs(game.data.all_player_scores, game.mode.sort_scores) do
 			local hand, score, dice_rolls = ScoreYahtzee(game.data.all_player_rolls[player])
-			CalmDownandGamble:MessageChat(player.." Dice: "..FormatDiceRolls(dice_rolls).." Score: "..score.." - "..hand)
+			CalmDownandGamble:MessageChat(FormatName(player).." Dice: "..FormatDiceRolls(dice_rolls).." Score: "..score.." - "..hand)
 		end
 		game.data.cash_winnings = game.data.gold_amount
 	end,
 
 	roll_accepted_callback = function(game, player, roll)
 		local dice_rolls = CollectDiceRolls(roll)
-		local text = player.." rolled "..FormatDiceRolls(dice_rolls)
+		local text = FormatName(player).." rolled "..FormatDiceRolls(dice_rolls)
 		CalmDownandGamble:MessageChat(text)
 	end
 }
