@@ -23,6 +23,10 @@ CDG_HILO = {
 	sort_rolls = CDG_SORT_DESCENDING,
 
 	sort_scores = CDG_SORT_DESCENDING,
+
+	print_help = function()
+		CalmDownandGamble:MessageChat("Roll from 1 to bet amount. Highest roll wins. Lowest roll loses. Payout is roll difference between winner and loser.")
+	end,
 	
 	payout = function(game)
 		game.data.cash_winnings = game.data.winning_score - game.data.losing_score
@@ -72,6 +76,10 @@ CDG_BIGTWOS = {
 	sort_rolls = CDG_SORT_DESCENDING,
 
 	sort_scores = CDG_SORT_DESCENDING,
+
+	print_help = function()
+		CalmDownandGamble:MessageChat("Roll from 1 to 2. A 2 roll wins. A 1 roll loses. Payout is the bet amount.")
+	end,
 	
 	payout = function(game)
 		game.data.cash_winnings = game.data.gold_amount
@@ -96,6 +104,10 @@ CDG_LILONES = {
 	sort_rolls = CDG_SORT_ASCENDING,
 
 	sort_scores = CDG_SORT_ASCENDING,
+
+	print_help = function()
+		CalmDownandGamble:MessageChat("Roll from 1 to 2. A 1 roll wins. A 2 roll loses. Payout is the bet amount")
+	end,
 	
 	payout = function(game)
 		game.data.cash_winnings = game.data.gold_amount
@@ -120,6 +132,10 @@ CDG_INVERSE = {
 	sort_rolls = CDG_SORT_ASCENDING,
 
 	sort_scores = CDG_SORT_ASCENDING,
+
+	print_help = function()
+		CalmDownandGamble:MessageChat("Roll from 1 to bet amount. Lowest roll wins. Highest roll loses. Payout is roll difference between winner and loser.")
+	end,
 	
 	payout = function(game)
 		game.data.cash_winnings = game.data.losing_score - game.data.winning_score
@@ -151,8 +167,8 @@ CDG_ROULETTE = {
 
 	sort_scores = CDG_SORT_DESCENDING,
 
-	custom_intro = function()
-		return "Roll 1 and you die. Last player alive wins. Your roll range changes to match your remaining chambers"
+	print_help = function()
+		CalmDownandGamble:MessageChat("Roll a 1 and you die. Last player alive wins. Your roll range changes to match your remaining chambers. Reload when there's only one chamber left or when you shoot yourself. Payout is the bet amount.")
 	end,
 	
 	payout = function(game)
@@ -395,6 +411,10 @@ CDG_YAHTZEE = {
 	sort_rolls = CDG_SORT_DESCENDING,
 
 	sort_scores = CDG_SORT_DESCENDING,
+
+	print_help = function()
+		CalmDownandGamble:MessageChat("Roll from 1 to 7776. This roll is translated into five 6-sided dice (7776 possible combinations). Yahtzee scores are applied and take your rolls highest score. Highest score wins. Lowest score loses. Payout is the bet amount.")
+	end,
 	
 	payout = function(game)
 		CalmDownandGamble:MessageChat("== Game Over! ==")
@@ -435,6 +455,10 @@ CDG_CURLING = {
 	sort_rolls =  CDG_SORT_DESCENDING,
 
 	sort_scores = CDG_SORT_ASCENDING,
+
+	print_help = function()
+		CalmDownandGamble:MessageChat("A random target between 1 and bet amount is found. Roll 1 to bet amount. The closest to the target wins. Furthest from the target loses. Payout is loser's distance to target.")
+	end,
 	
 	payout = function(game)
 		game.data.cash_winnings = math.abs(CDG_CURLING.game.target_roll - game.data.losing_roll)

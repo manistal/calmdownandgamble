@@ -782,6 +782,13 @@ function CalmDownandGamble:OpenTradeWinner()
 		end
 	end
 end
+
+function CalmDownandGamble:PrintModeHelp()
+	if self.game.mode and self.game.mode.print_help then
+		self.game.mode.print_help(game)
+	end
+end
+
 -- UI ELEMENTS 
 -- ======================================================
 function CalmDownandGamble:ShowUI()
@@ -818,7 +825,8 @@ function CalmDownandGamble:ConstructUI()
 		casino_button_index = {
 			"game_stage",
 			"game_mode",
-			"chat_channel"
+			"chat_channel",
+			"print_help"
 		},
 
 		-- Order in which the buttons are layed out In the play subgroup
@@ -831,32 +839,11 @@ function CalmDownandGamble:ConstructUI()
 		
 		-- Button Definitions -- 
 		buttons = {
-			chat_channel = {
-				width = 80,
-				label = "Raid",
-				click_callback = function() self:ChatChannelToggle() end
-			},
-			game_mode = {
-				width = 80,
-				label = "(Classic)",
-				click_callback = function() self:ToggleGameMode() end
-			},
-			reset_game = {
-				width = 80,
-				label = "Reset",
-				click_callback = function() self:ResetGame() end
-			},
-			game_stage = {
-				width = 95,
-				label = "Start!",
-				click_callback = function() self:ToggleGameStage() end
-
-			},
 			enter_for_me = {
 				width = 100,
 				label = "Enter",
 				click_callback = function() self:EnterForMe() end
-			},			
+			},
 			roll_for_me = {
 				width = 100,
 				label = "Roll!",
@@ -867,6 +854,31 @@ function CalmDownandGamble:ConstructUI()
 				width = 100,
 				label = "Payout",
 				click_callback = function() self:OpenTradeWinner() end
+			},
+			reset_game = {
+				width = 100,
+				label = "Reset",
+				click_callback = function() self:ResetGame() end
+			},
+			game_stage = {
+				width = 95,
+				label = "Start!",
+				click_callback = function() self:ToggleGameStage() end
+			},
+			game_mode = {
+				width = 80,
+				label = "(Classic)",
+				click_callback = function() self:ToggleGameMode() end
+			},
+			chat_channel = {
+				width = 80,
+				label = "Raid",
+				click_callback = function() self:ChatChannelToggle() end
+			},
+			print_help = {
+				width = 80,
+				label = "Help",
+				click_callback = function() self:PrintModeHelp() end
 			}
 		}
 	};
@@ -889,7 +901,7 @@ function CalmDownandGamble:ConstructUI()
 	on_mouse_down = function(w, button) 
 		if (button == "RightButton") then 
 			self:ToggleCasino() 
-		end 
+		end
 	end
 	self.ui.CDG_Frame.frame:SetScript("OnMouseDown", on_mouse_down)
 	
@@ -898,7 +910,7 @@ function CalmDownandGamble:ConstructUI()
 	-- TODO : Switch the UI code into XML, because this is stupid
 	-- Pad the top layer of buttons to be centered 
 	padding = AceGUI:Create("Button")
-	padding:SetWidth(70) -- Duno why, looked the best
+	padding:SetWidth(20)
 	padding.frame:SetAlpha(0)
 	self.ui.CDG_Frame:AddChild(padding)
 
@@ -919,6 +931,11 @@ function CalmDownandGamble:ConstructUI()
 	self.ui.CDG_CasinoFrame = AceGUI:Create("SimpleGroup")
 	self.ui.CDG_CasinoFrame:SetLayout("Flow")
 	self.ui.CDG_CasinoFrame.frame:SetWidth(cdg_ui_elements.main_frame.width)
+
+	padding = AceGUI:Create("Button")
+	padding:SetWidth(5)
+	padding.frame:SetAlpha(0)
+	self.ui.CDG_CasinoFrame:AddChild(padding)
 
 	-- gold_amount_entry - Text box for gold entry
 	self.ui.gold_amount_entry = AceGUI:Create("EditBox")
