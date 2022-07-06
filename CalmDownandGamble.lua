@@ -414,19 +414,19 @@ function CalmDownandGamble:EvaluateScores()
 	end
 
 	-- Order scores by winner first, return all meta info about score comparisions --
-	local sorted_scores = self:sortScores(player_scores, self.game)
+	local score_eval = self:CompareScores(player_scores, self.game)
 
 	-- Resolve Round --
 	local is_game_over, next_round, next_rollers = false, nil, {}
 	-- Initial Round --
 	if current_round == "initial" then
-		is_game_over, next_round, next_rollers = self:resolveInitialRound(sorted_scores, self.game)
+		is_game_over, next_round, next_rollers = self:ResolveInitialRound(score_eval, self.game)
 	-- Loser's Round --
 	elseif current_round == "losers" then
-		is_game_over, next_round, next_rollers = self:resolveLosersRound(sorted_scores, self.game)
+		is_game_over, next_round, next_rollers = self:ResolveLosersRound(score_eval, self.game)
 	-- Winner's Round --
 	elseif current_round == "winners" then
-		is_game_over, next_round, next_rollers = self:resolveWinnersRound(sorted_scores, self.game)
+		is_game_over, next_round, next_rollers = self:ResolveWinnersRound(score_eval, self.game)
 	-- Shouldn't be reached --
 	else
 		self:PrintDebug("Unreachable Else: game.data.round not set properly"..game.data.round)
@@ -439,47 +439,45 @@ function CalmDownandGamble:EvaluateScores()
 	return is_game_over
 end
 
-function CalmDownandGamble:resolveInitialRound(sorted_scores, game)
+function CalmDownandGamble:ResolveInitialRound(score_eval, game)
 	local is_game_over, next_round, next_rollers = false, nil, {}
 	-- Save original rolls, scores for displaying payouts, results --
 	game.data.all_player_rolls = self:CopyTable(game.data.player_rolls)
-	game.data.winning_roll = game.data.player_rolls[sorted_scores.winner]
-	game.data.losing_roll = game.data.player_rolls[sorted_scores.loser]
-	game.data.all_player_scores = self:CopyTable(sorted_scores.player_scores)
-	game.data.winning_score = sorted_scores.winning_score
-	game.data.losing_score = sorted_scores.losing_score
+	game.data.winning_roll = game.data.player_rolls[score_eval.winner]
+	game.data.losing_roll = game.data.player_rolls[score_eval.loser]
+	game.data.all_player_scores = self:CopyTable(score_eval.player_scores)
+	game.data.winning_score = score_eval.winning_score
+	game.data.losing_score = score_eval.losing_score
 	-- Winner and loser found. GG --
-	if sorted_scores.single_winner and sorted_scores.single_loser then
-		game.data.winner = sorted_scores.winner
-		game.data.loser = sorted_scores.loser
+	if score_eval.single_winner and score_eval.single_loser then
+		game.data.winner = score_eval.winner
+		game.data.loser = score_eval.loser
 		is_game_over = true
 	-- Winner found, start losers round --
-	elseif sorted_scores.single_winner then
-		game.data.winner = sorted_scores.winner
-		game.data.low_score_playoff = self:CopyTable(sorted_scores.low_score_playoff)
-		next_rollers = game.data.low_score_playoff
+	elseif score_eval.single_winner then
+		game.data.winner = score_eval.winner
+		game.data.low_score_playoff = self:CopyTable(score_eval.low_score_playoff)
+		next_rollers = self:CopyTable(game.data.low_score_playoff)
 		next_round = "losers"
 	-- Loser found, start winners round --
-	elseif sorted_scores.single_loser then
-		game.data.loser = sorted_scores.loser
-		game.data.high_score_playoff = self:CopyTable(sorted_scores.high_score_playoff)
-		next_rollers = game.data.high_score_playoff
+	elseif score_eval.single_loser then
+		game.data.loser = score_eval.loser
+		game.data.high_score_playoff = self:CopyTable(score_eval.high_score_playoff)
+		next_rollers = self:CopyTable(game.data.high_score_playoff)
 		next_round = "winners"
 	-- Low score playoff and high score playoff, start with loser round --
-	elseif sorted_scores.low_score_count > 1 and sorted_scores.high_score_count > 1 then
-		game.data.high_score_playoff = self:CopyTable(sorted_scores.high_score_playoff)
-		game.data.low_score_playoff = self:CopyTable(sorted_scores.low_score_playoff)
-		next_rollers = game.data.low_score_playoff
+	elseif score_eval.low_score_count > 1 and score_eval.high_score_count > 1 then
+		game.data.high_score_playoff = self:CopyTable(score_eval.high_score_playoff)
+		game.data.low_score_playoff = self:CopyTable(score_eval.low_score_playoff)
+		next_rollers = self:CopyTable(game.data.low_score_playoff)
 		next_round = "losers"
 	-- Only low rolls, reroll --
-	elseif sorted_scores.high_score_count == 0 then
-		game.data.low_score_playoff = self:CopyTable(sorted_scores.low_score_playoff)
-		next_rollers = game.data.low_score_playoff
+	elseif score_eval.high_score_count == 0 then
+		next_rollers = self:CopyTable(score_eval.low_score_playoff)
 		next_round = "initial"
 	-- Only high rolls, reroll --
-	elseif sorted_scores.low_score_count == 0 then
-		game.data.high_score_playoff = self:CopyTable(sorted_scores.high_score_playoff)
-		next_rollers = game.data.high_score_playoff
+	elseif score_eval.low_score_count == 0 then
+		next_rollers = self:CopyTable(game.data.high_score_playoff)
 		next_round = "initial"
 	-- This condition should never be reached --
 	else
@@ -488,64 +486,64 @@ function CalmDownandGamble:resolveInitialRound(sorted_scores, game)
 	return is_game_over, next_round, next_rollers
 end
 
-function CalmDownandGamble:resolveLosersRound(sorted_scores, game)
+function CalmDownandGamble:ResolveLosersRound(score_eval, game)
 	local is_game_over, next_round, next_rollers = false, nil, {}
 	-- Loser found -- 
-	if sorted_scores.single_loser then
-		game.data.loser = sorted_scores.loser
+	if score_eval.single_loser then
+		game.data.loser = score_eval.loser
 		-- If winner also found, end game --
 		if game.data.winner then
 			is_game_over = true
 		-- If no winner, start winners round --
 		else
-			next_rollers = game.data.high_score_playoff
+			next_rollers = self:CopyTable(game.data.high_score_playoff)
 			next_round = "winners"
 		end
 	-- No single loser found, roll again --
 	else
 		-- Only winners, play everyone again --
-		if sorted_scores.low_score_count == 0 then
-			game.data.high_score_playoff = self:CopyTable(sorted_scores.high_score_playoff)
+		if score_eval.low_score_count == 0 then
+			game.data.low_score_playoff = self:CopyTable(score_eval.high_score_playoff)
 		-- Many losers, play losers --
 		else
-			game.data.high_score_playoff = self:CopyTable(sorted_scores.low_score_playoff)
+			game.data.low_score_playoff = self:CopyTable(score_eval.low_score_playoff)
 		end
-		next_rollers = game.data.high_score_playoff
+		next_rollers = self:CopyTable(game.data.low_score_playoff)
 		next_round = "losers"
 	end
 	return is_game_over, next_round, next_rollers
 end
 
-function CalmDownandGamble:resolveWinnersRound(sorted_scores, game)
+function CalmDownandGamble:ResolveWinnersRound(score_eval, game)
 	local is_game_over, next_round, next_rollers = false, nil, {}
 	-- Winner found --
-	if sorted_scores.single_winner then
-		game.data.winner = sorted_scores.winner
+	if score_eval.single_winner then
+		game.data.winner = score_eval.winner
 		-- If loser also found, end game --
 		if game.data.loser then
 			is_game_over = true
 		-- If no loser found, start losers round --
 		else
-			next_rollers = game.data.low_score_playoff
+			next_rollers = self:CopyTable(game.data.low_score_playoff)
 			next_round = "losers"
 		end
 	-- No winner found --
 	else
 		-- Only losers, play everyone again --
-		if sorted_scores.high_score_count == 0 then
-			game.data.high_score_playoff = self:CopyTable(sorted_scores.low_score_playoff)
+		if score_eval.high_score_count == 0 then
+			game.data.high_score_playoff = self:CopyTable(score_eval.low_score_playoff)
 		-- Many winners, play winners --
 		else
-			game.data.high_score_playoff = self:CopyTable(sorted_scores.high_score_playoff)
+			game.data.high_score_playoff = self:CopyTable(score_eval.high_score_playoff)
 		end
-		next_rollers = game.data.high_score_playoff
+		next_rollers = self:CopyTable(game.data.high_score_playoff)
 		next_round = "winners"
 	end
 	return is_game_over, next_round, next_rollers
 end
 
 -- Loop over the players scores and sort winners/losers
--- included variables in sorted_scores:
+-- included variables in score_eval:
 --    player_scores (list of scores for reference)
 --    winner (name of first winner)
 --    winning_score (best score by mode's score sorting method)
@@ -557,7 +555,7 @@ end
 --    low_score_playoff (table of {player, -1} players who tied loser)
 --    low_score_count (number of losers)
 --    single_loser (if only one loser)
-function CalmDownandGamble:sortScores(player_scores, game)
+function CalmDownandGamble:CompareScores(player_scores, game)
 	local winner, loser = nil, nil
     local winning_score, losing_score = nil, nil
     local high_score_playoff, low_score_playoff = {}, {}

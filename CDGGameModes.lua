@@ -131,7 +131,7 @@ CDG_ROULETTE = {
 	end,
 	
 	roll_to_score = function(roll)
-		if tonumber(roll) == 1 then
+		if roll == 1 then
 			return 0 -- They LOSE
 		else
 			return 1
@@ -156,55 +156,30 @@ CDG_ROULETTE = {
 		-- Decrease w bullets on initial and winners rounds --
 		if current_round == "initial" or current_round == "winners" then
 			game.data.w_bullets = game.data.w_bullets - 1
-			game.data.roll_upper = game.data.w_bullets
 		-- Decrease l bullets on losers round --
 		elseif current_round == "loser" then
 			game.data.l_bullets = game.data.l_bullets - 1
-			game.data.roll_upper = game.data.l_bullets
 		-- Game over, do nothing --
 		else
 		end
-		
-		-- Check who needs to reload --
-		local everyone_is_dead = true
-		local any_losers = false
-		for player, roll in pairs(current_rollers) do
-			if roll > 1 then
-				everyone_is_dead = false
-			elseif roll == 1 then
-				any_losers = true
+
+		-- Set roll range for next round --
+		if next_round == "initial" or next_round == "winners" then
+			-- No empty chamber condition on initial or winners rounds--
+			if game.data.w_bullets < 2 then
+				game.data.w_bullets = 2
 			end
-		end
-		-- If everyone shot themselves, reload --
-		if everyone_is_dead then
-			CalmDownandGamble:MessageChat("You all shot yourself... Reload!") 
-			if next_round == "initial" or next_round == "winners" then
-				game.data.w_bullets = 6
-				game.data.roll_upper = game.data.w_bullets
-			elseif next_round == "losers" then
-				game.data.l_bullets = 6
-				game.data.roll_upper = game.data.l_bullets
-			else
-			end
-		-- Empty chamber condition on initial or winners rounds--
-		elseif (next_round == "initial" or next_round == "winners") and game.data.w_bullets < 2 then
-			CalmDownandGamble:MessageChat("Only one chamber left. Reload!") 
-			game.data.w_bullets = 6
 			game.data.roll_upper = game.data.w_bullets
 		elseif next_round == "losers" then
-			if any_losers then
-				-- Losers in the losers round (everyone_is_dead condition means at least 1 winner) --
-				CalmDownandGamble:MessageChat("All you losers shot yourself. Reload!") 
-				game.data.l_bullets = 6
-				game.data.roll_upper = game.data.l_bullets
-			-- Empty chamber condition --
-			elseif game.data.l_bullets < 2 then
-				CalmDownandGamble:MessageChat("Only one chamber left. Reload!") 
-				game.data.l_bullets = 6
-				game.data.roll_upper = game.data.l_bullets
+			-- No empty chamber condition on losers rounds--
+			if game.data.l_bullets < 2 then
+				game.data.l_bullets = 2
 			end
+			game.data.roll_upper = game.data.l_bulletss
+		-- Game over, do nothing --
 		else
 		end
+
 		game.data.roll_range = "("..game.data.roll_lower.."-"..game.data.roll_upper..")"
 	end
 }
@@ -397,6 +372,7 @@ CDG_YAHTZEE = {
 			local hand, score, dice_rolls = ScoreYahtzee(game.data.all_player_rolls[player])
 			CalmDownandGamble:MessageChat(player.." Dice: "..FormatDiceRolls(dice_rolls).." Score: "..score.." - "..hand)
 		end
+		CalmDownandGamble:MessageChat("===============")
 		game.data.cash_winnings = game.data.gold_amount
 	end,
 
