@@ -115,7 +115,7 @@ end
 -- ================
 function CalmDownandGamble:SetGameMode() 
 	-- Loaded from external File
-	GAME_MODES = { CDG_HILO, CDG_INVERSE, CDG_ROULETTE, CDG_BIGTWOS, CDG_LILONES, CDG_YAHTZEE, CDG_CURLING, CDG_LANDMINES }
+	GAME_MODES = { CDG_HILO, CDG_INVERSE, CDG_ROULETTE, CDG_BIGTWOS, CDG_LILONES, CDG_YAHTZEE, CDG_CURLING, CDG_LANDMINES, CDG_CALVINBALL }
 	self.game.mode = GAME_MODES[self.game.mode_id]
 	self.game.num_modes = table.getn(GAME_MODES)
 	self.ui.game_mode:SetText(self.game.mode.label)
@@ -251,8 +251,8 @@ function CalmDownandGamble:StartRolls()
 	-- Off to the races!
 	self:MessageChat(roll_msg)
 	self:MessageChat("Time to roll! Good Luck! Command:   /roll "..self.game.data.roll_range)
-	if self.game.mode.custom_roll_message then
-		self:MessageChat(self.game.mode.custom_roll_message())
+	if self.game.mode.round_start_callback then
+		self.game.mode.round_start_callback(self.game)
 	end
 end
 
@@ -295,7 +295,11 @@ end
 function CalmDownandGamble:GameLoop() 
 	if (CalmDownandGamble:EvaluateScores()) then
 		self.game.mode.payout(self.game)
-		self:MessageChat(self.game.data.loser.." owes "..self.game.data.winner.." "..self.game.data.cash_winnings.." gold!")
+		local additional_win_text = ""
+		if self.game.data.additional_win_text then
+			additional_win_text = " "..self.game.data.additional_win_text
+		end
+		self:MessageChat(self.game.data.loser.." owes "..self.game.data.winner.." "..self.game.data.cash_winnings.." gold!"..additional_win_text)
 		self:LogResults()
 		self:EndGame()
 	else
@@ -410,7 +414,7 @@ function CalmDownandGamble:EvaluateScores()
 	-- score all player rolls --
 	local player_scores = {}
 	for player, roll in pairs(current_rollers) do
-		player_scores[player] = self.game.mode.roll_to_score(roll)
+		player_scores[player] = self.game.mode.roll_to_score(roll, player, game)
 	end
 
 	-- Order scores by winner first, return all meta info about score comparisions --
@@ -477,7 +481,7 @@ function CalmDownandGamble:ResolveInitialRound(score_eval, game)
 		next_round = "initial"
 	-- Only high rolls, reroll --
 	elseif score_eval.low_score_count == 0 then
-		next_rollers = self:CopyTable(game.data.high_score_playoff)
+		next_rollers = self:CopyTable(score_eval.high_score_playoff)
 		next_round = "initial"
 	-- This condition should never be reached --
 	else

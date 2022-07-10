@@ -1,7 +1,6 @@
-
 -- Consts for Sorting, shortcuts for common cases
-local CDG_SORT_DESCENDING = function(scores, playera, playerb) return scores[playerb] < scores[playera] end
-local CDG_SORT_ASCENDING  = function(scores, playera, playerb) return scores[playerb] > scores[playera] end
+CDG_SORT_DESCENDING = function(scores, playera, playerb) return scores[playerb] < scores[playera] end
+CDG_SORT_ASCENDING  = function(scores, playera, playerb) return scores[playerb] > scores[playera] end
 local CDG_MAX_ROLL = function(roll) return (tonumber(roll) > 1000000) and 1000000 or tonumber(roll) end
 
 -- High/Low 
@@ -186,164 +185,6 @@ CDG_ROULETTE = {
 
 -- Yahtzee
 -- ============
-
--- Sorts dice_rolls into table where index = dice roll and value = count
-local function bucketDiceRolls(dice_rolls)
-	local buckets = {0,0,0,0,0,0}
-	for index,digit in ipairs(dice_rolls) do
-		buckets[digit] = buckets[digit] + 1
-	end
-	return buckets
-end
-
-local function getYahtzeeScore(dice_rolls)
-	local result = 0
-	for digit,count in ipairs(bucketDiceRolls(dice_rolls)) do
-		if count >= 5 then
-			result = 50
-		end
-	end
-	return result
-end
-
-local function getHighStraightScore(dice_rolls)
-	local result = 0
-	local buckets = bucketDiceRolls(dice_rolls)
-	local num_straight = 0
-	for digit,count in ipairs(buckets) do
-		if count > 0 then
-			num_straight = num_straight + 1
-		else
-			num_straight = 0
-		end
-		if num_straight >= 5 then
-			result = 40
-		end
-	end
-	return result
-end
-
-local function getLowStraightScore(dice_rolls)
-	local result = 0
-	local num_straight = 0
-	for digit,count in ipairs(bucketDiceRolls(dice_rolls)) do
-		if count > 0 then
-			num_straight = num_straight + 1
-		else
-			num_straight = 0
-		end
-		if num_straight >= 4 then
-			result = 30
-		end
-	end
-	return result
-end
-
-local function getFullHouseScore(dice_rolls)
-	local result = 0
-	local three_count = false
-	local two_count = false
-	for digit,count in ipairs(bucketDiceRolls(dice_rolls)) do
-		if count == 2 then
-			two_count = true
-		elseif count == 3 then
-			three_count = true
-		end
-	end
-	if two_count and three_count then
-		result = 25
-	end
-	return result
-end
-
-local function getFourOfAKindScore(dice_rolls)
-	local result = 0
-	local total = 0
-	local foakFound = false
-	for digit,count in ipairs(bucketDiceRolls(dice_rolls)) do
-		total = total + (digit * count)
-		if count == 4 then
-			foakFound = true
-		end
-	end
-	if foakFound then
-		result = total
-	end
-	return result
-end
-
-local function getThreeOfAKindScore(dice_rolls)
-	local result = 0
-	local total = 0
-	local toakFound = false
-	for digit,count in ipairs(bucketDiceRolls(dice_rolls)) do
-		total = total + (digit * count)
-		if count == 3 then
-			toakFound = true
-		end
-	end
-	if toakFound then
-		result = total
-	end
-	return result
-end
-
-local function getDieScore(num, dice_rolls)
-	local total = 0
-	for index,digit in ipairs(dice_rolls) do
-		if digit == num then
-			total = total + digit
-		end
-	end
-	return total
-end
-
-local function CollectDiceRolls(roll)
-	local base10 = roll - 1
-	local digits = {}
-	local index = 1
-	while index < 6 do
-		local digit = math.floor(base10 / (6 ^ (5 - index))) + 1
-		digits[index] = digit
-		base10 = base10 % (6 ^ (5 - index))
-		index = index + 1
-	end
-	return digits
-end
-
-local function ScoreYahtzee(roll)
-	local dice_rolls = CollectDiceRolls(roll)
-	local scores = {
-		{ name = "Yahtzee", score = getYahtzeeScore(dice_rolls)},
-		{ name = "High Straight", score = getHighStraightScore(dice_rolls)},
-		{ name = "Low Straight", score = getLowStraightScore(dice_rolls)},
-		{ name = "Full House", score = getFullHouseScore(dice_rolls)},
-		{ name = "4 of a Kind", score = getFourOfAKindScore(dice_rolls)},
-		{ name = "3 of a Kind", score = getThreeOfAKindScore(dice_rolls)},
-		{ name = "Sixes", score = getDieScore(6, dice_rolls)},
-		{ name = "Fives", score = getDieScore(5, dice_rolls)},
-		{ name = "Fours", score = getDieScore(4, dice_rolls)},
-		{ name = "Threes", score = getDieScore(3, dice_rolls)},
-		{ name = "Twos", score = getDieScore(2, dice_rolls)},
-		{ name = "Ones", score = getDieScore(1, dice_rolls)}
-	}
-	table.sort(scores, function(a, b) return a.score > b.score end)
-	for index, value in ipairs(scores) do
-		return value.name, value.score, dice_rolls
-	end
-end
-
-local function FormatDiceRolls(dice_rolls)
-	local text = ""
-	for index,digit in ipairs(dice_rolls) do
-		text = text..digit
-		if index < 5 then
-			text = text.."-"
-		end
-	end
-	return text
-end
-
 CDG_YAHTZEE = {
 	label = "Yahtzee",
 	
@@ -354,7 +195,7 @@ CDG_YAHTZEE = {
 	end,
 	
 	roll_to_score = function(roll)
-		local hand, score, dice_rolls = ScoreYahtzee(roll)
+		local hand, score, dice_rolls = YZ_ScoreYahtzee(roll)
 		return score
 	end,
 	
@@ -369,20 +210,22 @@ CDG_YAHTZEE = {
 	payout = function(game)
 		CalmDownandGamble:MessageChat("== Game Over! ==")
 		for player, score in CalmDownandGamble:sortedpairs(game.data.all_player_scores, game.mode.sort_scores) do
-			local hand, score, dice_rolls = ScoreYahtzee(game.data.all_player_rolls[player])
-			CalmDownandGamble:MessageChat(player.." Dice: "..FormatDiceRolls(dice_rolls).." Score: "..score.." - "..hand)
+			local hand, score, dice_rolls = YZ_ScoreYahtzee(game.data.all_player_rolls[player])
+			CalmDownandGamble:MessageChat(player.." Dice: "..YZ_FormatDiceRolls(dice_rolls).." Score: "..score.." - "..hand)
 		end
 		CalmDownandGamble:MessageChat("===============")
 		game.data.cash_winnings = game.data.gold_amount
 	end,
 
 	roll_accepted_callback = function(game, player, roll)
-		local dice_rolls = CollectDiceRolls(roll)
-		local text = player.." rolled "..FormatDiceRolls(dice_rolls)
+		local dice_rolls = YZ_CollectDiceRolls(roll)
+		local text = player.." rolled "..YZ_FormatDiceRolls(dice_rolls)
 		CalmDownandGamble:MessageChat(text)
 	end
 }
 
+-- Curling
+-- ==========
 CDG_CURLING = {
 	label = "Curling",
 	target_roll = 0,
@@ -444,7 +287,7 @@ CDG_LANDMINES = {
 		game.data.roll_lower = 1
 		game.data.roll_upper = CDG_MAX_ROLL(game.data.gold_amount)
 		game.data.roll_range = "(1-"..game.data.roll_upper..")"
-		CDG_LANDMINES.num_mines = math.floor(0.25 * game.data.roll_upper + 0.5)
+		CDG_LANDMINES.num_mines = math.floor(0.5 * game.data.roll_upper + 0.5)
 		CDG_LANDMINES.landmines = GenerateLandmines(game)
 	end,
 
@@ -465,7 +308,7 @@ CDG_LANDMINES = {
 	sort_scores = CDG_SORT_DESCENDING,
 
 	print_help = function()
-		CalmDownandGamble:MessageChat("Landmines: Roll from 1 to bet amount. 25% of rolls are landmines. Roll a landmine and you lose. Last survivor wins. Payout is bet amount.")
+		CalmDownandGamble:MessageChat("Landmines: Roll from 1 to bet amount. 50% of rolls are landmines. Roll a landmine and you lose. Last survivor wins. Payout is bet amount.")
 	end,
 	
 	payout = function(game)
@@ -476,5 +319,53 @@ CDG_LANDMINES = {
 		if CDG_LANDMINES.landmines[roll] then
 			CalmDownandGamble:MessageChat("BOOM! "..player.." exploded.")
 		end
+	end
+}
+
+CDG_CALVINBALL = {
+	label = "Calvinball",
+	inverse = false,
+	boomerang_active = false,
+			
+	roll_to_score = function(roll, player, game)
+		CB_SetScoringRules()
+		return CB_ApplyScoringRules(roll, player, game)
+	end,
+	
+	sort_rolls = CDG_SORT_DESCENDING,
+
+	sort_scores = function(scores, playera, playerb)
+		return CB_ApplySortingRule(scores, playera, playerb)
+	end,
+	
+	print_help = function()
+		CalmDownandGamble:MessageChat("Other kids' games are all such a bore! They've gotta have rules and they gotta keep score! Calvinball is better by far! It's never the same! It's always bizarre! You don't need a team or a referee! You know that it's great. 'cause it's named after me!")
+	end,
+	
+	payout = function(game)
+		CB_SetPayoutRule()
+		local winnings, text = CB_ApplyPayoutRule(game)
+		game.data.cash_winnings = winnings
+		if text then
+			game.data.additional_win_text = " "..text
+		end
+	end,
+
+	round_start_callback = function(game)
+		CB_HandleHogwartsHouses(game)
+	end,
+
+	roll_accepted_callback = function(game, player, roll)
+	end,
+
+	round_resolved_callback = function(game, current_round, current_rollers, next_round, next_rollers)
+		CB_SetSortingRule(game)
+	end,
+	
+	init_game = function(game)
+		CB_Reset()
+		game.data.roll_lower = 1
+		game.data.roll_upper = CDG_MAX_ROLL(game.data.gold_amount)
+		game.data.roll_range = "("..game.data.roll_lower.."-"..game.data.roll_upper..")"
 	end
 }

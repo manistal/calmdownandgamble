@@ -37,3 +37,5 @@ CDGUtils.lua
 CDGGameModes.lua
 CDGClient.lua
 CDGCommon.lua
+Calvinball.lua
+Yahtzee.lua
