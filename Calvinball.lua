@@ -44,14 +44,14 @@ local function scoreBoomerang(roll, score, player, game)
 	local opposite = isOpposite()
 	-- If !inverse and good or inverse and bad, add 20% of score to score --
 	if (not opposite and good) or (opposite and not good) then
-		text = text.." plus 20% to score"
+		text = text.." Plus 20% to score"
 		result = math.floor(result*1.2 + 0.5)
 	-- If !inverse and bad or inverse and good, subtract 20% of score from score --
-	elseif (opposite and not good) or (not opposite and good) then
-		text = text.." minus 20% from score"
+	elseif (opposite and good) or (not opposite and not good) then
+		text = text.." Minus 20% from score"
 		result = math.floor(result*0.8 + 0.5)
 	end
-	return score, text
+	return result, text
 end
 
 local function oddEven(roll, score, player, game)
@@ -83,7 +83,7 @@ local function oddEven(roll, score, player, game)
 		text = text.." Minus 50% from score!"
 		result = math.floor(result*0.5 + 0.5)
 	end
-	return score, text
+	return result, text
 end
 
 local function vortexZone(roll, score, player, game)
@@ -143,36 +143,37 @@ end
 
 local function changeDigits(roll, score, player, game)
 	local text = player.."'s score"
-	local addingDigit = coinflip()
+	local addingDigit = coinFlip()
 	local scoreString = tostring(score)
 	local scoreLen = string.len(scoreString)
+    local newScore = score
 	if addingDigit then
 		local newDigit = tostring(math.random(0, 9))
-		local digitLoc = math.random(1, scoreLen)
-		if digitLoc == scoreLen then
-			newScore = tonumber(newDigit..scoreString)
-		elseif digitLoc == 1 then
+		local digitLoc = math.random(1, scoreLen+1)
+		if digitLoc == scoreLen+1 then
 			newScore = tonumber(scoreString..newDigit)
+		elseif digitLoc == 1 then
+			newScore = tonumber(newDigit..scoreString)
 		else
 			local scoreStart = string.sub(scoreString, 1, digitLoc - 1)
 			local scoreEnd = string.sub(scoreString, digitLoc, scoreLen)
-			local newScore = tonumber(scoreStart..newDigit..scoreEnd)
+			newScore = tonumber(scoreStart..newDigit..scoreEnd)
 		end
 		text = text.." doesn't have enough digits... Adding a "..newDigit.." somewhere"
-		return newScore, text
 	else -- removing a digit --
 		text = text.." has too many digits..."
 		if scoreLen == 1 then
 			text = text.." And it only has one digit... SAD."
-			return score, text
+			newScore = score
 		end
 		local digitLoc = math.random(1, scoreLen)
 		local newScoreStart = string.sub(scoreString, 1, digitLoc - 1)
 		local newScoreEnd = string.sub(scoreString, digitLoc + 1, scoreLen)
 		local removedDigit = string.sub(scoreString, digitLoc, digitLoc)
 		text = text.." So I got rid of that pesky "..removedDigit.." for you :)"
-		return tonumber(newScoreStart..newScoreEnd), text
+        newScore = tonumber(newScoreStart..newScoreEnd)
 	end
+    return newScore, text
 end
 
 local function goalPost(roll, score, player, game)
@@ -181,9 +182,9 @@ local function goalPost(roll, score, player, game)
 	local tree = math.random(game.data.roll_lower, game.data.roll_upper)
 	local distance = math.abs(roll-tree)
 	text = text.." "..tree.."!"
-	local thisIsGood = coinflip()
+	local thisIsGood = coinFlip()
 	local opposite = isOpposite()
-	if thisisGood then
+	if thisIsGood then
 		text = text.." Proud of you."
 	else
 		text = text.." How dare you."
@@ -200,25 +201,28 @@ end
 
 local function foundBall(roll, score, player, game)
 	local newScore = score
-	local thisIsGood = coinflip()
+	local thisIsGood = coinFlip()
 	local opposite = isOpposite()
 	local calvinBallFound = math.random(1,100) > 80
+    if not calvinBallFound then
+        return score, nil
+    end
 	text = player.." has found the CALVINBALL!!!"
 	if thisIsGood then
 		if opposite then
-			text = " Score set to 1"
+			text = text.." Score set to 1"
 			newScore = 1
 		else
-			text = " Score x 100"
+			text = text.." Score x 100"
 			newScore = score * 100
 		end
 	else
-		text = " But it turned out to be a rotten egg."
+		text = text.." But it turned out to be a rotten egg."
 		if opposite then
-			text = " Score x 100"
+			text = text.." Score x 100"
 			newScore = score * 100
 		else
-			text = " Score set to 1"
+			text = text.." Score set to 1"
 			newScore = 1
 		end
 	end
@@ -237,7 +241,7 @@ local CB_CURRENT_SCORING_RULES = {}
 
 local function addScoringRules(numRulesToAdd)
 	local result_rules = {}
-	local num_rules = getn(CB_ALL_SCORING_RULES)
+	local num_rules = CalmDownandGamble:TableLength(CB_ALL_SCORING_RULES)
 	local pickedRules = {}
 	local idx = 1
 	while idx <= num_rules do
@@ -247,7 +251,7 @@ local function addScoringRules(numRulesToAdd)
 	while numRulesToAdd > 0 do
 		local rule_idx = math.random(num_rules)
 		if not pickedRules[rule_idx] then
-
+            table.insert(result_rules, CB_ALL_SCORING_RULES[rule_idx])
 			pickedRules[rule_idx] = true
 			numRulesToAdd = numRulesToAdd - 1
 		end
@@ -256,7 +260,7 @@ local function addScoringRules(numRulesToAdd)
 end
 
 local function upDownSort(scores, playera, playerb)
-	if isOpposite then
+	if isOpposite() then
 		return CDG_SORT_ASCENDING(scores, playera, playerb)
 	else
 		return CDG_SORT_DESCENDING(scores, playera, playerb)
@@ -273,7 +277,7 @@ local function differencePayout(game)
 	local text = "Score difference!"
 	local diff = game.data.winning_score - game.data.losing_score
 	local payout = 0
-	if diff > game.data.gold_amount then
+	if diff > game.data.gold_amount or diff < 0 then
 		text = text.."... But it's "..(diff-game.data.gold_amount).." higher than the bet amount"
 		payout = game.data.gold_amount
 	else
@@ -303,7 +307,8 @@ function CB_ApplyScoringRules(roll, player, game)
 	end
 	local score = roll;
 	for _,rule in pairs(CB_CURRENT_SCORING_RULES) do
-		score, text = rule(roll, score, player, game)
+		local newScore, text = rule(roll, score, player, game)
+        if newScore < 1 then score = 1 else score = newScore end
         if text then
             CalmDownandGamble:MessageChat(text)
         end
