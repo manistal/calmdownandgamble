@@ -44,11 +44,9 @@ local function scoreBoomerang(roll, score, player, game)
 	local opposite = isOpposite()
 	-- If !inverse and good or inverse and bad, add 20% of score to score --
 	if (not opposite and good) or (opposite and not good) then
-		text = text.." Plus 20% to score"
 		result = math.floor(result*1.2 + 0.5)
 	-- If !inverse and bad or inverse and good, subtract 20% of score from score --
 	elseif (opposite and good) or (not opposite and not good) then
-		text = text.." Minus 20% from score"
 		result = math.floor(result*0.8 + 0.5)
 	end
 	return result, text
@@ -62,25 +60,23 @@ local function oddEven(roll, score, player, game)
 	-- Is Odd or Even good? --
 	local oddIsGood = coinFlip()
 	if oddIsGood then
-		text = text.. " Lost in the future..."
+		text = text.." Lost in the future..."
 	else
-		text = text.. " Stuck in the past..."
+		text = text.." Stuck in the past..."
 	end
 
 	local oddRoll = roll % 2 == 1
 	if oddRoll then
-		text = text.." Falling backwards in time..."
+		text = text.." Falling backwards in time"
 	else
-		text = text.." Leaping forward in time..."
+		text = text.." Leaping forward in time"
 	end
 	if (oddIsGood and oddRoll and not opposite) or
 	   (oddIsGood and not oddRoll and opposite) or
 	   (not oddIsGood and not oddRoll and not opposite) or
 	   (not oddIsGood and oddRoll and opposite) then
-		text = text.." Plus 50% to score!"
 		result = math.floor(result*1.5 + 0.5)
 	else
-		text = text.." Minus 50% from score!"
 		result = math.floor(result*0.5 + 0.5)
 	end
 	return result, text
@@ -128,14 +124,12 @@ local function matchingDigits(roll, score, player, game)
 	end
 	-- Leave if no matching digits --
 	if not matchingDigits then return score,nil end
-	local text = player.."'s roll has matching digits! How cute..."
+	local text = player.."'s roll has matching digits! How cute."
 	local matchingIsGood = coinFlip()
 	local opposite = isOpposite
 	if (not opposite and matchingIsGood) or (opposite and not matchingIsGood) then
-		text = text.." Add 30% to score"
 		score = math.floor(score*1.3 + 0.5)
 	else
-		text = text.." Subtract 30% from score"
 		score = math.floor(score*0.7 + 0.5)
 	end
 	return score, text
@@ -190,10 +184,8 @@ local function goalPost(roll, score, player, game)
 		text = text.." How dare you."
 	end
 	if (not opposite and thisIsGood) or (opposite and not thisIsGood) then
-		text = text.." +"..distance.." to score!"
 		newScore = newScore + distance
 	else
-		text = text.." -"..distance.." from score!"
 		newScore = newScore - distance
 	end
 	return newScore, text
@@ -210,19 +202,15 @@ local function foundBall(roll, score, player, game)
 	text = player.." has found the CALVINBALL!!!"
 	if thisIsGood then
 		if opposite then
-			text = text.." Score set to 1"
 			newScore = 1
 		else
-			text = text.." Score x 100"
 			newScore = score * 100
 		end
 	else
 		text = text.." But it turned out to be a rotten egg."
 		if opposite then
-			text = text.." Score x 100"
 			newScore = score * 100
 		else
-			text = text.." Score set to 1"
 			newScore = 1
 		end
 	end
@@ -271,19 +259,6 @@ local CB_CURRENT_SORTING_RULE = upDownSort
 
 local function maxBetPayout(game)
 	return game.data.gold_amount, "Max Bet"
-end
-
-local function differencePayout(game)
-	local text = "Score difference!"
-	local diff = game.data.winning_score - game.data.losing_score
-	local payout = 0
-	if diff > game.data.gold_amount or diff < 0 then
-		text = text.."... But it's "..(diff-game.data.gold_amount).." higher than the bet amount"
-		payout = game.data.gold_amount
-	else
-		payout = diff
-	end
-	return payout, text
 end
 
 local function badEconomyPayout(game)
