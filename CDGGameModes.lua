@@ -153,23 +153,23 @@ CDG_ROULETTE = {
 
 		-- Count the shot just made --
 		-- Decrease w bullets on initial and winners rounds --
-		if current_round == "initial" or current_round == "winners" then
+		if current_round == INITIAL_ROUND or current_round == WINNERS_ROUND then
 			game.data.w_bullets = game.data.w_bullets - 1
 		-- Decrease l bullets on losers round --
-		elseif current_round == "loser" then
+		elseif current_round == LOSERS_ROUND then
 			game.data.l_bullets = game.data.l_bullets - 1
 		-- Game over, do nothing --
 		else
 		end
 
 		-- Set roll range for next round --
-		if next_round == "initial" or next_round == "winners" then
+		if next_round == CDGConstants.INITIAL_ROUND or next_round == CDGConstants.WINNERS_ROUND then
 			-- No empty chamber condition on initial or winners rounds--
 			if game.data.w_bullets < 2 then
 				game.data.w_bullets = 2
 			end
 			game.data.roll_upper = game.data.w_bullets
-		elseif next_round == "losers" then
+		elseif next_round == CDGConstants.LOSERS_ROUND then
 			-- No empty chamber condition on losers rounds--
 			if game.data.l_bullets < 2 then
 				game.data.l_bullets = 2

@@ -298,7 +298,7 @@ local function complimentPayout(game)
 	return game.data.gold_amount, "But only if they say something nice about "..game.data.loser
 end
 
-local CB_ALL_PAYOUT_RULES = {maxBetPayout, differencePayout, badEconomyPayout, singPayout, complimentPayout}
+local CB_ALL_PAYOUT_RULES = {maxBetPayout, badEconomyPayout, singPayout, complimentPayout}
 local CB_PAYOUT_RULE = maxBetPayout
 
 function CB_ApplyScoringRules(roll, player, game)
@@ -342,16 +342,18 @@ function CB_ApplyPayoutRule(game)
 end
 
 function CB_SetPayoutRule()
-	local payout_idx = math.random(10) - getn(CB_ALL_PAYOUT_RULES)
-	if payout_idx > 1 then
+    local num_rules = CalmDownandGamble:TableLength(CB_ALL_PAYOUT_RULES)
+	local payout_idx = math.random(10) - num_rules
+	if payout_idx > 1 and payout_idx <= num_rules then
 		CB_PAYOUT_RULE = CB_ALL_PAYOUT_RULES[payout_idx]
+    else
+        CB_PAYOUT_RULE = maxBetPayout
 	end
 end
 
 function CB_HandleHogwartsHouses(game)
     local houses = {"Gryffindor", "Hufflepuff", "Ravenclaw", "Slytherin"}
-    local idx = math.random(100)
-    local house = houses[idx]
+    local house = houses[math.random(50)]
     if house then
         game.data.player_rolls[house] = -1
     end

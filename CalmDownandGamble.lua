@@ -171,7 +171,7 @@ function CalmDownandGamble:StartGame()
 		accepting_rolls = false,
 		winner = nil,
 		loser = nil,
-		round = "initial",
+		round = CDGConstants.INITIAL_ROUND,
 		first_round = true,
 		winning_score = nil,
 		losing_score = nil,
@@ -237,16 +237,14 @@ function CalmDownandGamble:StartRolls()
 	
 	-- Tell Tiebreakers Who Has to Roll
 	local roll_msg = ""
-	if self.game.data.round == "losers" then 
+	if self.game.data.round == CDGConstants.LOSERS_ROUND then 
 		self:MessageChat("The Losers Bracket! Low Tiebreaker:")
-		self:PrintTieBreakerPlayers(self.game.data.player_rolls)
-	elseif self.game.data.round == "winners" then
+	elseif self.game.data.round == CDGConstants.WINNERS_ROUND then
 		self:MessageChat("The Winners Bracket! High Tiebreaker:")
-		self:PrintTieBreakerPlayers(self.game.data.player_rolls)
-	elseif self.game.data.round == "initial" and not self.game.data.first_round then
+	elseif self.game.data.round == CDGConstants.INITIAL_ROUND and not self.game.data.first_round then
 		self:MessageChat("Tie! Reroll:")
-		self:PrintTieBreakerPlayers(self.game.data.player_rolls)
 	end
+	self:PrintTieBreakerPlayers(self.game.data.player_rolls)
 	
 	-- Off to the races!
 	self:MessageChat(roll_msg)
@@ -297,7 +295,7 @@ function CalmDownandGamble:GameLoop()
 		self.game.mode.payout(self.game)
 		local additional_win_text = ""
 		if self.game.data.additional_win_text then
-			additional_win_text = " "..self.game.data.additional_win_text
+			additional_win_text = self.game.data.additional_win_text
 		end
 		self:MessageChat(self.game.data.loser.." owes "..self.game.data.winner.." "..self.game.data.cash_winnings.." gold!"..additional_win_text)
 		self:LogResults()
@@ -414,7 +412,7 @@ function CalmDownandGamble:EvaluateScores()
 	-- score all player rolls --
 	local player_scores = {}
 	for player, roll in pairs(current_rollers) do
-		player_scores[player] = self.game.mode.roll_to_score(roll, player, game)
+		player_scores[player] = self.game.mode.roll_to_score(roll, player, self.game)
 	end
 
 	-- Order scores by winner first, return all meta info about score comparisions --
@@ -423,13 +421,13 @@ function CalmDownandGamble:EvaluateScores()
 	-- Resolve Round --
 	local is_game_over, next_round, next_rollers = false, nil, {}
 	-- Initial Round --
-	if current_round == "initial" then
+	if current_round == CDGConstants.INITIAL_ROUND then
 		is_game_over, next_round, next_rollers = self:ResolveInitialRound(score_eval, self.game)
 	-- Loser's Round --
-	elseif current_round == "losers" then
+	elseif current_round == CDGConstants.LOSERS_ROUND then
 		is_game_over, next_round, next_rollers = self:ResolveLosersRound(score_eval, self.game)
 	-- Winner's Round --
-	elseif current_round == "winners" then
+	elseif current_round == CDGConstants.WINNERS_ROUND then
 		is_game_over, next_round, next_rollers = self:ResolveWinnersRound(score_eval, self.game)
 	-- Shouldn't be reached --
 	else
@@ -462,27 +460,27 @@ function CalmDownandGamble:ResolveInitialRound(score_eval, game)
 		game.data.winner = score_eval.winner
 		game.data.low_score_playoff = self:CopyTable(score_eval.low_score_playoff)
 		next_rollers = self:CopyTable(game.data.low_score_playoff)
-		next_round = "losers"
+		next_round = CDGConstants.LOSERS_ROUND
 	-- Loser found, start winners round --
 	elseif score_eval.single_loser then
 		game.data.loser = score_eval.loser
 		game.data.high_score_playoff = self:CopyTable(score_eval.high_score_playoff)
 		next_rollers = self:CopyTable(game.data.high_score_playoff)
-		next_round = "winners"
+		next_round = CDGConstants.WINNERS_ROUND
 	-- Low score playoff and high score playoff, start with loser round --
 	elseif score_eval.low_score_count > 1 and score_eval.high_score_count > 1 then
 		game.data.high_score_playoff = self:CopyTable(score_eval.high_score_playoff)
 		game.data.low_score_playoff = self:CopyTable(score_eval.low_score_playoff)
 		next_rollers = self:CopyTable(game.data.low_score_playoff)
-		next_round = "losers"
+		next_round = CDGConstants.LOSERS_ROUND
 	-- Only low rolls, reroll --
 	elseif score_eval.high_score_count == 0 then
 		next_rollers = self:CopyTable(score_eval.low_score_playoff)
-		next_round = "initial"
+		next_round = CDGConstants.INITIAL_ROUND
 	-- Only high rolls, reroll --
 	elseif score_eval.low_score_count == 0 then
 		next_rollers = self:CopyTable(score_eval.high_score_playoff)
-		next_round = "initial"
+		next_round = CDGConstants.INITIAL_ROUND
 	-- This condition should never be reached --
 	else
 		self:PrintDebug("Unreachable Else: resolveInitialRound")
@@ -501,7 +499,7 @@ function CalmDownandGamble:ResolveLosersRound(score_eval, game)
 		-- If no winner, start winners round --
 		else
 			next_rollers = self:CopyTable(game.data.high_score_playoff)
-			next_round = "winners"
+			next_round = CDGConstants.WINNERS_ROUND
 		end
 	-- No single loser found, roll again --
 	else
@@ -513,7 +511,7 @@ function CalmDownandGamble:ResolveLosersRound(score_eval, game)
 			game.data.low_score_playoff = self:CopyTable(score_eval.low_score_playoff)
 		end
 		next_rollers = self:CopyTable(game.data.low_score_playoff)
-		next_round = "losers"
+		next_round = CDGConstants.LOSERS_ROUND
 	end
 	return is_game_over, next_round, next_rollers
 end
@@ -529,7 +527,7 @@ function CalmDownandGamble:ResolveWinnersRound(score_eval, game)
 		-- If no loser found, start losers round --
 		else
 			next_rollers = self:CopyTable(game.data.low_score_playoff)
-			next_round = "losers"
+			next_round = CDGConstants.LOSERS_ROUND
 		end
 	-- No winner found --
 	else
@@ -541,7 +539,7 @@ function CalmDownandGamble:ResolveWinnersRound(score_eval, game)
 			game.data.high_score_playoff = self:CopyTable(score_eval.high_score_playoff)
 		end
 		next_rollers = self:CopyTable(game.data.high_score_playoff)
-		next_round = "winners"
+		next_round = CDGConstants.WINNERS_ROUND
 	end
 	return is_game_over, next_round, next_rollers
 end
