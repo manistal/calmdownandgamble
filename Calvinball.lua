@@ -477,7 +477,7 @@ end
 
 function CB_HandleHogwartsHouses(game)
     local houses = {"Gryffindor", "Hufflepuff", "Ravenclaw", "Slytherin"}
-    local house = houses[math.random(50)]
+    local house = houses[math.random(40)]
     if house then
         game.data.player_rolls[house] = -1
     end
