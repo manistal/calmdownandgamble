@@ -82,6 +82,28 @@ local function oddEven(roll, score, player, game)
 	return result, text
 end
 
+local function hotChip(roll, score, player, game)
+	text = player.." is eating hot chip..."
+	local isGood = coinFlip()
+	local opposite = isOpposite()
+	local text = player
+	if isGood then
+		text = text.." and they could put down their hot chip for a second"
+		if opposite then
+
+		else
+
+		end
+	else
+		text = text.." but they could not put down their hot chip for a second"
+		if opposite then
+			
+		else
+
+		end
+	end
+end
+
 local function vortexZone(roll, score, player, game)
 	local newRoll = math.random(game.data.roll_lower, game.data.roll_upper)
 	local text = player.." has entered the vortext zone! Your roll is now: "..newRoll..". I hope you learned your lesson."
@@ -217,7 +239,137 @@ local function foundBall(roll, score, player, game)
 	return newScore, text
 end
 
-local CB_ALL_SCORING_RULES = {oddEven, 
+local function upDownSort(scores, playera, playerb)
+	if isOpposite() then
+		return CDG_SORT_ASCENDING(scores, playera, playerb)
+	else
+		return CDG_SORT_DESCENDING(scores, playera, playerb)
+	end
+end
+
+local function madHatter_pickPlayer(playoff)
+	local num_players = CalmDownandGamble:TableLength(playoff)
+	local playerNames = {}
+	for player,roll in playoff do
+		tinsert(playerNames, player)
+	end
+	return playerNames[math.random(num_players)]
+end
+
+local madHatter_winnersLines = {
+	function(player)
+		return player..", what are you doing in winners bracket? You still haven't returned my VHS of Men in Black 2... "..player.." is now in the losers bracket!"
+	end,
+	function(player)
+		return "It seems "..player.." has been using loaded dice... "..player.." is now in the losers bracket!"
+	end,
+	function(player)
+		return player.." opened their fanny pack and all their spaghetti fell out onto their nice khakis... "..player.." is now in the losers bracket!"
+	end,
+	function(player)
+		return player.." forgot this game has no rules. "..player.." is now in the losers bracket!"
+	end
+}
+
+local madHatter_losersLines = {
+	function(player)
+		return "How much "..player.." would a "..player.."chuck chuck if a "..player.."chuck could chuck "..player.."?... One! "..player.." is now in the winners bracket!"
+	end,
+	function(player)
+		return player.." is definitely not sleeping with the raid leader... "..player.." is now in the winners bracket!"
+	end,
+	function(player)
+		return "It's lonely at the top... so "..player.." is now in the winners bracket!"
+	end,
+	function(player)
+		return player.." remembered this game has no rules. "..player.." is now in the winners bracket!"
+	end
+}
+
+local function madHatter_winners_line(pickedPlayer)
+	local num_lines = CalmDownandGamble:TableLength(madHatter_winnersLines)
+	local line = madHatter_winnersLines[math.random(num_lines)]
+	return line(pickedPlayer)
+end
+
+local function madHatter_losers_line(pickedPlayer)
+	local num_lines = CalmDownandGamble:TableLength(madHatter_losersLines)
+	local line = madHatter_losersLines[math.random(num_lines)]
+	return line(pickedPlayer)
+end
+
+local function madHatter_moveWinner(game, next_round)
+	local pickedPlayer = madHatter_pickPlayer(game.data.high_score_playoff)
+	game.data.high_score_playoff[pickedPlayer] = nil
+	game.data.low_score_playoff[pickedPlayer] = -1
+	if next_round == CDGConstants.LOSERS_ROUND then
+		game.data.player_rolls[pickedPlayer] = -1
+	elseif next_round == CDGConstants.WINNERS_ROUND then
+		game.data.player_rolls[pickedPlayer] = nil
+	end
+	return madHatter_winners_line(pickedPlayer)
+end
+
+local function madHatter_moveLoser(game, next_round)
+	local pickedPlayer = madHatter_pickPlayer(game.data.low_score_playoff)
+	game.data.low_score_playoff[pickedPlayer] = nil
+	game.data.high_score_playoff[pickedPlayer] = -1
+	if next_round == CDGConstants.WINNERS_ROUND then
+		game.data.player_rolls[pickedPlayer] = -1
+	elseif next_round == CDGConstants.LOSERS_ROUND then
+		game.data.player_rolls[pickedPlayer] = nil
+	end
+	return madHatter_losers_line(pickedPlayer)
+end
+
+local function madHatter(game, current_round, current_rollers, next_round, next_rollers)
+	text = "'CHANGE PLACES!!' yells the Mad Hatter..."
+	if next_round and next_round ~= CDGConstants.INITIAL_ROUND then
+		local removeWinner = coinFlip()
+		local winnersEligible = CalmDownandGamble:TableLength(game.data.high_score_playoff) > 2
+		local losersEligible = CalmDownandGamble:TableLength(game.data.low_score_playoff) > 2
+		if winnersEligible and losersEligible then
+			local removeWinner = coinFlip()
+			if removeWinner then
+				text = text.." "..madHatter_moveWinner(game, next_round)
+			else
+				text = text.." "..madHatter_moveLoser(game, next_round)
+			end
+		elseif winnersEligible then
+			text = text.." "..madHatter_moveWinner(game, next_round)
+		elseif losersEligible then
+			text = text.." "..madHatter_moveLoser(game, next_round)
+		else
+			text = nil
+		end
+		return text
+	else
+		return nil
+	end
+end
+
+local function maxBetPayout(game)
+	return game.data.gold_amount, "Max Bet"
+end
+
+local function badEconomyPayout(game)
+	return (game.data.gold_amount / 2), "Because the economy is in shambles."
+end
+
+local function singPayout(game)
+	return game.data.gold_amount, "But only if they sing for it."
+end
+
+local function complimentPayout(game)
+	return game.data.gold_amount, "But only if they say something nice about "..game.data.loser
+end
+
+local function secretPayout(game)
+	return game.data.gold_amount, "But only if they share a secret they wouldn't tell their parents."
+end
+
+local CB_ALL_SCORING_RULES = {oddEven,
+								hotChip,
 								vortexZone, 
 								oppositePole, 
 								boomerang, 
@@ -247,35 +399,6 @@ local function addScoringRules(numRulesToAdd)
 	return result_rules
 end
 
-local function upDownSort(scores, playera, playerb)
-	if isOpposite() then
-		return CDG_SORT_ASCENDING(scores, playera, playerb)
-	else
-		return CDG_SORT_DESCENDING(scores, playera, playerb)
-	end
-end
-
-local CB_CURRENT_SORTING_RULE = upDownSort
-
-local function maxBetPayout(game)
-	return game.data.gold_amount, "Max Bet"
-end
-
-local function badEconomyPayout(game)
-	return (game.data.gold_amount / 2), "Because the economy is in shambles."
-end
-
-local function singPayout(game)
-	return game.data.gold_amount, "But only if they sing for it."
-end
-
-local function complimentPayout(game)
-	return game.data.gold_amount, "But only if they say something nice about "..game.data.loser
-end
-
-local CB_ALL_PAYOUT_RULES = {maxBetPayout, badEconomyPayout, singPayout, complimentPayout}
-local CB_PAYOUT_RULE = maxBetPayout
-
 function CB_ApplyScoringRules(roll, player, game)
 	if catchBoomerang() then
 		tinsert(CB_CURRENT_SCORING_RULES, scoreBoomerang)
@@ -283,11 +406,11 @@ function CB_ApplyScoringRules(roll, player, game)
 	local score = roll;
 	for _,rule in pairs(CB_CURRENT_SCORING_RULES) do
 		local newScore, text = rule(roll, score, player, game)
-        if newScore < 1 then score = 1 else score = newScore end
         if text then
             CalmDownandGamble:MessageChat(text)
         end
 	end
+	if score < 1 then score = 1 end
 	return score
 end
 
@@ -304,13 +427,39 @@ function CB_SetScoringRules()
 	end
 end
 
+local CB_CURRENT_SORTING_RULE = upDownSort
+
 function CB_ApplySortingRule(scores, playera, playerb)
     return CB_CURRENT_SORTING_RULE(scores, playera, playerb)
 end
     
 function CB_SetSortingRule(game)
-
+	CB_CURRENT_SORTING_RULE = upDownSort
 end
+
+CB_ALL_ROUND_RESOLVED_RULES = {madHatter}
+CB_CURRENT_ROUND_RESOLVED_RULES = {}
+
+function CB_ApplyRoundResolvedRules(game, current_round, current_rollers, next_round, next_rollers)
+	for _, rule in CB_CURRENT_ROUND_RESOLVED_RULES do
+		local text = rule(game, current_round, current_rollers, next_round, next_rollers)
+		if text then
+			CalmDownandGamble:MessageChat(text)
+		end
+	end
+end
+
+function CB_SetRoundResolvedRules()
+	CB_CURRENT_ROUND_RESOLVED_RULES = {}
+	local num_rules = CalmDownandGamble:TableLength(CB_ALL_ROUND_RESOLVED_RULES)
+	local rule_idx = math.random(10)
+	if rule_idx <= num_rules then
+		tinsert(CB_CURRENT_ROUND_RESOLVED_RULES, CB_ALL_ROUND_RESOLVED_RULES[rule_idx])
+	end
+end
+
+local CB_ALL_PAYOUT_RULES = {maxBetPayout, badEconomyPayout, singPayout, complimentPayout, secretPayout}
+local CB_PAYOUT_RULE = maxBetPayout
 
 function CB_ApplyPayoutRule(game)
 	return CB_PAYOUT_RULE(game)
@@ -318,8 +467,8 @@ end
 
 function CB_SetPayoutRule()
     local num_rules = CalmDownandGamble:TableLength(CB_ALL_PAYOUT_RULES)
-	local payout_idx = math.random(10) - num_rules
-	if payout_idx > 1 and payout_idx <= num_rules then
+	local payout_idx = math.random(10)
+	if payout_idx <= num_rules then
 		CB_PAYOUT_RULE = CB_ALL_PAYOUT_RULES[payout_idx]
     else
         CB_PAYOUT_RULE = maxBetPayout
@@ -341,6 +490,7 @@ end
 
 function CB_Reset()
     CB_CURRENT_SCORING_RULES = {}
+	CB_CURRENT_ROUND_RESOLVED_RULES = {}
     CB_CURRENT_SORTING_RULE = upDownSort
     CB_PAYOUT_RULE = maxBetPayout
     cb_opposite = false

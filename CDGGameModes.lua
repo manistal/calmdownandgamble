@@ -360,6 +360,9 @@ CDG_CALVINBALL = {
 
 	round_resolved_callback = function(game, current_round, current_rollers, next_round, next_rollers)
 		CB_SetSortingRule(game)
+		
+		CB_SetRoundResolvedRules()
+		CB_ApplyRoundResolvedRules(game, current_round, current_rollers, next_round, next_rollers)
 	end,
 	
 	init_game = function(game)
