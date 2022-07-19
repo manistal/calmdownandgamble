@@ -433,11 +433,11 @@ function CalmDownandGamble:EvaluateScores()
 	else
 		self:PrintDebug("Unreachable Else: game.data.round not set properly"..game.data.round)
 	end
+	self.game.data.player_rolls = next_rollers
+	self.game.data.round = next_round
 	if self.game.mode.round_resolved_callback then
 		self.game.mode.round_resolved_callback(self.game, current_round, current_rollers, next_round, next_rollers)
 	end
-	self.game.data.player_rolls = next_rollers
-	self.game.data.round = next_round
 	return is_game_over
 end
 
@@ -458,6 +458,7 @@ function CalmDownandGamble:ResolveInitialRound(score_eval, game)
 	-- Winner found, start losers round --
 	elseif score_eval.single_winner then
 		game.data.winner = score_eval.winner
+		game.data.high_score_playoff = self:CopyTable(score_eval.high_score_playoff)
 		game.data.low_score_playoff = self:CopyTable(score_eval.low_score_playoff)
 		next_rollers = self:CopyTable(game.data.low_score_playoff)
 		next_round = CDGConstants.LOSERS_ROUND
@@ -465,6 +466,7 @@ function CalmDownandGamble:ResolveInitialRound(score_eval, game)
 	elseif score_eval.single_loser then
 		game.data.loser = score_eval.loser
 		game.data.high_score_playoff = self:CopyTable(score_eval.high_score_playoff)
+		game.data.low_score_playoff = self:CopyTable(score_eval.low_score_playoff)
 		next_rollers = self:CopyTable(game.data.high_score_playoff)
 		next_round = CDGConstants.WINNERS_ROUND
 	-- Low score playoff and high score playoff, start with loser round --
@@ -498,6 +500,7 @@ function CalmDownandGamble:ResolveLosersRound(score_eval, game)
 			is_game_over = true
 		-- If no winner, start winners round --
 		else
+			game.data.low_score_playoff = self:CopyTable(score_eval.low_score_playoff)
 			next_rollers = self:CopyTable(game.data.high_score_playoff)
 			next_round = CDGConstants.WINNERS_ROUND
 		end
@@ -526,6 +529,7 @@ function CalmDownandGamble:ResolveWinnersRound(score_eval, game)
 			is_game_over = true
 		-- If no loser found, start losers round --
 		else
+			game.data.high_score_playoff = self:CopyTable(score_eval.high_score_playoff)
 			next_rollers = self:CopyTable(game.data.low_score_playoff)
 			next_round = CDGConstants.LOSERS_ROUND
 		end

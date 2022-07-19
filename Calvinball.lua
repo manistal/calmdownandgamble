@@ -32,7 +32,7 @@ local function catchBoomerang()
 end
 
 local function scoreBoomerang(roll, score, player, game)
-	local result = score
+	local scoreMod = math.floor(0.2*(game.data.roll_upper - game.data.roll_lower) + 0.5)
 	local text = player.." has caught the boomerang..."
 	-- Is the boomerang good or bad? --
 	local good = coinFlip()
@@ -44,19 +44,18 @@ local function scoreBoomerang(roll, score, player, game)
 	local opposite = isOpposite()
 	-- If !inverse and good or inverse and bad, add 20% of score to score --
 	if (not opposite and good) or (opposite and not good) then
-		result = math.floor(result*1.2 + 0.5)
+		score = score + scoreMod
 	-- If !inverse and bad or inverse and good, subtract 20% of score from score --
 	elseif (opposite and good) or (not opposite and not good) then
-		result = math.floor(result*0.8 + 0.5)
+		score = score - scoreMod
 	end
-	return result, text
+	return score, text
 end
 
 local function oddEven(roll, score, player, game)
 	local text = player.." is caught between the time wickets..."
 	local opposite = isOpposite()
-	local result = score
-
+	local scoreMod = math.floor(0.3*(game.data.roll_upper - game.data.roll_lower) + 0.5)
 	-- Is Odd or Even good? --
 	local oddIsGood = coinFlip()
 	if oddIsGood then
@@ -75,11 +74,11 @@ local function oddEven(roll, score, player, game)
 	   (oddIsGood and not oddRoll and opposite) or
 	   (not oddIsGood and not oddRoll and not opposite) or
 	   (not oddIsGood and oddRoll and opposite) then
-		result = math.floor(result*1.5 + 0.5)
+		score = score + scoreMod
 	else
-		result = math.floor(result*0.5 + 0.5)
+		score = score - scoreMod
 	end
-	return result, text
+	return score, text
 end
 
 local function hotChip(roll, score, player, game)
@@ -87,21 +86,23 @@ local function hotChip(roll, score, player, game)
 	local isGood = coinFlip()
 	local opposite = isOpposite()
 	local text = player
+	local scoreMod = math.floor(0.2*(game.data.roll_upper - game.data.roll_lower) + 0.5)
 	if isGood then
 		text = text.." and they could put down their hot chip for a second"
 		if opposite then
-
+			score = score - scoreMod
 		else
-
+			score = score + scoreMod
 		end
 	else
 		text = text.." but they could not put down their hot chip for a second"
 		if opposite then
-			
+			score = score + scoreMod
 		else
-
+			score = score - scoreMod
 		end
 	end
+	return score, text
 end
 
 local function vortexZone(roll, score, player, game)
@@ -325,7 +326,6 @@ end
 local function madHatter(game, current_round, current_rollers, next_round, next_rollers)
 	text = "'CHANGE PLACES!!' yells the Mad Hatter..."
 	if next_round and next_round ~= CDGConstants.INITIAL_ROUND then
-		local removeWinner = coinFlip()
 		local winnersEligible = CalmDownandGamble:TableLength(game.data.high_score_playoff) > 2
 		local losersEligible = CalmDownandGamble:TableLength(game.data.low_score_playoff) > 2
 		if winnersEligible and losersEligible then
