@@ -42,10 +42,10 @@ local function scoreBoomerang(roll, score, player, game)
 		text = text.." With their face!"
 	end
 	local opposite = isOpposite()
-	-- If !inverse and good or inverse and bad, add 20% of score to score --
+	-- If !inverse and good or inverse and bad, add 20% to score --
 	if (not opposite and good) or (opposite and not good) then
 		score = score + scoreMod
-	-- If !inverse and bad or inverse and good, subtract 20% of score from score --
+	-- If !inverse and bad or inverse and good, subtract 20% from score --
 	elseif (opposite and good) or (not opposite and not good) then
 		score = score - scoreMod
 	end
@@ -82,10 +82,9 @@ local function oddEven(roll, score, player, game)
 end
 
 local function hotChip(roll, score, player, game)
-	text = player.." is eating hot chip..."
+	local text = player.." is eating hot chip..."
 	local isGood = coinFlip()
 	local opposite = isOpposite()
-	local text = player
 	local scoreMod = math.floor(0.2*(game.data.roll_upper - game.data.roll_lower) + 0.5)
 	if isGood then
 		text = text.." and they could put down their hot chip for a second"
@@ -182,13 +181,14 @@ local function changeDigits(roll, score, player, game)
 		if scoreLen == 1 then
 			text = text.." And it only has one digit... SAD."
 			newScore = score
+		else
+			local digitLoc = math.random(1, scoreLen)
+			local newScoreStart = string.sub(scoreString, 1, digitLoc - 1)
+			local newScoreEnd = string.sub(scoreString, digitLoc + 1, scoreLen)
+			local removedDigit = string.sub(scoreString, digitLoc, digitLoc)
+			text = text.." So I got rid of that pesky "..removedDigit.." for you :)"
+			newScore = tonumber(newScoreStart..newScoreEnd)
 		end
-		local digitLoc = math.random(1, scoreLen)
-		local newScoreStart = string.sub(scoreString, 1, digitLoc - 1)
-		local newScoreEnd = string.sub(scoreString, digitLoc + 1, scoreLen)
-		local removedDigit = string.sub(scoreString, digitLoc, digitLoc)
-		text = text.." So I got rid of that pesky "..removedDigit.." for you :)"
-        newScore = tonumber(newScoreStart..newScoreEnd)
 	end
     return newScore, text
 end
@@ -215,9 +215,10 @@ local function goalPost(roll, score, player, game)
 end
 
 local function foundBall(roll, score, player, game)
-	local newScore = score
 	local thisIsGood = coinFlip()
 	local opposite = isOpposite()
+	local scoreMod = math.floor(game.data.roll_lower + game.data.roll_upper + 0.5)
+	local newScore = score
 	local calvinBallFound = math.random(1,100) > 80
     if not calvinBallFound then
         return score, nil
@@ -225,16 +226,16 @@ local function foundBall(roll, score, player, game)
 	text = player.." has found the CALVINBALL!!!"
 	if thisIsGood then
 		if opposite then
-			newScore = 1
+			newScore = score - scoreMod
 		else
-			newScore = score * 100
+			newScore = score + scoreMod
 		end
 	else
 		text = text.." But it turned out to be a rotten egg."
 		if opposite then
-			newScore = score * 100
+			newScore = score + scoreMod
 		else
-			newScore = 1
+			newScore = score - scoreMod
 		end
 	end
 	return newScore, text
@@ -251,7 +252,7 @@ end
 local function madHatter_pickPlayer(playoff)
 	local num_players = CalmDownandGamble:TableLength(playoff)
 	local playerNames = {}
-	for player,roll in playoff do
+	for player,roll in pairs(playoff) do
 		tinsert(playerNames, player)
 	end
 	return playerNames[math.random(num_players)]
@@ -324,28 +325,30 @@ local function madHatter_moveLoser(game, next_round)
 end
 
 local function madHatter(game, current_round, current_rollers, next_round, next_rollers)
-	text = "'CHANGE PLACES!!' yells the Mad Hatter..."
-	if next_round and next_round ~= CDGConstants.INITIAL_ROUND then
-		local winnersEligible = CalmDownandGamble:TableLength(game.data.high_score_playoff) > 2
-		local losersEligible = CalmDownandGamble:TableLength(game.data.low_score_playoff) > 2
-		if winnersEligible and losersEligible then
-			local removeWinner = coinFlip()
-			if removeWinner then
-				text = text.." "..madHatter_moveWinner(game, next_round)
-			else
-				text = text.." "..madHatter_moveLoser(game, next_round)
-			end
-		elseif winnersEligible then
-			text = text.." "..madHatter_moveWinner(game, next_round)
-		elseif losersEligible then
-			text = text.." "..madHatter_moveLoser(game, next_round)
-		else
-			text = nil
-		end
-		return text
-	else
+	local text = "'CHANGE PLACES!!' yells the Mad Hatter..."
+
+	local winnersEligible = CalmDownandGamble:TableLength(game.data.high_score_playoff) > 2
+	local losersEligible = CalmDownandGamble:TableLength(game.data.low_score_playoff) > 2
+
+	if not next_round 
+	   or next_round == CDGConstants.INITIAL_ROUND 
+	   or (not losersEligible and not winnersEligible) then
 		return nil
 	end
+
+	if winnersEligible and losersEligible then
+		local removeWinner = coinFlip()
+		if removeWinner then
+			text = text.." "..madHatter_moveWinner(game, next_round)
+		else
+			text = text.." "..madHatter_moveLoser(game, next_round)
+		end
+	elseif winnersEligible then
+		text = text.." "..madHatter_moveWinner(game, next_round)
+	elseif losersEligible then
+		text = text.." "..madHatter_moveLoser(game, next_round)
+	end
+	return text
 end
 
 local function maxBetPayout(game)
@@ -441,7 +444,7 @@ CB_ALL_ROUND_RESOLVED_RULES = {madHatter}
 CB_CURRENT_ROUND_RESOLVED_RULES = {}
 
 function CB_ApplyRoundResolvedRules(game, current_round, current_rollers, next_round, next_rollers)
-	for _, rule in CB_CURRENT_ROUND_RESOLVED_RULES do
+	for _, rule in pairs(CB_CURRENT_ROUND_RESOLVED_RULES) do
 		local text = rule(game, current_round, current_rollers, next_round, next_rollers)
 		if text then
 			CalmDownandGamble:MessageChat(text)
