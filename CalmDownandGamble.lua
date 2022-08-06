@@ -115,7 +115,7 @@ end
 -- ================
 function CalmDownandGamble:SetGameMode() 
 	-- Loaded from external File
-	GAME_MODES = { CDG_HILO, CDG_INVERSE, CDG_ROULETTE, CDG_BIGTWOS, CDG_LILONES, CDG_YAHTZEE, CDG_CURLING, CDG_LANDMINES, CDG_CALVINBALL }
+	GAME_MODES = { CDG_HILO, CDG_INVERSE, CDG_ROULETTE, CDG_BIGTWOS, CDG_LILONES, CDG_YAHTZEE, CDG_CURLING, CDG_LANDMINES, CDG_CALVINBALL, CDG_RACE }
 	self.game.mode = GAME_MODES[self.game.mode_id]
 	self.game.num_modes = table.getn(GAME_MODES)
 	self.ui.game_mode:SetText(self.game.mode.label)
