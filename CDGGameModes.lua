@@ -373,6 +373,14 @@ CDG_CALVINBALL = {
 	end
 }
 
+local function race_getTotalDistance(game, player, roll)
+	local total_distance = roll
+	if game.data.player_runs[player] then
+		total_distance = total_distance + game.data.player_runs[player]
+	end
+	return total_distance
+end
+
 CDG_RACE = {
 	-- String for game name
 	label = "Race",
@@ -381,30 +389,29 @@ CDG_RACE = {
 		game.data.roll_lower = 1
 		game.data.roll_upper = CDG_MAX_ROLL(game.data.gold_amount)
 		game.data.roll_range = "(1-"..game.data.roll_upper..")"
+		game.data.race_length = game.data.gold_amount * 2
 		game.data.player_runs = {}
 		CDG_RACE.game = game
 	end,
 
 	custom_intro = function()
-		return CDG_RACE.game.data.gold_amount.." meter race! Roll to the finish!"
+		return CDG_RACE.game.data.race_length.." meter race! Roll to the finish!"
 	end,
 
 	roll_accepted_callback = function(game, player, roll)
-		local total_distance = roll
-		if game.data.player_runs[player] then
-			total_distance = total_distance + game.data.player_runs[player]
+		local total_distance = race_getTotalDistance(game, player, roll)
+		if total_distance >= game.data.race_length then
+			CalmDownandGamble:MessageChat(player.." has reached the finish line!")
+		else
+			CalmDownandGamble:MessageChat(player.." has run "..total_distance.." meters")
 		end
-		CalmDownandGamble:MessageChat(player.." has run "..total_distance.." meters")
 	end,
 
 	roll_to_score = function(roll, player, game)
 		local score = 0
-		local total_distance = roll
-		if game.data.player_runs[player] then
-			total_distance = total_distance + game.data.player_runs[player]
-		end
+		local total_distance = race_getTotalDistance(game, player, roll)
 
-		if total_distance >= game.data.roll_upper then
+		if total_distance >= game.data.race_length then
 			game.data.player_runs[player] = 0
 			score = 1
 		else
@@ -418,7 +425,7 @@ CDG_RACE = {
 	sort_scores = CDG_SORT_DESCENDING,
 
 	print_help = function()
-		CalmDownandGamble:MessageChat("Race: First person to reach the bet amount in cumulative rolls wins! Slowest roller is the loser.")
+		CalmDownandGamble:MessageChat("Race: Run until your cumulative rolls reaches 2x the bet amount. The loser is the slowest runner. Ties at the finish line race again.")
 	end,
 	
 	payout = function(game)

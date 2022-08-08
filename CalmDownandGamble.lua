@@ -238,11 +238,23 @@ function CalmDownandGamble:StartRolls()
 	-- Tell Tiebreakers Who Has to Roll
 	if not self.game.data.first_round then
 		if self.game.data.round == CDGConstants.LOSERS_ROUND then 
-			self:MessageChat("The Losers Bracket! Low Tiebreaker:")
+			if self.game.mode.losers_intro then
+				self.game.mode.losers_intro()
+			else
+				self:MessageChat("The Losers Bracket! Low Tiebreaker:")
+			end
 		elseif self.game.data.round == CDGConstants.WINNERS_ROUND then
-			self:MessageChat("The Winners Bracket! High Tiebreaker:")
+			if self.game.mode.winners_intro then
+				self.game.mode.winners_intro()
+			else
+				self:MessageChat("The Winners Bracket! High Tiebreaker:")
+			end
 		elseif self.game.data.round == CDGConstants.INITIAL_ROUND then
-			self:MessageChat("Tie! Reroll:")
+			if self.game.mode.tie_intro then
+				self.game.mode.tie_intro()
+			else
+				self:MessageChat("Tie! Reroll:")
+			end
 		end
 		self:PrintTieBreakerPlayers(self.game.data.player_rolls)
 	end
