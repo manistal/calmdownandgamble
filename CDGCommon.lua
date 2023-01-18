@@ -45,7 +45,8 @@ end
 -- Debug Setup
 -- ==================
 function CalmDownandGamble:PrintDebug(msg)
-	if self.DEBUG_ENABLED then self:Print("[CDG_DEBUG] "..msg) end
+	--if self.DEBUG_ENABLED then self:Print("[CDG_DEBUG] "..msg) end
+	self:Print("[CDG_DEBUG] "..msg)
 end
 
 -- Custom Channel Handling

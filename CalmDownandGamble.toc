@@ -1,7 +1,9 @@
-## Interface: 90105
-## X-Min-Interface: 90105
-## X-Min-Interface-Classic: 11402
-## X-Min-Interface-BCC: 20503
+## Interface: 304011
+## Interface: 100002
+## X-Min-Interface: 100002
+## X-Min-Interface-Classic: 11403
+## X-Min-Interface-BCC: 20504
+## X-Min-Interface-Wrath: 30401
 
 ## Title: CalmDownandGamble
 ## Author: Fuzz Magtheridon-US (Mal'Ganis-US) 
