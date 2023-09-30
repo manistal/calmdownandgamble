@@ -1,4 +1,4 @@
-## Interface: 100107
+## Interface: 30402
 ## Title: CalmDownandGamble
 ## Author: Fuzz Magtheridon-US (Mal'Ganis-US) 
 ## Version: 10.0.0
